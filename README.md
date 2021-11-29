@@ -1,2 +1,2 @@
 # terraform-provider-steampipe
-Terraform Steampipe provider
+Terraform Steampipe Cloud provider
