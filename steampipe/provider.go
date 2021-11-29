@@ -38,7 +38,7 @@ func Provider() terraform.ResourceProvider {
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	configuration := openapiclient.NewConfiguration()
 
-	spCloudToken := d.Get("access_key").(string)
+	spCloudToken := d.Get("token").(string)
 	configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", spCloudToken))
 	apiClient := openapiclient.NewAPIClient(configuration)
 
