@@ -12,33 +12,69 @@ import (
 func resourceSteampipeCloudWorkspace() *schema.Resource {
 	return &schema.Resource{
 		//Create: resourceTurbotFolderCreate,
-		Read: resourceTurbotFolderRead,
-		// Update: resourceTurbotFolderUpdate,
-		// Delete: resourceTurbotFolderDelete,
-		// Exists: resourceTurbotFolderExists,
-		// Importer: &schema.ResourceImporter{
-		// 	State: resourceTurbotFolderImport,
-		// },
+		Create: resourceSteampipeCloudWorkspaceCreate,
+		Read:   resourceSteampipeCloudWorkspaceRead,
+		Delete: resourceSteampipeCloudWorkspaceDelete,
+		Importer: &schema.ResourceImporter{
+			State: resourceSteampipeCloudWorkspaceImport,
+		},
 		Schema: map[string]*schema.Schema{
 			// aka of the parent resource
 			"handle": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
 			},
 		},
 	}
 }
 
-func resourceTurbotFolderRead(d *schema.ResourceData, meta interface{}) error {
+func resourceSteampipeCloudWorkspaceImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	if err := resourceSteampipeCloudWorkspaceRead(d, meta); err != nil {
+		return nil, err
+	}
+	return []*schema.ResourceData{d}, nil
+}
+
+func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*openapiclient.APIClient)
 
-	resp, r, err := client.UsersWorkspacesApi.ActorWorkspaceGet(context.Background()).Limit(int32(20)).Execute()
+	req := openapiclient.TypesCreateWorkspaceRequest{
+		Handle: "terraformtest1234",
+	}
+	resp, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspacePost(context.Background(), "subhajit97").Request(req).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.ActorWorkspaceGet``: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspacePost`: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
-	data := *resp.Items
-	d.Set("resource", data[0].Handle)
+	// data := *resp.Items
+	d.Set("handle", resp.Handle)
+
+	return nil
+}
+
+func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*openapiclient.APIClient)
+
+	resp, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet(context.Background(), "terraformtest1234", "subhajit97").Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet`: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
+	// data := *resp.Items
+	d.Set("handle", resp.Handle)
+
+	return nil
+}
+
+func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
+	client := meta.(*openapiclient.APIClient)
+
+	_, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleDelete(context.Background(), "terraformtest2021", "subhajit97").Execute()
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleDelete`: %v\n", err)
+		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+	}
 
 	return nil
 }
