@@ -28,7 +28,10 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"spc_workspace": resourceSteampipeCloudWorkspace(),
+			"steampipe_workspace": resourceSteampipeCloudWorkspace(),
+		},
+		DataSourcesMap: map[string]*schema.Resource{
+			"steampipe_workspace": dataSourceSteampipeWorkspace(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -38,8 +41,8 @@ func Provider() terraform.ResourceProvider {
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	configuration := openapiclient.NewConfiguration()
 
-	spCloudToken := d.Get("token").(string)
-	configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", spCloudToken))
+	spcToken := d.Get("token").(string)
+	configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", spcToken))
 	apiClient := openapiclient.NewAPIClient(configuration)
 
 	log.Println("[INFO] Steampipe cloud API client initialized, now validating...", apiClient)
