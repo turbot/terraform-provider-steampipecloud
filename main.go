@@ -1,8 +1,8 @@
 package main
 
 import (
-	"github.com/Subhajit97/terraform-provider-steampipe/steampipecloud"
 	"github.com/hashicorp/terraform/plugin"
+	"github.com/turbot/terraform-provider-steampipecloud/steampipecloud"
 )
 
 func main() {
