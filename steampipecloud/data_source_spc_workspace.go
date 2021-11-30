@@ -44,7 +44,7 @@ func dataSourceSteampipeWorkspace() *schema.Resource {
 func dataSourceSteampipeWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*apiClient.APIClient)
 
-	resp, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet(context.Background(), "terraformtest1234", "subhajit97").Execute()
+	resp, r, err := client.UserWorkspacesApi.GetUserWorkspace(context.Background(), "terraformtest1234", "subhajit97").Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.ActorWorkspaceGet`: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
