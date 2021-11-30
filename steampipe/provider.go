@@ -34,6 +34,7 @@ func Provider() terraform.ResourceProvider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipe_workspace": dataSourceSteampipeWorkspace(),
+			"steampipe_user":      dataSourceSteampipeUser(),
 		},
 
 		ConfigureFunc: providerConfigure,

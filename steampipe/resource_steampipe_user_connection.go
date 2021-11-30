@@ -6,6 +6,7 @@ import (
 	"os"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/turbot/go-kit/types"
 	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
@@ -20,7 +21,6 @@ func resourceSteampipeUserConnection() *schema.Resource {
 		// 	State: resourceSteampipeConnectionImport,
 		// },
 		Schema: map[string]*schema.Schema{
-			// aka of the parent resource
 			"connection_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -30,7 +30,6 @@ func resourceSteampipeUserConnection() *schema.Resource {
 			"handle": {
 				Type:     schema.TypeString,
 				Required: true,
-				// ForceNew: true,
 			},
 			"identity_id": {
 				Type:     schema.TypeString,
@@ -130,7 +129,7 @@ func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) e
 	client := meta.(*openapiclient.APIClient)
 	var user_handle = "lalit"
 	var conn_handle string
-	if value, ok := d.GetOk("conn_handle"); ok {
+	if value, ok := d.GetOk("handle"); ok {
 		conn_handle = value.(string)
 	}
 
@@ -138,8 +137,13 @@ func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) e
 		// fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet`: %v\n", err)
 		return fmt.Errorf("connection handle not present")
 	}
+	// type TypesUpdateConnectionRequest struct {
+	// 	Config *map[string]interface{} `json:"config,omitempty"`
+	// 	Handle *string `json:"handle,omitempty"`
+	// }
 
 	resp, r, err := client.UserConnectionsApi.GetUserConnection(context.Background(), user_handle, conn_handle).Execute()
+
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling resourceSteampipeConnectionRead: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -147,7 +151,7 @@ func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) e
 	}
 
 	// assign results back into ResourceData
-	err = d.Set("id", resp.Id)
+	err = d.Set("connection_id", resp.Id)
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
 		return err
@@ -182,7 +186,7 @@ func resourceSteampipeConnectionDelete(d *schema.ResourceData, meta interface{})
 	client := meta.(*openapiclient.APIClient)
 	var user_handle = "lalit"
 	var conn_handle string
-	if value, ok := d.GetOk("conn_handle"); ok {
+	if value, ok := d.GetOk("handle"); ok {
 		conn_handle = value.(string)
 	}
 
@@ -201,67 +205,65 @@ func resourceSteampipeConnectionDelete(d *schema.ResourceData, meta interface{})
 
 func resourceSteampipeConnectionUpdate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*openapiclient.APIClient)
-	var user_handle = "lalit"
-	var conn_handle string
-	if value, ok := d.GetOk("conn_handle"); ok {
-		conn_handle = value.(string)
+	oldHandle, newHandle := d.GetChange("handle")
+
+	if newHandle.(string) == "" {
+		return fmt.Errorf("handle must be configured")
+	}
+	// config := map[string]interface{}{
+	// 	"regions":    []string{"us-east-1"},
+	// 	"access_key": "AKIAQGDRKHTKFBLNOL5N",
+	// 	"secret_key": "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",
+	// }
+
+	req := openapiclient.TypesUpdateConnectionRequest{
+		Handle: types.String(newHandle.(string)),
+		// Config: &config,
 	}
 
-	_, r, err := client.UserConnectionsApi.DeleteUserConnection(context.Background(), user_handle, conn_handle).Execute()
+	// Get user handler
+	user_handle := getUserHandler(meta)
+	resp, _, err := client.UserConnectionsApi.UpdateUserConnection(context.Background(), user_handle, oldHandle.(string)).Request(req).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleDelete`: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
+		return fmt.Errorf("AM I HERE %v", err)
+	}
+
+	err = d.Set("handle", resp.Handle)
+	err = d.Set("connection_id", resp.Id)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
 		return err
 	}
-
-	// clear the id to show we have deleted
-	d.SetId("")
+	err = d.Set("identity_id", resp.IdentityId)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
+		return err
+	}
+	err = d.Set("type", resp.Type)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
+		return err
+	}
+	// err = d.Set("config", resp.Config)
+	// if err != nil {
+	// 	fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
+	// 	return err
+	// }
+	err = d.Set("plugin", resp.Plugin)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
+		return err
+	}
+	// d.SetId(resp.Id)
 
 	return nil
 }
 
-// 	{
-//   "plugin": "aws",
-//   "config": {
-//     "regions": [
-//       "us-east-1"
-//     ],
-//     "access_key": "AKIAQGDRKHTKFBLNOL5N",
-//     "secret_key": "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"
-//   }
-// }
-
-// {
-//   "id": "c_c6ivcn9e4mvahd3kqbd0",
-//   "handle": "aac",
-//   "identity_id": "u_c6flu7pe4mvf26h42ibg",
-//   "type": "connection",
-//   "plugin": "aws",
-//   "config": {
-//     "access_key": "AKIAQGDRKHTKFBLNOL5N",
-//     "regions": [
-//       "us-east-1"
-//     ]
-//   },
-//   "version_id": 1,
-//   "created_at": "2021-11-30T10:01:01Z",
-//   "updated_at": null
-// }
-
-// data := *resp.Items
-// {
-//   "id": "c_c6ivcn9e4mvahd3kqbd0",
-//   "handle": "aac",
-//   "identity_id": "u_c6flu7pe4mvf26h42ibg",
-//   "type": "connection",
-//   "plugin": "aws",
-//   "config": {
-//     "access_key": "AKIAQGDRKHTKFBLNOL5N",
-//     "regions": [
-//       "us-east-1"
-//     ]
-//   },
-//   "version_id": 1,
-//   "created_at": "2021-11-30T10:01:01Z",
-//   "updated_at": null
-// }
+func getUserHandler(meta interface{}) string {
+	client := meta.(*openapiclient.APIClient)
+	resp, _, err := client.UsersApi.GetActor(context.Background()).Execute()
+	if err != nil {
+		return ""
+	}
+	return resp.Handle
+}
