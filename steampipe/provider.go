@@ -23,13 +23,14 @@ func Provider() terraform.ResourceProvider {
 				Optional: true,
 			},
 			"org": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeMap,
 				Optional: true,
 			},
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"steampipe_workspace": resourceSteampipeCloudWorkspace(),
+			"steampipe_workspace":       resourceSteampipeCloudWorkspace(),
+			"steampipe_user_connection": resourceSteampipeUserConnection(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipe_workspace": dataSourceSteampipeWorkspace(),
