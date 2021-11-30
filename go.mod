@@ -2,6 +2,8 @@ module github.com/turbot/terraform-provider-steampipecloud
 
 go 1.17
 
+require github.com/turbot/go-kit v0.3.0
+
 require (
 	github.com/hashicorp/terraform v0.12.0
 	github.com/turbot/go-kit v0.3.0
