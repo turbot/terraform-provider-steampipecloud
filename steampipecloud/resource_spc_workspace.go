@@ -22,17 +22,23 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 			// aka of the parent resource
 			"handle": {
 				Type:     schema.TypeString,
-				Optional: true,
+				Computed: true,
 				ForceNew: true,
 			},
+			// "id": {
+			// 	Type:     schema.TypeString,
+			// 	Computed: true,
+			// },
 		},
 	}
 }
 
 func resourceSteampipeCloudWorkspaceImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := resourceSteampipeCloudWorkspaceRead(d, meta); err != nil {
-		return nil, err
-	}
+	// if err := resourceSteampipeCloudWorkspaceRead(d, meta); err != nil {
+	// 	return nil, err
+	// }
+	// d.Set("handle", "terraformtest1234")
+	d.State().Attributes["handle"] = "terraformtest1234"
 	return []*schema.ResourceData{d}, nil
 }
 
@@ -48,6 +54,7 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
 	// data := *resp.Items
+	d.SetId(resp.Id)
 	d.Set("handle", resp.Handle)
 
 	return nil
@@ -56,13 +63,15 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*openapiclient.APIClient)
 
-	resp, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet(context.Background(), "terraformtest1234", "subhajit97").Execute()
+	handle := d.State().Attributes["handle"]
+
+	_, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet(context.Background(), handle, "subhajit97").Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet`: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 	}
 	// data := *resp.Items
-	d.Set("handle", resp.Handle)
+	d.Set("handle", handle)
 
 	return nil
 }
