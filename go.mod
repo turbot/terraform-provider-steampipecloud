@@ -2,8 +2,6 @@ module github.com/Subhajit97/terraform-provider-steampipe
 
 go 1.17
 
-require github.com/turbot/steampipe-cloud-sdk-go v0.0.0-00010101000000-000000000000
-
 require (
 	cloud.google.com/go v0.65.0 // indirect
 	cloud.google.com/go/storage v1.10.0 // indirect
@@ -66,6 +64,7 @@ require (
 require (
 	github.com/golang/protobuf v1.4.2 // indirect
 	github.com/hashicorp/terraform v0.12.0
+	github.com/turbot/steampipe-cloud-sdk-go v0.0.0-00010101000000-000000000000
 	golang.org/x/net v0.0.0-20200822124328-c89045814202 // indirect
 	golang.org/x/oauth2 v0.0.0-20210218202405-ba52d332ba99 // indirect
 	google.golang.org/appengine v1.6.6 // indirect

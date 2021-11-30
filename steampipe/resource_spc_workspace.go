@@ -42,7 +42,7 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 	req := openapiclient.TypesCreateWorkspaceRequest{
 		Handle: "terraformtest1234",
 	}
-	resp, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspacePost(context.Background(), "subhajit97").Request(req).Execute()
+	resp, r, err := client.UserWorkspacesApi.CreateUserWorkspace(context.Background(), "subhajit97").Request(req).Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspacePost`: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -56,7 +56,7 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*openapiclient.APIClient)
 
-	resp, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet(context.Background(), "terraformtest1234", "subhajit97").Execute()
+	resp, r, err := client.UserWorkspacesApi.GetUserWorkspace(context.Background(), "terraformtest1234", "subhajit97").Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet`: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
@@ -70,7 +70,7 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*openapiclient.APIClient)
 
-	_, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleDelete(context.Background(), "terraformtest2021", "subhajit97").Execute()
+	_, r, err := client.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), "terraformtest2021", "subhajit97").Execute()
 	if err != nil {
 		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleDelete`: %v\n", err)
 		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
