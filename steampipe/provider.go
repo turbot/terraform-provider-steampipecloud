@@ -22,10 +22,6 @@ func Provider() terraform.ResourceProvider {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"handle": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 			"insecure_skip_verify": {
 				Type:     schema.TypeBool,
 				Optional: true,
@@ -52,7 +48,6 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := Config{
 		Token:              d.Get("token").(string),
 		Org:                d.Get("org").(string),
-		Handle:             d.Get("handle").(string),
 		InsecureSkipVerify: d.Get("insecure_skip_verify").(bool),
 		Hostname:           d.Get("hostname").(string),
 	}
@@ -77,7 +72,6 @@ type SteampipeClient struct {
 type Config struct {
 	Org                string
 	Token              string
-	Handle             string
 	Hostname           string
 	InsecureSkipVerify bool
 }
