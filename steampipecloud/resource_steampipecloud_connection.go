@@ -43,9 +43,8 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 			},
 			"plugin": {
 				Type:     schema.TypeString,
-				Optional: true,
+				Required: true,
 				ForceNew: true,
-				Computed: true,
 			},
 			// "config": {
 			// 	Type:         schema.TypeString,
