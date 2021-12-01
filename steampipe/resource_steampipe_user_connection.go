@@ -117,10 +117,6 @@ func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) e
 	client := meta.(*openapiclient.APIClient)
 	id := d.Id()
 	var user_handle = "lalit"
-	// var conn_handle string
-	// if value, ok := d.GetOk("id"); ok {
-	// 	conn_handle = value.(string)
-	// }
 
 	if id == "" {
 		return fmt.Errorf("connection handle not present. conn_handle: %s", id)
