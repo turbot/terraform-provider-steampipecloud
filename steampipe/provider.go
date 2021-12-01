@@ -37,12 +37,10 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"steampipe_workspace":       resourceSteampipeCloudWorkspace(),
-			"steampipe_user_connection": resourceSteampipeUserConnection(),
+			"steampipe_connection": resourceSteampipeConnection(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"steampipe_workspace": dataSourceSteampipeWorkspace(),
-			"steampipe_user":      dataSourceSteampipeUser(),
+			"steampipe_user": dataSourceSteampipeUser(),
 		},
 
 		ConfigureFunc: providerConfigure,
@@ -59,11 +57,21 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Hostname:           d.Get("hostname").(string),
 	}
 
+	// TODO: Write a helper function to extract Token, Handle, Org from env variable and set as per their precedence
+
 	configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", config.Token))
 	apiClient := openapiclient.NewAPIClient(configuration)
 
 	log.Println("[INFO] Steampipe cloud API client initialized, now validating...", apiClient)
-	return apiClient, nil
+	return &SteampipeClient{
+		APIClient: apiClient,
+		Config:    &config,
+	}, nil
+}
+
+type SteampipeClient struct {
+	APIClient *openapiclient.APIClient
+	Config    *Config
 }
 
 type Config struct {

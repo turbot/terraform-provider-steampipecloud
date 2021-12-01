@@ -3,7 +3,6 @@ package steampipe
 import (
 	"context"
 	"fmt"
-	"os"
 
 	// "github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	// "github.com/hashicorp/terraform/helper/structure"
@@ -13,13 +12,12 @@ import (
 	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
-func resourceSteampipeUserConnection() *schema.Resource {
+func resourceSteampipeConnection() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceSteampipeConnectionCreate,
 		Read:   resourceSteampipeConnectionRead,
-		Delete: resourceSteampipeConnectionDelete,
+		Create: resourceSteampipeConnectionCreate,
 		Update: resourceSteampipeConnectionUpdate,
-		// Exists: resourceExistsItem,
+		Delete: resourceSteampipeConnectionDelete,
 		Importer: &schema.ResourceImporter{
 			State: resourceSteampipeConnectionImport,
 		},
@@ -67,7 +65,7 @@ func resourceSteampipeConnectionImport(d *schema.ResourceData, meta interface{})
 }
 
 func resourceSteampipeConnectionCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*openapiclient.APIClient)
+	steampipeClient := meta.(*SteampipeClient)
 
 	config := map[string]interface{}{
 		"regions":    []string{"us-east-1"},
@@ -84,18 +82,14 @@ func resourceSteampipeConnectionCreate(d *schema.ResourceData, meta interface{})
 		plugin = value.(string)
 	}
 
-	// return fmt.Errorf("Data \nconn_handle: %s \nplugin: %s ", conn_handle, plugin)
-
 	req := openapiclient.TypesCreateConnectionRequest{
 		Handle: conn_handle,
 		Plugin: plugin,
 		Config: &config,
 	}
 
-	resp, r, err := client.UserConnectionsApi.CreateUserConnection(context.Background(), "lalit").Request(req).Execute()
+	resp, _, err := steampipeClient.APIClient.UserConnectionsApi.CreateUserConnection(context.Background(), "lalit").Request(req).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspacePost`: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 		return err
 	}
 
@@ -114,7 +108,7 @@ func resourceSteampipeConnectionCreate(d *schema.ResourceData, meta interface{})
 }
 
 func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*openapiclient.APIClient)
+	steampipeClient := meta.(*SteampipeClient)
 	id := d.Id()
 	var user_handle = "lalit"
 
@@ -122,7 +116,7 @@ func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) e
 		return fmt.Errorf("connection handle not present. conn_handle: %s", id)
 	}
 
-	resp, _, err := client.UserConnectionsApi.GetUserConnection(context.Background(), user_handle, id).Execute()
+	resp, _, err := steampipeClient.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), user_handle, id).Execute()
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeConnectionRead. \nGetUserConnection.error %v", err)
 	}
@@ -131,9 +125,9 @@ func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) e
 	d.Set("connection_id", resp.Id)
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("type", resp.Type)
-	// d.Set("config", resp.Config)
 	d.Set("plugin", resp.Plugin)
 	d.Set("handle", resp.Handle)
+	// d.Set("config", resp.Config)
 	// d.Set("created_at", resp.CreatedAt)
 	// d.Set("updated_at", resp.UpdatedAt)
 	// d.Set("identity", resp.Identity)
@@ -142,14 +136,14 @@ func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) e
 }
 
 func resourceSteampipeConnectionDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*openapiclient.APIClient)
+	steampipeClient := meta.(*SteampipeClient)
 	var user_handle = "lalit"
 	var conn_handle string
 	if value, ok := d.GetOk("handle"); ok {
 		conn_handle = value.(string)
 	}
 
-	_, _, err := client.UserConnectionsApi.DeleteUserConnection(context.Background(), user_handle, conn_handle).Execute()
+	_, _, err := steampipeClient.APIClient.UserConnectionsApi.DeleteUserConnection(context.Background(), user_handle, conn_handle).Execute()
 	if err != nil {
 		return err
 	}
@@ -161,7 +155,7 @@ func resourceSteampipeConnectionDelete(d *schema.ResourceData, meta interface{})
 }
 
 func resourceSteampipeConnectionUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*openapiclient.APIClient)
+	steampipeClient := meta.(*SteampipeClient)
 	oldHandle, newHandle := d.GetChange("handle")
 
 	if newHandle.(string) == "" {
@@ -180,7 +174,7 @@ func resourceSteampipeConnectionUpdate(d *schema.ResourceData, meta interface{})
 
 	// Get user handler
 	user_handle := getUserHandler(meta)
-	resp, _, err := client.UserConnectionsApi.UpdateUserConnection(context.Background(), user_handle, oldHandle.(string)).Request(req).Execute()
+	resp, _, err := steampipeClient.APIClient.UserConnectionsApi.UpdateUserConnection(context.Background(), user_handle, oldHandle.(string)).Request(req).Execute()
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeConnectionUpdate: %v", err)
 	}
@@ -196,8 +190,8 @@ func resourceSteampipeConnectionUpdate(d *schema.ResourceData, meta interface{})
 }
 
 func getUserHandler(meta interface{}) string {
-	client := meta.(*openapiclient.APIClient)
-	resp, _, err := client.UsersApi.GetActor(context.Background()).Execute()
+	steampipeClient := meta.(*SteampipeClient)
+	resp, _, err := steampipeClient.APIClient.UsersApi.GetActor(context.Background()).Execute()
 	if err != nil {
 		return ""
 	}

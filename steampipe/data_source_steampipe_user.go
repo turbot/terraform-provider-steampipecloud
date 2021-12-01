@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	apiClient "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func dataSourceSteampipeUser() *schema.Resource {
@@ -60,9 +59,9 @@ func dataSourceSteampipeUser() *schema.Resource {
 }
 
 func dataSourceSteampipeUserRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*apiClient.APIClient)
+	steampipeClient := meta.(*SteampipeClient)
 
-	resp, _, err := client.UsersApi.GetActor(context.Background()).Execute()
+	resp, _, err := steampipeClient.APIClient.UsersApi.GetActor(context.Background()).Execute()
 	if err != nil {
 		return err
 	}
