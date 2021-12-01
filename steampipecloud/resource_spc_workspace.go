@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	_nethttp "net/http"
 
 	"github.com/turbot/go-kit/types"
 
@@ -28,46 +29,63 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 			"workspace_state": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"created_at": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"updated_at": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"database_name": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"hive": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"host": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"identity_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"version_id": {
 				Type:     schema.TypeInt,
 				Optional: true,
+				Computed: true,
 			},
 		},
 	}
 }
 
 func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	client := meta.(*openapiclient.APIClient)
+	client := meta.(*SteampipeCloudClient)
 
 	handle := d.State().Attributes["handle"]
-	userHandler := getUserHandler(meta)
 
-	_, r, err := client.UserWorkspacesApi.GetUserWorkspace(context.Background(), handle, userHandler).Execute()
+	var err error
+	var r *_nethttp.Response
+
+	if client.Config != nil && client.Config.Org != "" {
+		_, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
+	} else {
+		userHandler := getUserHandler(meta)
+		_, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), handle, userHandler).Execute()
+	}
+
+	// Error check
 	if err != nil {
 		if r.StatusCode == 404 {
 			return false, nil
@@ -87,10 +105,14 @@ func resourceSteampipeCloudWorkspaceImport(d *schema.ResourceData, meta interfac
 }
 
 func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
+<<<<<<< HEAD:steampipecloud/resource_spc_workspace.go
 	client := meta.(*openapiclient.APIClient)
 <<<<<<< HEAD:steampipecloud/resource_spc_workspace.go
 
 =======
+=======
+	client := meta.(*SteampipeCloudClient)
+>>>>>>> 3b06fad (Add support to manage org workspaces using terraform):steampipe/resource_spc_workspace.go
 	handle := d.Get("handle")
 
 	// Empty check
@@ -112,11 +134,21 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 	// data := *resp.Items
 =======
 
-	// Get current user/org information
-	userHandler := getUserHandler(meta)
+	var resp openapiclient.TypesWorkspace
+	var err error
 
-	// Create resource
-	resp, _, err := client.UserWorkspacesApi.CreateUserWorkspace(context.Background(), userHandler).Request(req).Execute()
+	// Check for organization
+	// If 'org' is set in the provider config, workspace will create in that organization
+	// else, the user identity is used.
+	if client.Config != nil && client.Config.Org != "" {
+		resp, _, err = client.APIClient.OrgWorkspacesApi.CreateOrgWorkspace(context.Background(), client.Config.Org).Request(req).Execute()
+	} else {
+		// Get current actor information
+		userHandler := getUserHandler(meta)
+		resp, _, err = client.APIClient.UserWorkspacesApi.CreateUserWorkspace(context.Background(), userHandler).Request(req).Execute()
+	}
+
+	// Error check
 	if err != nil {
 		return fmt.Errorf("error creating workspace: %s", err)
 	}
@@ -139,11 +171,25 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 }
 
 func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*openapiclient.APIClient)
+	client := meta.(*SteampipeCloudClient)
 
 	handle := d.State().Attributes["handle"]
 
+<<<<<<< HEAD:steampipecloud/resource_spc_workspace.go
 	_, r, err := client.UsersWorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet(context.Background(), handle, "subhajit97").Execute()
+=======
+	var resp openapiclient.TypesWorkspace
+	var err error
+	var r *_nethttp.Response
+
+	if client.Config != nil && client.Config.Org != "" {
+		resp, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
+	} else {
+		userHandler := getUserHandler(meta)
+		resp, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), handle, userHandler).Execute()
+	}
+
+>>>>>>> 3b06fad (Add support to manage org workspaces using terraform):steampipe/resource_spc_workspace.go
 	if err != nil {
 <<<<<<< HEAD:steampipecloud/resource_spc_workspace.go
 		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet`: %v\n", err)
@@ -174,7 +220,7 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 <<<<<<< HEAD:steampipecloud/resource_spc_workspace.go
 =======
 func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*openapiclient.APIClient)
+	client := meta.(*SteampipeCloudClient)
 
 	oldHandle, newHandle := d.GetChange("handle")
 
@@ -182,16 +228,24 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 		return fmt.Errorf("handle can not be empty")
 	}
 
-	// Get user handler
-	userHandler := getUserHandler(meta)
-
 	// Create request
 	req := openapiclient.TypesUpdateWorkspaceRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 	log.Printf("\n[DEBUG] Updating Workspace: %s", *req.Handle)
 
-	resp, _, err := client.UserWorkspacesApi.UpdateUserWorkspace(context.Background(), userHandler, oldHandle.(string)).Request(req).Execute()
+	var resp openapiclient.TypesWorkspace
+	var err error
+
+	if client.Config != nil && client.Config.Org != "" {
+		resp, _, err = client.APIClient.OrgWorkspacesApi.UpdateOrgWorkspace(context.Background(), client.Config.Org, oldHandle.(string)).Request(req).Execute()
+	} else {
+		// Get user handler
+		userHandler := getUserHandler(meta)
+		resp, _, err = client.APIClient.UserWorkspacesApi.UpdateUserWorkspace(context.Background(), userHandler, oldHandle.(string)).Request(req).Execute()
+	}
+
+	// Error check
 	if err != nil {
 		return fmt.Errorf("error updating workspace: %s", err)
 	}
@@ -213,10 +267,9 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 
 >>>>>>> a8895d8 (Fix update to store all properties in state file):steampipe/resource_spc_workspace.go
 func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*openapiclient.APIClient)
+	client := meta.(*SteampipeCloudClient)
 
 	handle := d.State().Attributes["handle"]
-	userHandler := getUserHandler(meta)
 
 <<<<<<< HEAD:steampipecloud/resource_spc_workspace.go
 	_, r, err := client.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), handle, userHandler).Execute()
@@ -230,7 +283,16 @@ func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interfac
 	}
 	log.Printf("\n[DEBUG] Deleting Workspace: %s", handle)
 
-	_, _, err := client.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), handle, userHandler).Execute()
+	var err error
+
+	if client.Config != nil && client.Config.Org != "" {
+		_, _, err = client.APIClient.OrgWorkspacesApi.DeleteOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
+	} else {
+		userHandler := getUserHandler(meta)
+		_, _, err = client.APIClient.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), handle, userHandler).Execute()
+	}
+
+	// Error check
 	if err != nil {
 		return fmt.Errorf("error deleting workspace: %s", err)
 >>>>>>> a8895d8 (Fix update to store all properties in state file):steampipe/resource_spc_workspace.go
@@ -242,8 +304,8 @@ func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interfac
 =======
 
 func getUserHandler(meta interface{}) string {
-	client := meta.(*openapiclient.APIClient)
-	resp, _, err := client.UsersApi.GetActor(context.Background()).Execute()
+	client := meta.(*SteampipeCloudClient)
+	resp, _, err := client.APIClient.UsersApi.GetActor(context.Background()).Execute()
 	if err != nil {
 		return ""
 	}

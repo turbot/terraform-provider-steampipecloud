@@ -44,7 +44,26 @@ func Provider() terraform.ResourceProvider {
 	}
 }
 
+type ProviderConfig = struct {
+	Hostname           string
+	InsecureSkipVerify bool
+	Org                string
+	Token              string
+}
+
+type SteampipeCloudClient = struct {
+	APIClient *openapiclient.APIClient
+	Config    *ProviderConfig
+}
+
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
+	config := &ProviderConfig{
+		// Hostname:           d.Get("hostname").(string),
+		// InsecureSkipVerify: d.Get("insecure_skip_verify").(bool),
+		Org:   d.Get("org").(string),
+		Token: d.Get("token").(string),
+	}
+
 	configuration := openapiclient.NewConfiguration()
 	config := Config{
 		Token:              d.Get("token").(string),
