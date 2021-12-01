@@ -3,6 +3,7 @@ package steampipe
 import (
 	"context"
 	"fmt"
+	_nethttp "net/http"
 
 	// "github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 	// "github.com/hashicorp/terraform/helper/structure"
@@ -21,6 +22,7 @@ func resourceSteampipeConnection() *schema.Resource {
 		Importer: &schema.ResourceImporter{
 			State: resourceSteampipeConnectionImport,
 		},
+		Exists: resourceSteampipeConnectionExists,
 		Schema: map[string]*schema.Schema{
 			"connection_id": {
 				Type:     schema.TypeString,
@@ -59,6 +61,46 @@ func resourceSteampipeConnection() *schema.Resource {
 			// },
 		},
 	}
+}
+
+func resourceSteampipeConnectionExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
+	var org string
+	var r *_nethttp.Response
+	var err error
+	var actorHandle string
+	IsUser := true
+
+	steampipeClient := meta.(*SteampipeClient)
+	if steampipeClient.Config != nil {
+		if steampipeClient.Config.Org != "" {
+			org = steampipeClient.Config.Org
+			IsUser = false
+		}
+	}
+
+	id := d.Id()
+	if id == "" {
+		return false, fmt.Errorf("inside resourceSteampipeConnectionExists. connection handle not present.")
+	}
+
+	if IsUser {
+		actorHandle, err = getUserHandler(meta)
+		if err != nil {
+			return false, fmt.Errorf("inside resourceSteampipeConnectionExists. getUserHandler Error: \n%v", err)
+		}
+		_, r, err = steampipeClient.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, id).Execute()
+	} else {
+		_, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), org, id).Execute()
+	}
+
+	if err != nil {
+		if r.StatusCode == 404 {
+			return false, nil
+		}
+		return false, fmt.Errorf("inside resourceSteampipeConnectionExists. \nGetConnection.error %v", err)
+	}
+	return true, nil
+
 }
 
 func resourceSteampipeConnectionImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
