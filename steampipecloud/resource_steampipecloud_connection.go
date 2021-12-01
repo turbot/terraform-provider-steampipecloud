@@ -93,8 +93,9 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	}
 	var resp openapiclient.TypesConnection
 	var err error
+	var actorHandle string
 	if IsUser {
-		actorHandle, err := getUserHandler(meta)
+		actorHandle, err = getUserHandler(meta)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. getUserHandler Error: \n%v", err)
 		}
@@ -156,6 +157,7 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
 	d.Set("handle", resp.Handle)
+	d.SetId(resp.Id)
 	// d.Set("config", resp.Config)
 	// d.Set("created_at", resp.CreatedAt)
 	// d.Set("updated_at", resp.UpdatedAt)
@@ -239,6 +241,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		}
 		resp, _, err = steampipeClient.APIClient.UserConnectionsApi.UpdateUserConnection(context.Background(), actorHandle, oldHandle.(string)).Request(req).Execute()
 	} else {
+		// return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. \n newHandle %s \n oldHandle: %s", newHandle.(string), oldHandle.(string))
 		resp, _, err = steampipeClient.APIClient.OrgConnectionsApi.UpdateOrgConnection(context.Background(), org, oldHandle.(string)).Request(req).Execute()
 	}
 	if err != nil {
@@ -251,6 +254,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("type", resp.Type)
 	d.Set("config", resp.Config)
 	d.Set("plugin", resp.Plugin)
+	d.SetId(resp.Id)
 
 	return nil
 }
