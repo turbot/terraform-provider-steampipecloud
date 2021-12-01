@@ -63,60 +63,6 @@ func resourceSteampipeConnection() *schema.Resource {
 	}
 }
 
-func resourceSteampipeConnectionExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	var org string
-	var r *_nethttp.Response
-	var err error
-	var actorHandle string
-	IsUser := true
-
-	steampipeClient := meta.(*SteampipeClient)
-	if steampipeClient.Config != nil {
-		if steampipeClient.Config.Org != "" {
-			org = steampipeClient.Config.Org
-			IsUser = false
-		}
-	}
-
-	id := d.Id()
-	if id == "" {
-		return false, fmt.Errorf("inside resourceSteampipeConnectionExists. connection handle not present.")
-	}
-
-	if IsUser {
-		actorHandle, err = getUserHandler(meta)
-		if err != nil {
-			return false, fmt.Errorf("inside resourceSteampipeConnectionExists. getUserHandler Error: \n%v", err)
-		}
-		_, r, err = steampipeClient.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, id).Execute()
-	} else {
-		_, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), org, id).Execute()
-	}
-
-	if err != nil {
-		if r.StatusCode == 404 {
-			return false, nil
-		}
-		return false, fmt.Errorf("inside resourceSteampipeConnectionExists. \nGetConnection.error %v", err)
-	}
-	return true, nil
-
-}
-
-func resourceSteampipeConnectionImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := resourceSteampipeConnectionRead(d, meta); err != nil {
-		return nil, err
-	}
-	return []*schema.ResourceData{d}, nil
-}
-
-// type IdentityType string
-
-// var (
-// 	USER         IdentityType = "USER"
-// 	ORGANIZATION IdentityType = "ORGANIZATION"
-// )
-
 func resourceSteampipeConnectionCreate(d *schema.ResourceData, meta interface{}) error {
 	IsUser := true
 	var org string
@@ -311,6 +257,52 @@ func resourceSteampipeConnectionUpdate(d *schema.ResourceData, meta interface{})
 	d.Set("plugin", resp.Plugin)
 
 	return nil
+}
+
+func resourceSteampipeConnectionExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
+	var org string
+	var r *_nethttp.Response
+	var err error
+	var actorHandle string
+	IsUser := true
+
+	steampipeClient := meta.(*SteampipeClient)
+	if steampipeClient.Config != nil {
+		if steampipeClient.Config.Org != "" {
+			org = steampipeClient.Config.Org
+			IsUser = false
+		}
+	}
+
+	id := d.Id()
+	if id == "" {
+		return false, fmt.Errorf("inside resourceSteampipeConnectionExists. connection handle not present.")
+	}
+
+	if IsUser {
+		actorHandle, err = getUserHandler(meta)
+		if err != nil {
+			return false, fmt.Errorf("inside resourceSteampipeConnectionExists. getUserHandler Error: \n%v", err)
+		}
+		_, r, err = steampipeClient.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, id).Execute()
+	} else {
+		_, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), org, id).Execute()
+	}
+
+	if err != nil {
+		if r.StatusCode == 404 {
+			return false, nil
+		}
+		return false, fmt.Errorf("inside resourceSteampipeConnectionExists. \nGetConnection.error %v", err)
+	}
+	return true, nil
+}
+
+func resourceSteampipeConnectionImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	if err := resourceSteampipeConnectionRead(d, meta); err != nil {
+		return nil, err
+	}
+	return []*schema.ResourceData{d}, nil
 }
 
 func getUserHandler(meta interface{}) (string, error) {
