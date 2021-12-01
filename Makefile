@@ -3,7 +3,7 @@ GOFMT_FILES?=$$(find . -name '*.go' |grep -v vendor)
 WEBSITE_REPO=github.com/hashicorp/terraform-website
 FULL_PKG_NAME=github.com/steampipe/terraform-provider-steampipe
 VERSION_PLACEHOLDER=version.ProviderVersion
-PKG_NAME=steampipe
+PKG_NAME=steampipecloud
 VERSION=0.0.1
 DIR=~/.terraform.d/plugins
 

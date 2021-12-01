@@ -5,9 +5,6 @@ import (
 	"fmt"
 	_nethttp "net/http"
 
-	// "github.com/hashicorp/terraform-plugin-sdk/helper/validation"
-	// "github.com/hashicorp/terraform/helper/structure"
-
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/turbot/go-kit/types"
 	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
