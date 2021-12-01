@@ -35,14 +35,18 @@ func resourceSteampipeConnection() *schema.Resource {
 			"identity_id": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"type": {
 				Type:     schema.TypeString,
 				Optional: true,
+				Computed: true,
 			},
 			"plugin": {
 				Type:     schema.TypeString,
 				Optional: true,
+				ForceNew: true,
+				Computed: true,
 			},
 			// "config": {
 			// 	Type:         schema.TypeString,
