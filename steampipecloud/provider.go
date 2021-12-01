@@ -1,4 +1,4 @@
-package steampipe
+package steampipecloud
 
 import (
 	"fmt"
@@ -25,6 +25,7 @@ func Provider() terraform.ResourceProvider {
 			"insecure_skip_verify": {
 				Type:     schema.TypeBool,
 				Optional: true,
+				Default:  false,
 			},
 			"hostname": {
 				Type:     schema.TypeString,
@@ -33,10 +34,10 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"steampipe_connection": resourceSteampipeConnection(),
+			"steampipecloud_connection": resourceSteampipeCloudConnection(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"steampipe_user": dataSourceSteampipeUser(),
+			"steampipecloud_user": dataSourceSteampipeCloudUser(),
 		},
 
 		ConfigureFunc: providerConfigure,

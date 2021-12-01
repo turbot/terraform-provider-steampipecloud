@@ -1,4 +1,4 @@
-package steampipe
+package steampipecloud
 
 import (
 	"context"
@@ -6,9 +6,9 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 )
 
-func dataSourceSteampipeUser() *schema.Resource {
+func dataSourceSteampipeCloudUser() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceSteampipeUserRead,
+		Read: dataSourceSteampipeCloudUserRead,
 		Schema: map[string]*schema.Schema{
 			"handle": {
 				Type:     schema.TypeString,
@@ -58,7 +58,7 @@ func dataSourceSteampipeUser() *schema.Resource {
 	}
 }
 
-func dataSourceSteampipeUserRead(d *schema.ResourceData, meta interface{}) error {
+func dataSourceSteampipeCloudUserRead(d *schema.ResourceData, meta interface{}) error {
 	steampipeClient := meta.(*SteampipeClient)
 
 	resp, _, err := steampipeClient.APIClient.UsersApi.GetActor(context.Background()).Execute()
