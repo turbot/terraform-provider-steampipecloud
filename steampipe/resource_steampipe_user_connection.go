@@ -5,6 +5,9 @@ import (
 	"fmt"
 	"os"
 
+	// "github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	// "github.com/hashicorp/terraform/helper/structure"
+
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/turbot/go-kit/types"
 	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
@@ -17,9 +20,9 @@ func resourceSteampipeUserConnection() *schema.Resource {
 		Delete: resourceSteampipeConnectionDelete,
 		Update: resourceSteampipeConnectionUpdate,
 		// Exists: resourceExistsItem,
-		// Importer: &schema.ResourceImporter{
-		// 	State: resourceSteampipeConnectionImport,
-		// },
+		Importer: &schema.ResourceImporter{
+			State: resourceSteampipeConnectionImport,
+		},
 		Schema: map[string]*schema.Schema{
 			"connection_id": {
 				Type:     schema.TypeString,
@@ -44,23 +47,24 @@ func resourceSteampipeUserConnection() *schema.Resource {
 				Optional: true,
 			},
 			// "config": {
-			// 	Type:     schema.TypeMap,
-			// 	Optional: true,
-			// 	Elem: &schema.Schema{
-
-			// 		Type: schema.TypeString,
+			// 	Type:         schema.TypeString,
+			// 	Optional:     true,
+			// 	ValidateFunc: validation.StringIsJSON,
+			// 	StateFunc: func(v interface{}) string {
+			// 		json, _ := structure.NormalizeJsonString(v)
+			// 		return json
 			// 	},
 			// },
 		},
 	}
 }
 
-// func resourceSteampipeConnectionImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-// 	if err := resourceSteampipeConnectionRead(d, meta); err != nil {
-// 		return nil, err
-// 	}
-// 	return []*schema.ResourceData{d}, nil
-// }
+func resourceSteampipeConnectionImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
+	if err := resourceSteampipeConnectionRead(d, meta); err != nil {
+		return nil, err
+	}
+	return []*schema.ResourceData{d}, nil
+}
 
 func resourceSteampipeConnectionCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*openapiclient.APIClient)
@@ -95,89 +99,48 @@ func resourceSteampipeConnectionCreate(d *schema.ResourceData, meta interface{})
 		return err
 	}
 
-	err = d.Set("connection_id", resp.Id)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	err = d.Set("identity_id", resp.IdentityId)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	err = d.Set("type", resp.Type)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
+	d.Set("connection_id", resp.Id)
+	d.Set("identity_id", resp.IdentityId)
+	d.Set("type", resp.Type)
+	d.Set("plugin", resp.Plugin)
+	d.SetId(resp.Id)
 	// err = d.Set("config", resp.Config)
 	// if err != nil {
 	// 	fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
 	// 	return err
 	// }
-	err = d.Set("plugin", resp.Plugin)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	d.SetId(resp.Id)
 
 	return nil
 }
 
 func resourceSteampipeConnectionRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*openapiclient.APIClient)
+	id := d.Id()
 	var user_handle = "lalit"
-	var conn_handle string
-	if value, ok := d.GetOk("handle"); ok {
-		conn_handle = value.(string)
-	}
-
-	if conn_handle == "" {
-		// fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleGet`: %v\n", err)
-		return fmt.Errorf("connection handle not present")
-	}
-	// type TypesUpdateConnectionRequest struct {
-	// 	Config *map[string]interface{} `json:"config,omitempty"`
-	// 	Handle *string `json:"handle,omitempty"`
+	// var conn_handle string
+	// if value, ok := d.GetOk("id"); ok {
+	// 	conn_handle = value.(string)
 	// }
 
-	resp, r, err := client.UserConnectionsApi.GetUserConnection(context.Background(), user_handle, conn_handle).Execute()
+	if id == "" {
+		return fmt.Errorf("connection handle not present. conn_handle: %s", id)
+	}
 
+	resp, _, err := client.UserConnectionsApi.GetUserConnection(context.Background(), user_handle, id).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling resourceSteampipeConnectionRead: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
-		return err
+		return fmt.Errorf("inside resourceSteampipeConnectionRead. \nGetUserConnection.error %v", err)
 	}
 
 	// assign results back into ResourceData
-	err = d.Set("connection_id", resp.Id)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	err = d.Set("identity_id", resp.IdentityId)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	err = d.Set("type", resp.Type)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	// err = d.Set("config", resp.Config)
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-	// 	return err
-	// }
-	err = d.Set("plugin", resp.Plugin)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	// data := *resp.Items
-	// d.Set("handle", resp.Handle)
+	d.Set("connection_id", resp.Id)
+	d.Set("identity_id", resp.IdentityId)
+	d.Set("type", resp.Type)
+	// d.Set("config", resp.Config)
+	d.Set("plugin", resp.Plugin)
+	d.Set("handle", resp.Handle)
+	// d.Set("created_at", resp.CreatedAt)
+	// d.Set("updated_at", resp.UpdatedAt)
+	// d.Set("identity", resp.Identity)
 
 	return nil
 }
@@ -190,10 +153,8 @@ func resourceSteampipeConnectionDelete(d *schema.ResourceData, meta interface{})
 		conn_handle = value.(string)
 	}
 
-	_, r, err := client.UserConnectionsApi.DeleteUserConnection(context.Background(), user_handle, conn_handle).Execute()
+	_, _, err := client.UserConnectionsApi.DeleteUserConnection(context.Background(), user_handle, conn_handle).Execute()
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Error when calling `WorkspacesApi.UserUserHandleWorkspaceWorkspaceHandleDelete`: %v\n", err)
-		fmt.Fprintf(os.Stderr, "Full HTTP response: %v\n", r)
 		return err
 	}
 
@@ -225,36 +186,15 @@ func resourceSteampipeConnectionUpdate(d *schema.ResourceData, meta interface{})
 	user_handle := getUserHandler(meta)
 	resp, _, err := client.UserConnectionsApi.UpdateUserConnection(context.Background(), user_handle, oldHandle.(string)).Request(req).Execute()
 	if err != nil {
-		return fmt.Errorf("AM I HERE %v", err)
+		return fmt.Errorf("inside resourceSteampipeConnectionUpdate: %v", err)
 	}
 
-	err = d.Set("handle", resp.Handle)
-	err = d.Set("connection_id", resp.Id)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	err = d.Set("identity_id", resp.IdentityId)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	err = d.Set("type", resp.Type)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	// err = d.Set("config", resp.Config)
-	// if err != nil {
-	// 	fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-	// 	return err
-	// }
-	err = d.Set("plugin", resp.Plugin)
-	if err != nil {
-		fmt.Fprintf(os.Stderr, "After SET`: %v\n", err)
-		return err
-	}
-	// d.SetId(resp.Id)
+	d.Set("handle", resp.Handle)
+	d.Set("connection_id", resp.Id)
+	d.Set("identity_id", resp.IdentityId)
+	d.Set("type", resp.Type)
+	d.Set("config", resp.Config)
+	d.Set("plugin", resp.Plugin)
 
 	return nil
 }

@@ -18,12 +18,20 @@ func Provider() terraform.ResourceProvider {
 				Required:    true,
 				DefaultFunc: schema.EnvDefaultFunc("STEAMPIPE_CLOUD_TOKEN", ""),
 			},
-			"hostname": {
+			"org": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"org": {
-				Type:     schema.TypeMap,
+			"handle": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"insecure_skip_verify": {
+				Type:     schema.TypeBool,
+				Optional: true,
+			},
+			"hostname": {
+				Type:     schema.TypeString,
 				Optional: true,
 			},
 		},
@@ -43,11 +51,57 @@ func Provider() terraform.ResourceProvider {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	configuration := openapiclient.NewConfiguration()
+	config := Config{
+		Token:              d.Get("token").(string),
+		Org:                d.Get("org").(string),
+		Handle:             d.Get("handle").(string),
+		InsecureSkipVerify: d.Get("insecure_skip_verify").(bool),
+		Hostname:           d.Get("hostname").(string),
+	}
 
-	spcToken := d.Get("token").(string)
-	configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", spcToken))
+	configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", config.Token))
 	apiClient := openapiclient.NewAPIClient(configuration)
 
 	log.Println("[INFO] Steampipe cloud API client initialized, now validating...", apiClient)
 	return apiClient, nil
 }
+
+type Config struct {
+	Org                string
+	Token              string
+	Handle             string
+	Hostname           string
+	InsecureSkipVerify bool
+}
+
+// provider "steampipecloud" {
+//   org   = "acme"
+//   token = "spt_example"
+// }
+
+// provider "steampipecloud" {
+//   alias = "turbie"
+//   # Token is for the user turbie
+//   token = "spt_example"
+// }
+
+// provider "steampipecloud" {
+//   alias = "foo"
+//   org   = "foo"
+//   token = "spt_example"
+// }
+
+// resource "steampipecloud_workspace" "orgdev" {
+//   # uses default provider, for org acme
+//   handle = "dev"
+// }
+
+// resource "steampipecloud_workspace" "userdev" {
+//   provider = steampipecloud.turbie
+//   handle = "dev"
+// }
+
+// resource "steampipecloud_workspace" "orgfoodev" {
+//   provider = steampipecloud.foo
+//   handle = "dev"
+// }
