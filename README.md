@@ -16,6 +16,7 @@
 Clone repository to: `$GOPATH/src/github.com/turbot/terraform-provider-steampipecloud`
 
 ```sh
+$ export GOPATH=$(go env GOPATH)
 $ mkdir -p $GOPATH/src/github.com/turbot; cd $GOPATH/src/github.com/turbot
 $ git clone git@github.com:turbot/terraform-provider-steampipecloud
 ```

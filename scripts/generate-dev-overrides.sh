@@ -12,9 +12,3 @@ provider_installation {
 }
 EOF
 
-# provider_installation {
-#   dev_overrides {
-#     "turbot/steampipecloud" = "/Users/lalitbhardwaj/go/src/github.com/turbot/terraform-provider-steampipecloud/bin"
-#   }
-#   direct {}
-# }

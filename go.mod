@@ -1,12 +1,11 @@
-module github.com/Subhajit97/terraform-provider-steampipe
+module github.com/turbot/terraform-provider-steampipecloud
 
 go 1.17
 
-// github.com/hashicorp/terraform-plugin-sdk v1.17.2
+require github.com/turbot/go-kit v0.3.0
 
 require (
 	github.com/hashicorp/terraform v0.12.0
-	github.com/turbot/go-kit v0.3.0
 	github.com/turbot/steampipe-cloud-sdk-go v0.0.0-00010101000000-000000000000
 )
 
