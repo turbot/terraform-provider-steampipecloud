@@ -8,6 +8,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/turbot/go-kit/types"
 	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 
 func resourceSteampipeCloudConnection() *schema.Resource {
@@ -46,15 +47,10 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			// "config": {
-			// 	Type:         schema.TypeString,
-			// 	Optional:     true,
-			// 	ValidateFunc: validation.StringIsJSON,
-			// 	StateFunc: func(v interface{}) string {
-			// 		json, _ := structure.NormalizeJsonString(v)
-			// 		return json
-			// 	},
-			// },
+			"config": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 		},
 	}
 }
@@ -72,6 +68,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 
 	var plugin string
 	var connHandle string
+	var config map[string]interface{}
 
 	if value, ok := d.GetOk("handle"); ok {
 		connHandle = value.(string)
@@ -79,20 +76,25 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	if value, ok := d.GetOk("plugin"); ok {
 		plugin = value.(string)
 	}
-
-	config := map[string]interface{}{
-		"regions":    []string{"us-east-1"},
-		"access_key": "redacted",
-		"secret_key": "redacted",
+	var ok bool
+	var err error
+	var dataString interface{}
+	if dataString, ok = d.GetOk("config"); ok {
+		if config, err = helpers.JsonStringToMap(dataString.(string)); err != nil {
+			return fmt.Errorf("error build connection config, failed to unmarshal data: \n%s\nerror: %s", dataString, err.Error())
+		}
 	}
 
 	req := openapiclient.TypesCreateConnectionRequest{
 		Handle: connHandle,
 		Plugin: plugin,
-		Config: &config,
 	}
+
+	if config != nil {
+		req.SetConfig(config)
+	}
+
 	var resp openapiclient.TypesConnection
-	var err error
 	var actorHandle string
 	if IsUser {
 		actorHandle, err = getUserHandler(meta)
@@ -112,6 +114,10 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
+	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
+	if data, ok := d.GetOk("config"); ok {
+		d.Set("config", helpers.FormatJson(data.(string)))
+	}
 	d.SetId(resp.Id)
 
 	return nil
