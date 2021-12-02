@@ -278,7 +278,7 @@ func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interfac
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceDelete.\ngetHandler Error: \n%v", err)
 		}
-		_, _, err = client.APIClient.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), handle, userHandler).Execute()
+		_, _, err = client.APIClient.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), userHandler, handle).Execute()
 	}
 
 	// Error check
