@@ -148,7 +148,12 @@ func GetNullProperties(propertyMap map[string]interface{}) []string {
 // get keys from old map not in new map
 func GetOldMapProperties(old, new map[string]interface{}) []interface{} {
 	var result []interface{}
+	secretKeys := []string{"secret_key", "api_key"}
 	for k, _ := range old {
+		if SliceContains(secretKeys, k) {
+			result = append(result, k)
+			continue
+		}
 		if _, ok := new[k]; !ok {
 			result = append(result, k)
 		}

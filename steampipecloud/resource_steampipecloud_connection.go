@@ -37,6 +37,11 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			// "identity": {
+			// 	Type:     schema.TypeString,
+			// 	Optional: true,
+			// 	Computed: true,
+			// },
 			"type": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -47,9 +52,18 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
-			"config": {
+			"created_at": {
 				Type:     schema.TypeString,
-				Optional: true,
+				Computed: true,
+			},
+			"updated_at": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"config": {
+				Type:             schema.TypeString,
+				Optional:         true,
+				DiffSuppressFunc: suppressIfDataMatches,
 			},
 		},
 	}
@@ -107,13 +121,15 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	}
 
 	if err != nil {
-		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Crete connection error \nError %v", err)
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Create connection error \nError %v", err)
 	}
 
 	d.Set("connection_id", resp.Id)
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
+	d.Set("created_at", resp.CreatedAt)
+	d.Set("updated_at", resp.UpdatedAt)
 	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
 	if data, ok := d.GetOk("config"); ok {
 		d.Set("config", helpers.FormatJson(data.(string)))
@@ -163,11 +179,18 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
 	d.Set("handle", resp.Handle)
-	d.SetId(resp.Id)
-	// d.Set("config", resp.Config)
-	// d.Set("created_at", resp.CreatedAt)
-	// d.Set("updated_at", resp.UpdatedAt)
+	d.Set("created_at", resp.CreatedAt)
+	d.Set("updated_at", resp.UpdatedAt)
 	// d.Set("identity", resp.Identity)
+	if _, ok := d.GetOk("config"); ok {
+		// if data is set, only include the properties that are specified in the resource config
+		data, err := getStringValueForKey(d, "data", *resp.Config)
+		if err != nil {
+			return err
+		}
+		d.Set("config", data)
+	}
+	d.SetId(resp.Id)
 
 	return nil
 }
@@ -222,23 +245,33 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	}
 
 	oldHandle, newHandle := d.GetChange("handle")
-
 	if newHandle.(string) == "" {
 		return fmt.Errorf("handle must be configured")
 	}
-	// config := map[string]interface{}{
-	// 	"regions":    []string{"us-east-1"},
-	// 	"access_key": "redacted",
-	// 	"secret_key": "redacted",
-	// }
+
+	var ok bool
+	var err error
+	var dataProperty string
+	var config map[string]interface{}
+	var resp openapiclient.TypesConnection
 
 	req := openapiclient.TypesUpdateConnectionRequest{
 		Handle: types.String(newHandle.(string)),
-		// Config: &config,
 	}
 
-	var resp openapiclient.TypesConnection
-	var err error
+	if _, ok = d.GetOk("config"); ok {
+		dataProperty = "config"
+	}
+	if ok {
+		config, err = buildUpdatePayloadForData(d, dataProperty)
+		if err != nil {
+			return err
+		}
+	}
+
+	if config != nil {
+		req.SetConfig(config)
+	}
 
 	if IsUser {
 		actorHandle, err = getUserHandler(meta)
@@ -258,7 +291,12 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("connection_id", resp.Id)
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("type", resp.Type)
-	d.Set("config", resp.Config)
+	d.Set("created_at", resp.CreatedAt)
+	d.Set("updated_at", resp.UpdatedAt)
+	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
+	if data, ok := d.GetOk("config"); ok {
+		d.Set("config", helpers.FormatJson(data.(string)))
+	}
 	d.Set("plugin", resp.Plugin)
 	d.SetId(resp.Id)
 
@@ -318,4 +356,90 @@ func getUserHandler(meta interface{}) (string, error) {
 		return "", err
 	}
 	return resp.Handle, nil
+}
+
+// data is a json string
+// apply standard formatting to old and new data then compare
+func suppressIfDataMatches(k, old, new string, d *schema.ResourceData) bool {
+	if old == "" || new == "" {
+		return false
+	}
+
+	oldFormatted := helpers.FormatJson(old)
+	newFormatted := helpers.FormatJson(new)
+	return oldFormatted == newFormatted
+}
+
+// - get properties for a given key from config
+// - build a map only including the properties fetched from config
+// - convert map to string
+func getStringValueForKey(d *schema.ResourceData, key string, readResponse map[string]interface{}) (string, error) {
+	propertiesOfKey, err := getPropertiesFromConfig(d, key)
+	if err != nil {
+		return "", err
+	}
+	metadata := buildResourceMapFromProperties(readResponse, propertiesOfKey)
+	metadataString, err := helpers.MapToJsonString(metadata)
+	if err != nil {
+		return "", fmt.Errorf("error building resource data: %s", err.Error())
+	}
+	return metadataString, nil
+}
+
+func getPropertiesFromConfig(d *schema.ResourceData, key string) (map[string]string, error) {
+	var properties map[string]string = nil
+	var err error = nil
+	if keyValue, ok := d.GetOk(key); ok {
+		if properties, err = helpers.PropertyMapFromJson(keyValue.(string)); err != nil {
+			return nil, fmt.Errorf("error retrieving properties: %s", err.Error())
+		}
+	}
+	return properties, nil
+}
+
+func buildResourceMapFromProperties(input map[string]interface{}, properties map[string]string) map[string]interface{} {
+	for key, _ := range input {
+		// delete external keys from response data
+		if _, ok := properties[key]; !ok {
+			delete(input, key)
+		}
+	}
+	return input
+}
+
+// - build a map from the data or full_data property (specified by 'key' parameter)
+// - add a `nil` value for deleted properties
+// - remove any properties disallowed by the updateSchema
+func buildUpdatePayloadForData(d *schema.ResourceData, key string) (map[string]interface{}, error) {
+	var err error
+	dataMap, err := markPropertiesForDeletion(d, key)
+	if err != nil {
+		return nil, err
+	}
+	return dataMap, nil
+}
+
+func markPropertiesForDeletion(d *schema.ResourceData, key string) (map[string]interface{}, error) {
+	var oldContent, newContent map[string]interface{}
+	var err error
+	// fetch old(state-file) and new(config) content
+	if old, new := d.GetChange(key); old != nil {
+		if oldContent, err = helpers.JsonStringToMap(old.(string)); err != nil {
+			return nil, fmt.Errorf("error build resource mutation input, failed to unmarshal content: \n%s\nerror: %s", old.(string), err.Error())
+		}
+		if newContent, err = helpers.JsonStringToMap(new.(string)); err != nil {
+			return nil, fmt.Errorf("error build resource mutation input, failed to unmarshal content: \n%s\nerror: %s", new.(string), err.Error())
+		}
+		// extract keys from old content not in new
+		excludeContentProperties := helpers.GetOldMapProperties(oldContent, newContent)
+		for _, key := range excludeContentProperties {
+			// set keys of old content to `nil` in new content
+			// any property which doesn't exist in config is set to nil
+			// NOTE: for folder we cannot currently delete the description property
+			if _, ok := oldContent[key.(string)]; ok {
+				newContent[key.(string)] = nil
+			}
+		}
+	}
+	return newContent, nil
 }
