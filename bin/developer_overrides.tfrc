@@ -1,0 +1,8 @@
+provider_installation {
+  dev_overrides {
+    "steampipe/steampipe" = "/Users/lalitbhardwaj/go/src/github.com/steampipe/terraform-provider-steampipe/bin"
+  }
+  direct {}
+}
+
+
