@@ -196,7 +196,7 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 		resp, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
 		userHandler := getUserHandler(meta)
-		resp, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), handle, userHandler).Execute()
+		resp, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), userHandler, handle).Execute()
 	}
 
 >>>>>>> 3b06fad (Add support to manage org workspaces using terraform):steampipe/resource_spc_workspace.go
