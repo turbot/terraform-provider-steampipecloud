@@ -33,9 +33,16 @@ provider "steampipecloud" {
 
 resource "steampipecloud_connection" "test_org_connection" {
   resource "steampipecloud_connection" "test" {
-  plugin = "aws"
-  handle = "test"
-}
+    plugin = "aws"
+    handle = "test"
+    config   = <<EOT
+      {
+        "regions": [ "us-east-1" ],
+        "access_key": "redacted",
+        "secret_key": "redacted"
+      }
+    EOT
+  }
 }
 ```
 
@@ -56,7 +63,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Connections can be imported using the `id`. For example,
+Connections can be imported using the `handle`. For example,
 
 ```sh
 terraform import steampipecloud_connection.test test

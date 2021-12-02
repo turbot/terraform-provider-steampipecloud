@@ -55,7 +55,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Workspaces can be imported using the `id`. For example,
+Workspaces can be imported using the `handle`. For example,
 
 ```sh
 terraform import steampipecloud_workspace.test test
