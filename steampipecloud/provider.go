@@ -39,6 +39,7 @@ func Provider() terraform.ResourceProvider {
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipecloud_user": dataSourceSteampipeCloudUser(),
 		},
+		DataSourcesMap: map[string]*schema.Resource{},
 
 		ConfigureFunc: providerConfigure,
 	}
@@ -58,12 +59,11 @@ type SteampipeCloudClient = struct {
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 	config := &ProviderConfig{
-		// Hostname:           d.Get("hostname").(string),
-		// InsecureSkipVerify: d.Get("insecure_skip_verify").(bool),
-		Org:   d.Get("org").(string),
-		Token: d.Get("token").(string),
+		Hostname:           d.Get("hostname").(string),
+		InsecureSkipVerify: d.Get("insecure_skip_verify").(bool),
+		Org:                d.Get("org").(string),
+		Token:              d.Get("token").(string),
 	}
-
 	configuration := openapiclient.NewConfiguration()
 	config := Config{
 		Token:              d.Get("token").(string),
