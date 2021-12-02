@@ -1,20 +1,20 @@
 #!/bin/bash
 
 BIN_DIR=$PWD/bin
-OVERRIDES_FILENAME=developer_overrides.tfrc
+OVERRIDES_FILENAME=$HOME/.terraformrc
 
-cat << EOF > $BIN_DIR/$OVERRIDES_FILENAME
+cat << EOF > $OVERRIDES_FILENAME
 provider_installation {
   dev_overrides {
-    "steampipe/steampipe" = "$BIN_DIR"
+    "turbot/steampipecloud" = "$BIN_DIR"
   }
   direct {}
 }
 EOF
 
-# echo ""
-# echo "A development overrides file has been generated at ./bin/$OVERRIDES_FILENAME."
-# echo "To make Terraform temporarily use your locally built version of the provider, set TF_CLI_CONFIG_FILE within your terminal"
-# echo ""
-# printf "\texport TF_CLI_CONFIG_FILE=$BIN_DIR/$OVERRIDES_FILENAME"
-# echo ""
+# provider_installation {
+#   dev_overrides {
+#     "turbot/steampipecloud" = "/Users/lalitbhardwaj/go/src/github.com/turbot/terraform-provider-steampipecloud/bin"
+#   }
+#   direct {}
+# }

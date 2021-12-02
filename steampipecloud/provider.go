@@ -76,35 +76,3 @@ type Config struct {
 	Hostname           string
 	InsecureSkipVerify bool
 }
-
-// provider "steampipecloud" {
-//   org   = "acme"
-//   token = "spt_example"
-// }
-
-// provider "steampipecloud" {
-//   alias = "turbie"
-//   # Token is for the user turbie
-//   token = "spt_example"
-// }
-
-// provider "steampipecloud" {
-//   alias = "foo"
-//   org   = "foo"
-//   token = "spt_example"
-// }
-
-// resource "steampipecloud_workspace" "orgdev" {
-//   # uses default provider, for org acme
-//   handle = "dev"
-// }
-
-// resource "steampipecloud_workspace" "userdev" {
-//   provider = steampipecloud.turbie
-//   handle = "dev"
-// }
-
-// resource "steampipecloud_workspace" "orgfoodev" {
-//   provider = steampipecloud.foo
-//   handle = "dev"
-// }

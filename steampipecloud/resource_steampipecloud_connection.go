@@ -82,8 +82,8 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 
 	config := map[string]interface{}{
 		"regions":    []string{"us-east-1"},
-		"access_key": "AKIAQGDRKHTKFBLNOL5N",
-		"secret_key": "fg2TK0E341Qs3mVuRrkNCnF7XpD0/1sh5zeeJ9UO",
+		"access_key": "redacted",
+		"secret_key": "redacted",
 	}
 
 	req := openapiclient.TypesCreateConnectionRequest{
@@ -222,8 +222,8 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	}
 	// config := map[string]interface{}{
 	// 	"regions":    []string{"us-east-1"},
-	// 	"access_key": "AKIAQGDRKHTKFBLNOL5N",
-	// 	"secret_key": "fg2TK0E341Qs3mVuRrkNCnF7XpD0/1sh5zeeJ9UO",
+	// 	"access_key": "redacted",
+	// 	"secret_key": "redacted",
 	// }
 
 	req := openapiclient.TypesUpdateConnectionRequest{
