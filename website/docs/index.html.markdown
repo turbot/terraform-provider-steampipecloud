@@ -56,7 +56,7 @@ You can provide your credentials via `STEAMPIPE_CLOUD_TOKEN` environment variabl
 
 **Example Usage**
 
-```ruby
+```shell
 export STEAMPIPE_CLOUD_TOKEN=spt_xxxxxxxxxxxxxxxxxxxx_xxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
