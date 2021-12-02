@@ -3,6 +3,7 @@ package steampipecloud
 import (
 	"fmt"
 	"log"
+	"os"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
@@ -14,9 +15,8 @@ func Provider() terraform.ResourceProvider {
 	return &schema.Provider{
 		Schema: map[string]*schema.Schema{
 			"token": {
-				Type:        schema.TypeString,
-				Required:    true,
-				DefaultFunc: schema.EnvDefaultFunc("STEAMPIPE_CLOUD_TOKEN", ""),
+				Type:     schema.TypeString,
+				Optional: true,
 			},
 			"org": {
 				Type:     schema.TypeString,
@@ -46,7 +46,6 @@ func Provider() terraform.ResourceProvider {
 }
 
 func providerConfigure(d *schema.ResourceData) (interface{}, error) {
-	configuration := openapiclient.NewConfiguration()
 	config := Config{
 		Token:              d.Get("token").(string),
 		Org:                d.Get("org").(string),
@@ -54,10 +53,10 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 		Hostname:           d.Get("hostname").(string),
 	}
 
-	// TODO: Write a helper function to extract Token, Handle, Org from env variable and set as per their precedence
-
-	configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", config.Token))
-	apiClient := openapiclient.NewAPIClient(configuration)
+	apiClient, err := CreateClient(&config)
+	if err != nil {
+		return nil, err
+	}
 
 	log.Println("[INFO] Steampipe cloud API client initialized, now validating...", apiClient)
 	return &SteampipeClient{
@@ -76,4 +75,27 @@ type Config struct {
 	Token              string
 	Hostname           string
 	InsecureSkipVerify bool
+}
+
+/*
+	precedence of credentials:
+	- token set in config
+	- ENV vars {STEAMPIPE_CLOUD_TOKEN}
+*/
+func CreateClient(config *Config) (*openapiclient.APIClient, error) {
+	configuration := openapiclient.NewConfiguration()
+	var steampipeCloudToken string
+	if config != nil && config.Token != "" {
+		steampipeCloudToken = config.Token
+	} else {
+		// return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider to config. STEAMPIPE_CLOUD_TOKEN")
+		if token, ok := os.LookupEnv("STEAMPIPE_CLOUD_TOKEN"); ok {
+			steampipeCloudToken = token
+		}
+	}
+	if steampipeCloudToken != "" {
+		configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", steampipeCloudToken))
+		return openapiclient.NewAPIClient(configuration), nil
+	}
+	return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider config.")
 }
