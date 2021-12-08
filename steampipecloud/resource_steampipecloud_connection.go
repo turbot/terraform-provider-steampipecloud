@@ -113,8 +113,12 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			// Connection argument for DO
+			// Connection argument for DO, Github
 			"token": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"bearer_token": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -204,10 +208,13 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		}
 		data, _ := json.Marshal(azureConfig)
 		json.Unmarshal(data, &config)
-	case "digitalocean":
-		var DOConfig DigitalOceanConnectionConfigWithSecrets
+	case "digitalocean", "github", "linode", "slack", "twitter":
+		var DOConfig ConnectionConfigWithOnlyToken
 		if value, ok := d.GetOk("token"); ok {
 			DOConfig.Token = value.(string)
+		}
+		if value, ok := d.GetOk("bearer_token"); ok {
+			DOConfig.BearerToken = value.(string)
 		}
 		data, _ := json.Marshal(DOConfig)
 		json.Unmarshal(data, &config)
@@ -256,7 +263,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 				}
 			}
 		}
-	case "gcp", "azure", "digitalocean":
+	case "gcp", "azure", "digitalocean", "github", "linode", "slack", "twitter":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -335,7 +342,7 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 				}
 			}
 		}
-	case "gcp", "azure", "digitalocean":
+	case "gcp", "azure", "digitalocean", "github", "linode", "slack", "twitter":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -470,10 +477,13 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 
 		data, _ := json.Marshal(azureConfig)
 		json.Unmarshal(data, &config)
-	case "digitalocean":
-		var DOConfig DigitalOceanConnectionConfigWithSecrets
+	case "digitalocean", "github", "linode", "slack", "twitter":
+		var DOConfig ConnectionConfigWithOnlyToken
 		if value, ok := d.GetOk("token"); ok {
 			DOConfig.Token = value.(string)
+		}
+		if value, ok := d.GetOk("bearer_token"); ok {
+			DOConfig.BearerToken = value.(string)
 		}
 		data, _ := json.Marshal(DOConfig)
 		json.Unmarshal(data, &config)
@@ -514,7 +524,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 				}
 			}
 		}
-	case "gcp", "azure", "digitalocean":
+	case "gcp", "azure", "digitalocean", "github", "linode", "slack", "twitter":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -675,24 +685,25 @@ func ConvertArray(s string) (*[]string, bool) {
 }
 
 type AwsConnectionConfigWithSecrets struct {
-	Regions      []string `json:"regions,omitempty" hcl:"regions"`
-	AccessKey    string   `json:"access_key,omitempty" mapstructure:"access_key" hcl:"access_key"`
-	SecretKey    string   `json:"secret_key,omitempty" mapstructure:"secret_key" hcl:"secret_key"`
-	SessionToken string   `json:"session_token,omitempty" hcl:"session_token" hcle:"omitempty"`
+	Regions      []string `json:"regions,omitempty"`
+	AccessKey    string   `json:"access_key,omitempty"`
+	SecretKey    string   `json:"secret_key,omitempty"`
+	SessionToken string   `json:"session_token,omitempty"`
 }
 
 type GcpConnectionConfigWithSecrets struct {
-	Project     string `json:"project,omitempty" mapstructure:"project" hcl:"project"`
-	Credentials string `json:"credentials,omitempty" mapstructure:"credentials" hcl:"credentials"`
+	Project     string `json:"project,omitempty"`
+	Credentials string `json:"credentials,omitempty"`
 }
 type AzureConnectionConfigWithSecrets struct {
-	Environment    string `json:"environment,omitempty"  mapstructure:"environment" hcl:"environment"`
-	TenantID       string `json:"tenant_id,omitempty"  mapstructure:"tenant_id" hcl:"tenant_id"`
-	SubscriptionID string `json:"subscription_id,omitempty" mapstructure:"subscription_id" hcl:"subscription_id"`
-	ClientID       string `json:"client_id,omitempty" mapstructure:"client_id" hcl:"client_id"`
-	ClientSecret   string `json:"client_secret,omitempty" mapstructure:"client_secret" hcl:"client_secret"`
+	Environment    string `json:"environment,omitempty"`
+	TenantID       string `json:"tenant_id,omitempty"`
+	SubscriptionID string `json:"subscription_id,omitempty"`
+	ClientID       string `json:"client_id,omitempty"`
+	ClientSecret   string `json:"client_secret,omitempty"`
 }
 
-type DigitalOceanConnectionConfigWithSecrets struct {
-	Token string `json:"token,omitempty" mapstructure:"token" hcl:"token"`
+type ConnectionConfigWithOnlyToken struct {
+	Token       string `json:"token,omitempty"`
+	BearerToken string `json:"bearer_token,omitempty"`
 }
