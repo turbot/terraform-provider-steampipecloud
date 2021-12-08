@@ -44,3 +44,17 @@ To compile the provider, run `make build`. This will build the provider and put 
 $ make build
 go build -o bin/terraform-provider-steampipecloud_0.0.1 -ldflags="-X github.com/turbot/terraform-provider-steampipecloud/version.ProviderVersion=0.0.1"
 ```
+
+In order to test the provider, you can simply run `make test`.
+
+```sh
+$ make test
+```
+
+In order to run the full suite of Acceptance tests, run `make testacc`.
+
+*Note:* Acceptance tests create real resources, and often cost money to run.
+
+```sh
+$ make testacc
+```
