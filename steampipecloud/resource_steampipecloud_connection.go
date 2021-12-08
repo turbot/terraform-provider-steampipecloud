@@ -61,6 +61,7 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			// AWS connection config arguments
 			"regions": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -77,6 +78,15 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Optional: true,
 			},
 			"session_token": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// GCP connection config arguments
+			"project": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"credentials": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
@@ -121,7 +131,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 			}
 			awsConfig.Regions = regions
 		}
-		if value, ok := d.GetOk("secretKey"); ok {
+		if value, ok := d.GetOk("secret_key"); ok {
 			awsConfig.SecretKey = value.(string)
 		}
 		if value, ok := d.GetOk("access_key"); ok {
@@ -131,6 +141,16 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 			awsConfig.SessionToken = value.(string)
 		}
 		data, _ := json.Marshal(awsConfig)
+		json.Unmarshal(data, &config)
+	case "gcp":
+		var gcpConfig GcpConnectionConfigWithSecrets
+		if value, ok := d.GetOk("project"); ok {
+			gcpConfig.Project = value.(string)
+		}
+		if value, ok := d.GetOk("credentials"); ok {
+			gcpConfig.Credentials = value.(string)
+		}
+		data, _ := json.Marshal(gcpConfig)
 		json.Unmarshal(data, &config)
 	}
 
@@ -175,6 +195,12 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 				} else {
 					d.Set(k, v.(string))
 				}
+			}
+		}
+	case "gcp":
+		if resp.Config != nil {
+			for k, v := range *resp.Config {
+				d.Set(k, v.(string))
 			}
 		}
 	}
@@ -248,6 +274,12 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 				} else {
 					d.Set(k, v.(string))
 				}
+			}
+		}
+	case "gcp":
+		if resp.Config != nil {
+			for k, v := range *resp.Config {
+				d.Set(k, v.(string))
 			}
 		}
 	}
@@ -344,6 +376,16 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		}
 		data, _ := json.Marshal(awsConfig)
 		json.Unmarshal(data, &config)
+	case "gcp":
+		var gcpConfig GcpConnectionConfigWithSecrets
+		if value, ok := d.GetOk("project"); ok {
+			gcpConfig.Project = value.(string)
+		}
+		if value, ok := d.GetOk("credentials"); ok {
+			gcpConfig.Credentials = value.(string)
+		}
+		data, _ := json.Marshal(gcpConfig)
+		json.Unmarshal(data, &config)
 	}
 
 	if config != nil {
@@ -370,12 +412,25 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("type", resp.Type)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-
-	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
-	if data, ok := d.GetOk("config"); ok {
-		d.Set("config", helpers.FormatJson(data.(string)))
+	switch *resp.Plugin {
+	case "aws":
+		if resp.Config != nil {
+			for k, v := range *resp.Config {
+				if k == "regions" {
+					d.Set(k, v.([]interface{}))
+				} else {
+					d.Set(k, v.(string))
+				}
+			}
+		}
+	case "gcp":
+		if resp.Config != nil {
+			for k, v := range *resp.Config {
+				d.Set(k, v.(string))
+			}
+		}
 	}
-	d.Set("plugin", resp.Plugin)
+	d.Set("plugin", *resp.Plugin)
 	d.SetId(resp.Id)
 
 	return nil
@@ -528,14 +583,14 @@ func ConvertArray(s string) (*[]string, bool) {
 	return &js, err == nil
 }
 
-type AwsConnectionConfig struct {
-	Regions   []string `json:"regions" mapstructure:"regions" hcl:"regions"`
-	AccessKey string   `json:"access_key" mapstructure:"access_key" hcl:"access_key"`
+type AwsConnectionConfigWithSecrets struct {
+	Regions      []string `json:"regions,omitempty" hcl:"regions"`
+	AccessKey    string   `json:"access_key,omitempty" mapstructure:"access_key" hcl:"access_key"`
+	SecretKey    string   `json:"secret_key,omitempty" mapstructure:"secret_key" hcl:"secret_key"`
+	SessionToken string   `json:"session_token,omitempty" hcl:"session_token" hcle:"omitempty"`
 }
 
-type AwsConnectionConfigWithSecrets struct {
-	Regions      []string `json:"regions" hcl:"regions"`
-	AccessKey    string   `json:"access_key" mapstructure:"access_key" hcl:"access_key"`
-	SecretKey    string   `json:"secret_key" mapstructure:"secret_key" hcl:"secret_key"`
-	SessionToken string   `json:"session_token" hcl:"session_token" hcle:"omitempty"`
+type GcpConnectionConfigWithSecrets struct {
+	Project     string `json:"project,omitempty" mapstructure:"project" hcl:"project"`
+	Credentials string `json:"credentials,omitempty" mapstructure:"credentials" hcl:"credentials"`
 }
