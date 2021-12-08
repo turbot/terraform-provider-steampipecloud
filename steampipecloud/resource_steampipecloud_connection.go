@@ -64,61 +64,62 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			// AWS connection config arguments
-			"regions": {
-				Type:     schema.TypeList,
-				Optional: true,
-				Elem: &schema.Schema{
-					Type: schema.TypeString,
-				},
-			},
+			// AWS, Alicloud
 			"access_key": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// AWS, Alicloud
 			"secret_key": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// AWS
 			"session_token": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			// GCP connection config arguments
+			// GCP
 			"project": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// GCP
 			"credentials": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			// AZURE connection config arguments
+			// AZURE, AzureAD
 			"environment": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// AZURE, AzureAD
 			"tenant_id": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// AZURE, AzureAD
 			"subscription_id": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// AZURE, AzureAD
 			"client_id": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// AZURE, AzureAD
 			"client_secret": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			// Connection argument for DO, Github
+			// Digital Ocean, GitHub, Airtable, Jira, Linode, Slack
 			"token": {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// Digital Ocean
 			"bearer_token": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -128,6 +129,70 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			//  OCI
+			"user_ocid": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			//  OCI
+			"fingerprint": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			//  OCI
+			"tenancy_ocid": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			//  OCI
+			"private_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Jira, Bitbucket
+			"username": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Jira, Bitbucket
+			"base_url": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Bitbucket
+			"password": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Hacker News
+			"max_items": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// hackernews, Zendesk, DataDog, IBM, Cloudflare, Stripe
+			"api_key": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// Zendesk, Cloudflare
+			"subdomain": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// Zendesk, Cloudflare
+			"email": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// AWS, OCI, Alicloud, IBM
+			"regions": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			// Airtable
 			"tables": {
 				Type:     schema.TypeList,
 				Optional: true,
@@ -135,28 +200,6 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 					Type: schema.TypeString,
 				},
 			},
-			//  OCI
-			"user_ocid": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"fingerprint": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"tenancy_ocid": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			"private_key": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
-			// "config": {
-			// 	Type:     schema.TypeMap,
-			// 	Optional: true,
-			// 	// DiffSuppressFunc: suppressIfDataMatches,
-			// },
 		},
 	}
 }
@@ -184,78 +227,11 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	}
 
 	// Get config to create connection
-	var connConfig ConnectionConfig
-	if value, ok := d.GetOk("regions"); ok {
-		var regions []string
-		for _, item := range value.([]interface{}) {
-			regions = append(regions, item.(string))
-		}
-		connConfig.Regions = regions
+	connConfig, err := CreateConnectionCofiguration(d)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
-	if value, ok := d.GetOk("secret_key"); ok {
-		connConfig.SecretKey = value.(string)
-	}
-	if value, ok := d.GetOk("access_key"); ok {
-		connConfig.AccessKey = value.(string)
-	}
-	if value, ok := d.GetOk("session_token"); ok {
-		connConfig.SessionToken = value.(string)
-	}
-	if value, ok := d.GetOk("project"); ok {
-		connConfig.Project = value.(string)
-	}
-	if value, ok := d.GetOk("credentials"); ok {
-		creds := value.(string)
-		buffer := new(bytes.Buffer)
-		if err := json.Compact(buffer, []byte(creds)); err != nil {
-			log.Println(err)
-		}
-		connConfig.Credentials = buffer.String()
-	}
-	if value, ok := d.GetOk("environment"); ok {
-		connConfig.Environment = value.(string)
-	}
-	if value, ok := d.GetOk("tenant_id"); ok {
-		connConfig.TenantID = value.(string)
-	}
-	if value, ok := d.GetOk("subscription_id"); ok {
-		connConfig.SubscriptionID = value.(string)
-	}
-	if value, ok := d.GetOk("client_id"); ok {
-		connConfig.ClientID = value.(string)
-	}
-	if value, ok := d.GetOk("client_secret"); ok {
-		connConfig.ClientSecret = value.(string)
-	}
-	if value, ok := d.GetOk("token"); ok {
-		connConfig.Token = value.(string)
-	}
-	if value, ok := d.GetOk("bearer_token"); ok {
-		connConfig.BearerToken = value.(string)
-	}
-	if value, ok := d.GetOk("database_id"); ok {
-		connConfig.DatabaseID = value.(string)
-	}
-	if value, ok := d.GetOk("tables"); ok {
-		var tables []string
-		for _, item := range value.([]interface{}) {
-			tables = append(tables, item.(string))
-		}
-		connConfig.Tables = tables
-	}
-	if value, ok := d.GetOk("private_key"); ok {
-		privateKey := value.(string)
-		connConfig.PrivateKey = strings.ReplaceAll(privateKey, "\r\n", "\\n")
-	}
-	if value, ok := d.GetOk("user_ocid"); ok {
-		connConfig.UserOCID = value.(string)
-	}
-	if value, ok := d.GetOk("fingerprint"); ok {
-		connConfig.Fingerprint = value.(string)
-	}
-	if value, ok := d.GetOk("tenancy_ocid"); ok {
-		connConfig.TenancyOCID = value.(string)
-	}
+
 	configByteData, err := json.Marshal(connConfig)
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Marshalling connection config error  %v", err)
@@ -357,7 +333,6 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	d.Set("updated_at", resp.UpdatedAt)
 	// d.Set("identity", resp.Identity)
 	if resp.Config != nil {
-
 		for k, v := range *resp.Config {
 			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
 				d.Set(strings.ToLower(k), v.([]interface{}))
@@ -433,78 +408,11 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	}
 
 	// Get config to create connection
-	var connConfig ConnectionConfig
-	if value, ok := d.GetOk("regions"); ok {
-		var regions []string
-		for _, item := range value.([]interface{}) {
-			regions = append(regions, item.(string))
-		}
-		connConfig.Regions = regions
+	connConfig, err := CreateConnectionCofiguration(d)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
-	if value, ok := d.GetOk("secret_key"); ok {
-		connConfig.SecretKey = value.(string)
-	}
-	if value, ok := d.GetOk("access_key"); ok {
-		connConfig.AccessKey = value.(string)
-	}
-	if value, ok := d.GetOk("session_token"); ok {
-		connConfig.SessionToken = value.(string)
-	}
-	if value, ok := d.GetOk("project"); ok {
-		connConfig.Project = value.(string)
-	}
-	if value, ok := d.GetOk("credentials"); ok {
-		creds := value.(string)
-		buffer := new(bytes.Buffer)
-		if err := json.Compact(buffer, []byte(creds)); err != nil {
-			log.Println(err)
-		}
-		connConfig.Credentials = buffer.String()
-	}
-	if value, ok := d.GetOk("environment"); ok {
-		connConfig.Environment = value.(string)
-	}
-	if value, ok := d.GetOk("tenant_id"); ok {
-		connConfig.TenantID = value.(string)
-	}
-	if value, ok := d.GetOk("subscription_id"); ok {
-		connConfig.SubscriptionID = value.(string)
-	}
-	if value, ok := d.GetOk("client_id"); ok {
-		connConfig.ClientID = value.(string)
-	}
-	if value, ok := d.GetOk("client_secret"); ok {
-		connConfig.ClientSecret = value.(string)
-	}
-	if value, ok := d.GetOk("token"); ok {
-		connConfig.Token = value.(string)
-	}
-	if value, ok := d.GetOk("bearer_token"); ok {
-		connConfig.BearerToken = value.(string)
-	}
-	if value, ok := d.GetOk("database_id"); ok {
-		connConfig.DatabaseID = value.(string)
-	}
-	if value, ok := d.GetOk("tables"); ok {
-		var tables []string
-		for _, item := range value.([]interface{}) {
-			tables = append(tables, item.(string))
-		}
-		connConfig.Tables = tables
-	}
-	if value, ok := d.GetOk("private_key"); ok {
-		privateKey := value.(string)
-		connConfig.PrivateKey = strings.ReplaceAll(privateKey, "\r\n", "\\n")
-	}
-	if value, ok := d.GetOk("user_ocid"); ok {
-		connConfig.UserOCID = value.(string)
-	}
-	if value, ok := d.GetOk("fingerprint"); ok {
-		connConfig.Fingerprint = value.(string)
-	}
-	if value, ok := d.GetOk("tenancy_ocid"); ok {
-		connConfig.TenancyOCID = value.(string)
-	}
+
 	data, err := json.Marshal(connConfig)
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Marshalling connection config error  %v", err)
@@ -615,23 +523,125 @@ func ConvertArray(s string) (*[]string, bool) {
 }
 
 type ConnectionConfig struct {
-	Regions        []string `json:"regions,omitempty"`
-	Tables         []string `json:"tables,omitempty"`
 	AccessKey      string   `json:"access_key,omitempty"`
-	SecretKey      string   `json:"secret_key,omitempty"`
-	SessionToken   string   `json:"session_token,omitempty"`
-	Project        string   `json:"project,omitempty"`
-	Credentials    string   `json:"credentials,omitempty"`
-	Environment    string   `json:"environment,omitempty"`
-	TenantID       string   `json:"tenant_id,omitempty"`
-	SubscriptionID string   `json:"subscription_id,omitempty"`
+	ApiKey         string   `json:"api_key,omitempty"`
+	BaseURL        string   `json:"base_url,omitempty"`
+	BearerToken    string   `json:"bearer_token,omitempty"`
 	ClientID       string   `json:"client_id,omitempty"`
 	ClientSecret   string   `json:"client_secret,omitempty"`
-	Token          string   `json:"token,omitempty"`
-	BearerToken    string   `json:"bearer_token,omitempty"`
+	Credentials    string   `json:"credentials,omitempty"`
 	DatabaseID     string   `json:"database_id,omitempty"`
-	PrivateKey     string   `json:"private_key,omitempty"`
-	UserOCID       string   `json:"user_ocid,omitempty"`
+	Email          string   `json:"email,omitempty"`
+	Environment    string   `json:"environment,omitempty"`
 	Fingerprint    string   `json:"fingerprint,omitempty"`
+	MaxItems       int      `json:"max_items,omitempty"`
+	Password       string   `json:"password,omitempty"`
+	PrivateKey     string   `json:"private_key,omitempty"`
+	Project        string   `json:"project,omitempty"`
+	Regions        []string `json:"regions,omitempty"`
+	SecretKey      string   `json:"secret_key,omitempty"`
+	SessionToken   string   `json:"session_token,omitempty"`
+	Subdomain      string   `json:"subdomain,omitempty"`
+	SubscriptionID string   `json:"subscription_id,omitempty"`
+	Tables         []string `json:"tables,omitempty"`
 	TenancyOCID    string   `json:"tenancy_ocid,omitempty"`
+	TenantID       string   `json:"tenant_id,omitempty"`
+	Token          string   `json:"token,omitempty"`
+	UserOCID       string   `json:"user_ocid,omitempty"`
+}
+
+func CreateConnectionCofiguration(d *schema.ResourceData) (ConnectionConfig, error) {
+	var connConfig ConnectionConfig
+
+	if value, ok := d.GetOk("access_key"); ok {
+		connConfig.AccessKey = value.(string)
+	}
+	if value, ok := d.GetOk("api_key"); ok {
+		connConfig.ApiKey = value.(string)
+	}
+	if value, ok := d.GetOk("base_url"); ok {
+		connConfig.BaseURL = value.(string)
+	}
+	if value, ok := d.GetOk("bearer_token"); ok {
+		connConfig.BearerToken = value.(string)
+	}
+	if value, ok := d.GetOk("client_id"); ok {
+		connConfig.ClientID = value.(string)
+	}
+	if value, ok := d.GetOk("client_secret"); ok {
+		connConfig.ClientSecret = value.(string)
+	}
+	if value, ok := d.GetOk("credentials"); ok {
+		creds := value.(string)
+		buffer := new(bytes.Buffer)
+		if err := json.Compact(buffer, []byte(creds)); err != nil {
+			log.Println(err)
+		}
+		connConfig.Credentials = buffer.String()
+	}
+	if value, ok := d.GetOk("database_id"); ok {
+		connConfig.DatabaseID = value.(string)
+	}
+	if value, ok := d.GetOk("email"); ok {
+		connConfig.Email = value.(string)
+	}
+	if value, ok := d.GetOk("environment"); ok {
+		connConfig.Environment = value.(string)
+	}
+	if value, ok := d.GetOk("fingerprint"); ok {
+		connConfig.Fingerprint = value.(string)
+	}
+	if value, ok := d.GetOk("max_items"); ok {
+		connConfig.MaxItems = value.(int)
+	}
+	if value, ok := d.GetOk("password"); ok {
+		connConfig.Password = value.(string)
+	}
+	if value, ok := d.GetOk("private_key"); ok {
+		privateKey := value.(string)
+		connConfig.PrivateKey = strings.ReplaceAll(privateKey, "\r\n", "\\n")
+	}
+	if value, ok := d.GetOk("project"); ok {
+		connConfig.Project = value.(string)
+	}
+	if value, ok := d.GetOk("regions"); ok {
+		var regions []string
+		for _, item := range value.([]interface{}) {
+			regions = append(regions, item.(string))
+		}
+		connConfig.Regions = regions
+	}
+	if value, ok := d.GetOk("secret_key"); ok {
+		connConfig.SecretKey = value.(string)
+	}
+	if value, ok := d.GetOk("session_token"); ok {
+		connConfig.SessionToken = value.(string)
+	}
+	if value, ok := d.GetOk("subdomain"); ok {
+		connConfig.Subdomain = value.(string)
+	}
+	if value, ok := d.GetOk("subscription_id"); ok {
+		connConfig.SubscriptionID = value.(string)
+	}
+	if value, ok := d.GetOk("tables"); ok {
+		var tables []string
+		for _, item := range value.([]interface{}) {
+			tables = append(tables, item.(string))
+		}
+		connConfig.Tables = tables
+	}
+	if value, ok := d.GetOk("tenancy_ocid"); ok {
+		connConfig.TenancyOCID = value.(string)
+	}
+	if value, ok := d.GetOk("tenant_id"); ok {
+		connConfig.TenantID = value.(string)
+	}
+	if value, ok := d.GetOk("token"); ok {
+		connConfig.Token = value.(string)
+	}
+	if value, ok := d.GetOk("user_ocid"); ok {
+		connConfig.UserOCID = value.(string)
+	}
+
+	return connConfig, nil
 }
