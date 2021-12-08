@@ -113,6 +113,11 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// Connection argument for DO
+			"token": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			// "config": {
 			// 	Type:     schema.TypeMap,
 			// 	Optional: true,
@@ -197,8 +202,14 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		if value, ok := d.GetOk("client_secret"); ok {
 			azureConfig.ClientSecret = value.(string)
 		}
-
 		data, _ := json.Marshal(azureConfig)
+		json.Unmarshal(data, &config)
+	case "digitalocean":
+		var DOConfig DigitalOceanConnectionConfigWithSecrets
+		if value, ok := d.GetOk("token"); ok {
+			DOConfig.Token = value.(string)
+		}
+		data, _ := json.Marshal(DOConfig)
 		json.Unmarshal(data, &config)
 	}
 
@@ -235,7 +246,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	switch *resp.Plugin {
-	case "aws":
+	case "aws", "alicloud":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				if k == "regions" {
@@ -245,7 +256,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 				}
 			}
 		}
-	case "gcp", "azure":
+	case "gcp", "azure", "digitalocean":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -324,7 +335,7 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 				}
 			}
 		}
-	case "gcp", "azure":
+	case "gcp", "azure", "digitalocean":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -459,6 +470,13 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 
 		data, _ := json.Marshal(azureConfig)
 		json.Unmarshal(data, &config)
+	case "digitalocean":
+		var DOConfig DigitalOceanConnectionConfigWithSecrets
+		if value, ok := d.GetOk("token"); ok {
+			DOConfig.Token = value.(string)
+		}
+		data, _ := json.Marshal(DOConfig)
+		json.Unmarshal(data, &config)
 	}
 
 	if config != nil {
@@ -496,13 +514,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 				}
 			}
 		}
-	case "gcp":
-		if resp.Config != nil {
-			for k, v := range *resp.Config {
-				d.Set(k, v.(string))
-			}
-		}
-	case "azure":
+	case "gcp", "azure", "digitalocean":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -674,9 +686,13 @@ type GcpConnectionConfigWithSecrets struct {
 	Credentials string `json:"credentials,omitempty" mapstructure:"credentials" hcl:"credentials"`
 }
 type AzureConnectionConfigWithSecrets struct {
-	Environment    string `json:"environment"  mapstructure:"environment" hcl:"environment"`
-	TenantID       string `json:"tenant_id"  mapstructure:"tenant_id" hcl:"tenant_id"`
-	SubscriptionID string `json:"subscription_id" mapstructure:"subscription_id" hcl:"subscription_id"`
-	ClientID       string `json:"client_id" mapstructure:"client_id" hcl:"client_id"`
-	ClientSecret   string `json:"client_secret" mapstructure:"client_secret" hcl:"client_secret"`
+	Environment    string `json:"environment,omitempty"  mapstructure:"environment" hcl:"environment"`
+	TenantID       string `json:"tenant_id,omitempty"  mapstructure:"tenant_id" hcl:"tenant_id"`
+	SubscriptionID string `json:"subscription_id,omitempty" mapstructure:"subscription_id" hcl:"subscription_id"`
+	ClientID       string `json:"client_id,omitempty" mapstructure:"client_id" hcl:"client_id"`
+	ClientSecret   string `json:"client_secret,omitempty" mapstructure:"client_secret" hcl:"client_secret"`
+}
+
+type DigitalOceanConnectionConfigWithSecrets struct {
+	Token string `json:"token,omitempty" mapstructure:"token" hcl:"token"`
 }
