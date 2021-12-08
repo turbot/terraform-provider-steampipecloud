@@ -92,6 +92,27 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// AZURE connection config arguments
+			"environment": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"tenant_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"subscription_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"client_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"client_secret": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			// "config": {
 			// 	Type:     schema.TypeMap,
 			// 	Optional: true,
@@ -159,6 +180,26 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		}
 		data, _ := json.Marshal(gcpConfig)
 		json.Unmarshal(data, &config)
+	case "azure":
+		var azureConfig AzureConnectionConfigWithSecrets
+		if value, ok := d.GetOk("environment"); ok {
+			azureConfig.Environment = value.(string)
+		}
+		if value, ok := d.GetOk("tenant_id"); ok {
+			azureConfig.TenantID = value.(string)
+		}
+		if value, ok := d.GetOk("subscription_id"); ok {
+			azureConfig.SubscriptionID = value.(string)
+		}
+		if value, ok := d.GetOk("client_id"); ok {
+			azureConfig.ClientID = value.(string)
+		}
+		if value, ok := d.GetOk("client_secret"); ok {
+			azureConfig.ClientSecret = value.(string)
+		}
+
+		data, _ := json.Marshal(azureConfig)
+		json.Unmarshal(data, &config)
 	}
 
 	req := openapiclient.TypesCreateConnectionRequest{
@@ -204,7 +245,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 				}
 			}
 		}
-	case "gcp":
+	case "gcp", "azure":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -283,7 +324,7 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 				}
 			}
 		}
-	case "gcp":
+	case "gcp", "azure":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -398,6 +439,26 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		}
 		data, _ := json.Marshal(gcpConfig)
 		json.Unmarshal(data, &config)
+	case "azure":
+		var azureConfig AzureConnectionConfigWithSecrets
+		if value, ok := d.GetOk("environment"); ok {
+			azureConfig.Environment = value.(string)
+		}
+		if value, ok := d.GetOk("tenant_id"); ok {
+			azureConfig.TenantID = value.(string)
+		}
+		if value, ok := d.GetOk("subscription_id"); ok {
+			azureConfig.SubscriptionID = value.(string)
+		}
+		if value, ok := d.GetOk("client_id"); ok {
+			azureConfig.ClientID = value.(string)
+		}
+		if value, ok := d.GetOk("client_secret"); ok {
+			azureConfig.ClientSecret = value.(string)
+		}
+
+		data, _ := json.Marshal(azureConfig)
+		json.Unmarshal(data, &config)
 	}
 
 	if config != nil {
@@ -436,6 +497,12 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 			}
 		}
 	case "gcp":
+		if resp.Config != nil {
+			for k, v := range *resp.Config {
+				d.Set(k, v.(string))
+			}
+		}
+	case "azure":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				d.Set(k, v.(string))
@@ -605,4 +672,11 @@ type AwsConnectionConfigWithSecrets struct {
 type GcpConnectionConfigWithSecrets struct {
 	Project     string `json:"project,omitempty" mapstructure:"project" hcl:"project"`
 	Credentials string `json:"credentials,omitempty" mapstructure:"credentials" hcl:"credentials"`
+}
+type AzureConnectionConfigWithSecrets struct {
+	Environment    string `json:"environment"  mapstructure:"environment" hcl:"environment"`
+	TenantID       string `json:"tenant_id"  mapstructure:"tenant_id" hcl:"tenant_id"`
+	SubscriptionID string `json:"subscription_id" mapstructure:"subscription_id" hcl:"subscription_id"`
+	ClientID       string `json:"client_id" mapstructure:"client_id" hcl:"client_id"`
+	ClientSecret   string `json:"client_secret" mapstructure:"client_secret" hcl:"client_secret"`
 }
