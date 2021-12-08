@@ -2,12 +2,13 @@ package steampipecloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	_nethttp "net/http"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/turbot/go-kit/types"
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	openapiclient "github.com/turbot/steampipecloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 
@@ -60,11 +61,30 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"config": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				DiffSuppressFunc: suppressIfDataMatches,
+			"regions": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
+			"access_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"secret_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"session_token": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// "config": {
+			// 	Type:     schema.TypeMap,
+			// 	Optional: true,
+			// 	// DiffSuppressFunc: suppressIfDataMatches,
+			// },
 		},
 	}
 }
@@ -90,13 +110,28 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	if value, ok := d.GetOk("plugin"); ok {
 		plugin = value.(string)
 	}
-	var ok bool
-	var err error
-	var dataString interface{}
-	if dataString, ok = d.GetOk("config"); ok {
-		if config, err = helpers.JsonStringToMap(dataString.(string)); err != nil {
-			return fmt.Errorf("error build connection config, failed to unmarshal data: \n%s\nerror: %s", dataString, err.Error())
+
+	switch plugin {
+	case "aws":
+		var awsConfig AwsConnectionConfigWithSecrets
+		if value, ok := d.GetOk("regions"); ok {
+			var regions []string
+			for _, item := range value.([]interface{}) {
+				regions = append(regions, item.(string))
+			}
+			awsConfig.Regions = regions
 		}
+		if value, ok := d.GetOk("secretKey"); ok {
+			awsConfig.SecretKey = value.(string)
+		}
+		if value, ok := d.GetOk("access_key"); ok {
+			awsConfig.AccessKey = value.(string)
+		}
+		if value, ok := d.GetOk("session_token"); ok {
+			awsConfig.SessionToken = value.(string)
+		}
+		data, _ := json.Marshal(awsConfig)
+		json.Unmarshal(data, &config)
 	}
 
 	req := openapiclient.TypesCreateConnectionRequest{
@@ -108,6 +143,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		req.SetConfig(config)
 	}
 
+	var err error
 	var resp openapiclient.TypesConnection
 	var actorHandle string
 	if IsUser {
@@ -130,10 +166,31 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	d.Set("plugin", resp.Plugin)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
-	if data, ok := d.GetOk("config"); ok {
-		d.Set("config", helpers.FormatJson(data.(string)))
+	switch *resp.Plugin {
+	case "aws":
+		if resp.Config != nil {
+			for k, v := range *resp.Config {
+				if k == "regions" {
+					d.Set(k, v.([]string))
+				} else {
+					d.Set(k, v.(string))
+				}
+			}
+		}
 	}
+
+	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
+	// if resp.Config != nil {
+	// 	configMap := map[string]string{}
+	// 	for k, v := range *resp.Config {
+	// 		switch item := v.(type) {
+	// 		case string:
+	// 			configMap[k] = item
+	// 		case []string
+	// 		}
+	// 	}
+	// 	d.Set("config", helpers.FormatJson(data.(string)))
+	// }
 	d.SetId(resp.Id)
 
 	return nil
@@ -182,13 +239,17 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	// d.Set("identity", resp.Identity)
-	if _, ok := d.GetOk("config"); ok {
-		// if data is set, only include the properties that are specified in the resource config
-		data, err := getStringValueForKey(d, "data", *resp.Config)
-		if err != nil {
-			return err
+	switch *resp.Plugin {
+	case "aws":
+		if resp.Config != nil {
+			for k, v := range *resp.Config {
+				if k == "regions" {
+					d.Set(k, v.([]interface{}))
+				} else {
+					d.Set(k, v.(string))
+				}
+			}
 		}
-		d.Set("config", data)
 	}
 	d.SetId(resp.Id)
 
@@ -249,9 +310,12 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf("handle must be configured")
 	}
 
-	var ok bool
+	plugin := d.Get("plugin")
+	if newHandle.(string) == "" {
+		return fmt.Errorf("handle must be configured")
+	}
+
 	var err error
-	var dataProperty string
 	var config map[string]interface{}
 	var resp openapiclient.TypesConnection
 
@@ -259,14 +323,27 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		Handle: types.String(newHandle.(string)),
 	}
 
-	if _, ok = d.GetOk("config"); ok {
-		dataProperty = "config"
-	}
-	if ok {
-		config, err = buildUpdatePayloadForData(d, dataProperty)
-		if err != nil {
-			return err
+	switch plugin.(string) {
+	case "aws":
+		var awsConfig AwsConnectionConfigWithSecrets
+		if value, ok := d.GetOkExists("regions"); ok {
+			var regions []string
+			for _, item := range value.([]interface{}) {
+				regions = append(regions, item.(string))
+			}
+			awsConfig.Regions = regions
 		}
+		if value, ok := d.GetOkExists("secretKey"); ok {
+			awsConfig.SecretKey = value.(string)
+		}
+		if value, ok := d.GetOkExists("access_key"); ok {
+			awsConfig.AccessKey = value.(string)
+		}
+		if value, ok := d.GetOkExists("session_token"); ok {
+			awsConfig.SessionToken = value.(string)
+		}
+		data, _ := json.Marshal(awsConfig)
+		json.Unmarshal(data, &config)
 	}
 
 	if config != nil {
@@ -293,6 +370,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("type", resp.Type)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+
 	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
 	if data, ok := d.GetOk("config"); ok {
 		d.Set("config", helpers.FormatJson(data.(string)))
@@ -442,4 +520,22 @@ func markPropertiesForDeletion(d *schema.ResourceData, key string) (map[string]i
 		}
 	}
 	return newContent, nil
+}
+
+func ConvertArray(s string) (*[]string, bool) {
+	var js []string
+	err := json.Unmarshal([]byte(s), &js)
+	return &js, err == nil
+}
+
+type AwsConnectionConfig struct {
+	Regions   []string `json:"regions" mapstructure:"regions" hcl:"regions"`
+	AccessKey string   `json:"access_key" mapstructure:"access_key" hcl:"access_key"`
+}
+
+type AwsConnectionConfigWithSecrets struct {
+	Regions      []string `json:"regions" hcl:"regions"`
+	AccessKey    string   `json:"access_key" mapstructure:"access_key" hcl:"access_key"`
+	SecretKey    string   `json:"secret_key" mapstructure:"secret_key" hcl:"secret_key"`
+	SessionToken string   `json:"session_token" hcl:"session_token" hcle:"omitempty"`
 }

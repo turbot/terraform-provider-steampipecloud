@@ -5,10 +5,12 @@ go 1.17
 require github.com/turbot/go-kit v0.3.0
 
 require (
+	github.com/turbot/steampipecloud-sdk-go v0.0.0-20211207141746-973451180df0
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/terraform v0.12.0
+	github.com/iancoleman/strcase v0.2.0
 	github.com/stretchr/testify v1.7.0
-	github.com/turbot/steampipe-cloud-sdk-go v0.0.0-00010101000000-000000000000
+	github.com/turbot/terraform-provider-turbot v1.8.2
 )
 
 require (
@@ -60,6 +62,7 @@ require (
 	github.com/kr/pretty v0.2.1 // indirect
 	github.com/kr/text v0.2.0 // indirect
 	github.com/kylelemons/godebug v1.1.0 // indirect
+	github.com/machinebox/graphql v0.2.3-0.20180904014615-9835de6386a3 // indirect
 	github.com/mattn/go-colorable v0.1.4 // indirect
 	github.com/mattn/go-isatty v0.0.10 // indirect
 	github.com/mitchellh/cli v1.1.2 // indirect
@@ -71,10 +74,12 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.0.0 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/posener/complete v1.2.1 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
+	github.com/turbot/steampipecloud-sdk-go v0.0.0-20211207141746-973451180df0 // indirect
 	github.com/ulikunitz/xz v0.5.8 // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect
 	github.com/vmihailenco/tagparser v0.1.1 // indirect
@@ -98,4 +103,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-replace github.com/turbot/steampipe-cloud-sdk-go => ../steampipe-cloud-sdk-go
+// replace github.com/turbot/steampipe-cloud-sdk-go => ../steampipe-cloud-sdk-go
