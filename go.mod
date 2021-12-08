@@ -100,4 +100,4 @@ require (
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
 
-// replace github.com/turbot/steampipe-cloud-sdk-go => ../steampipe-cloud-sdk-go
+// replace github.com/turbot/steampipecloud-sdk-go => ../steampipecloud-sdk-go

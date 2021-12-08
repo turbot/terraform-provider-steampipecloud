@@ -1,9 +1,11 @@
 package steampipecloud
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"fmt"
+	"log"
 	_nethttp "net/http"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -148,7 +150,13 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 			gcpConfig.Project = value.(string)
 		}
 		if value, ok := d.GetOk("credentials"); ok {
-			gcpConfig.Credentials = value.(string)
+			creds := value.(string)
+			buffer := new(bytes.Buffer)
+			if err := json.Compact(buffer, []byte(creds)); err != nil {
+				log.Println(err)
+			}
+			log.Println(string(buffer.Bytes()))
+			gcpConfig.Credentials = string(buffer.Bytes())
 		}
 		data, _ := json.Marshal(gcpConfig)
 		json.Unmarshal(data, &config)
