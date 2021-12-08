@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	_nethttp "net/http"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/turbot/go-kit/types"
@@ -122,6 +123,35 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
+			// Airtable
+			"database_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"tables": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			//  OCI
+			"user_ocid": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"fingerprint": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"tenancy_ocid": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			"private_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			// "config": {
 			// 	Type:     schema.TypeMap,
 			// 	Optional: true,
@@ -153,71 +183,86 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		plugin = value.(string)
 	}
 
-	switch plugin {
-	case "aws", "alicloud":
-		var awsConfig AwsConnectionConfigWithSecrets
-		if value, ok := d.GetOk("regions"); ok {
-			var regions []string
-			for _, item := range value.([]interface{}) {
-				regions = append(regions, item.(string))
-			}
-			awsConfig.Regions = regions
+	// Get config to create connection
+	var connConfig ConnectionConfig
+	if value, ok := d.GetOk("regions"); ok {
+		var regions []string
+		for _, item := range value.([]interface{}) {
+			regions = append(regions, item.(string))
 		}
-		if value, ok := d.GetOk("secret_key"); ok {
-			awsConfig.SecretKey = value.(string)
+		connConfig.Regions = regions
+	}
+	if value, ok := d.GetOk("secret_key"); ok {
+		connConfig.SecretKey = value.(string)
+	}
+	if value, ok := d.GetOk("access_key"); ok {
+		connConfig.AccessKey = value.(string)
+	}
+	if value, ok := d.GetOk("session_token"); ok {
+		connConfig.SessionToken = value.(string)
+	}
+	if value, ok := d.GetOk("project"); ok {
+		connConfig.Project = value.(string)
+	}
+	if value, ok := d.GetOk("credentials"); ok {
+		creds := value.(string)
+		buffer := new(bytes.Buffer)
+		if err := json.Compact(buffer, []byte(creds)); err != nil {
+			log.Println(err)
 		}
-		if value, ok := d.GetOk("access_key"); ok {
-			awsConfig.AccessKey = value.(string)
+		connConfig.Credentials = buffer.String()
+	}
+	if value, ok := d.GetOk("environment"); ok {
+		connConfig.Environment = value.(string)
+	}
+	if value, ok := d.GetOk("tenant_id"); ok {
+		connConfig.TenantID = value.(string)
+	}
+	if value, ok := d.GetOk("subscription_id"); ok {
+		connConfig.SubscriptionID = value.(string)
+	}
+	if value, ok := d.GetOk("client_id"); ok {
+		connConfig.ClientID = value.(string)
+	}
+	if value, ok := d.GetOk("client_secret"); ok {
+		connConfig.ClientSecret = value.(string)
+	}
+	if value, ok := d.GetOk("token"); ok {
+		connConfig.Token = value.(string)
+	}
+	if value, ok := d.GetOk("bearer_token"); ok {
+		connConfig.BearerToken = value.(string)
+	}
+	if value, ok := d.GetOk("database_id"); ok {
+		connConfig.DatabaseID = value.(string)
+	}
+	if value, ok := d.GetOk("tables"); ok {
+		var tables []string
+		for _, item := range value.([]interface{}) {
+			tables = append(tables, item.(string))
 		}
-		if value, ok := d.GetOk("session_token"); ok {
-			awsConfig.SessionToken = value.(string)
-		}
-		data, _ := json.Marshal(awsConfig)
-		json.Unmarshal(data, &config)
-	case "gcp":
-		var gcpConfig GcpConnectionConfigWithSecrets
-		if value, ok := d.GetOk("project"); ok {
-			gcpConfig.Project = value.(string)
-		}
-		if value, ok := d.GetOk("credentials"); ok {
-			creds := value.(string)
-			buffer := new(bytes.Buffer)
-			if err := json.Compact(buffer, []byte(creds)); err != nil {
-				log.Println(err)
-			}
-			gcpConfig.Credentials = string(buffer.Bytes())
-		}
-		data, _ := json.Marshal(gcpConfig)
-		json.Unmarshal(data, &config)
-	case "azure":
-		var azureConfig AzureConnectionConfigWithSecrets
-		if value, ok := d.GetOk("environment"); ok {
-			azureConfig.Environment = value.(string)
-		}
-		if value, ok := d.GetOk("tenant_id"); ok {
-			azureConfig.TenantID = value.(string)
-		}
-		if value, ok := d.GetOk("subscription_id"); ok {
-			azureConfig.SubscriptionID = value.(string)
-		}
-		if value, ok := d.GetOk("client_id"); ok {
-			azureConfig.ClientID = value.(string)
-		}
-		if value, ok := d.GetOk("client_secret"); ok {
-			azureConfig.ClientSecret = value.(string)
-		}
-		data, _ := json.Marshal(azureConfig)
-		json.Unmarshal(data, &config)
-	case "digitalocean", "github", "linode", "slack", "twitter":
-		var DOConfig ConnectionConfigWithOnlyToken
-		if value, ok := d.GetOk("token"); ok {
-			DOConfig.Token = value.(string)
-		}
-		if value, ok := d.GetOk("bearer_token"); ok {
-			DOConfig.BearerToken = value.(string)
-		}
-		data, _ := json.Marshal(DOConfig)
-		json.Unmarshal(data, &config)
+		connConfig.Tables = tables
+	}
+	if value, ok := d.GetOk("private_key"); ok {
+		privateKey := value.(string)
+		connConfig.PrivateKey = strings.ReplaceAll(privateKey, "\r\n", "\\n")
+	}
+	if value, ok := d.GetOk("user_ocid"); ok {
+		connConfig.UserOCID = value.(string)
+	}
+	if value, ok := d.GetOk("fingerprint"); ok {
+		connConfig.Fingerprint = value.(string)
+	}
+	if value, ok := d.GetOk("tenancy_ocid"); ok {
+		connConfig.TenancyOCID = value.(string)
+	}
+	configByteData, err := json.Marshal(connConfig)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Marshalling connection config error  %v", err)
+	}
+	err = json.Unmarshal(configByteData, &config)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Unmarshalling connection config error  %v", err)
 	}
 
 	req := openapiclient.TypesCreateConnectionRequest{
@@ -229,7 +274,6 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		req.SetConfig(config)
 	}
 
-	var err error
 	var resp openapiclient.TypesConnection
 	var actorHandle string
 	if IsUser {
@@ -252,37 +296,18 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	d.Set("plugin", resp.Plugin)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-	switch *resp.Plugin {
-	case "aws", "alicloud":
-		if resp.Config != nil {
-			for k, v := range *resp.Config {
-				if k == "regions" {
-					d.Set(k, v.([]string))
-				} else {
-					d.Set(k, v.(string))
-				}
-			}
-		}
-	case "gcp", "azure", "digitalocean", "github", "linode", "slack", "twitter":
-		if resp.Config != nil {
-			for k, v := range *resp.Config {
+	d.SetId(resp.Id)
+	// Save the config
+	if resp.Config != nil {
+		for k, v := range *resp.Config {
+			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				d.Set(strings.ToLower(k), v.([]interface{}))
+			} else {
 				d.Set(k, v.(string))
 			}
 		}
 	}
 
-	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
-	// if resp.Config != nil {
-	// 	configMap := map[string]string{}
-	// 	for k, v := range *resp.Config {
-	// 		switch item := v.(type) {
-	// 		case string:
-	// 			configMap[k] = item
-	// 		case []string
-	// 		}
-	// 	}
-	// 	d.Set("config", helpers.FormatJson(data.(string)))
-	// }
 	d.SetId(resp.Id)
 
 	return nil
@@ -331,26 +356,17 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	// d.Set("identity", resp.Identity)
-	switch *resp.Plugin {
-	case "aws", "alicloud":
-		if resp.Config != nil {
-			for k, v := range *resp.Config {
-				if k == "regions" {
-					d.Set(k, v.([]interface{}))
-				} else {
-					d.Set(k, v.(string))
-				}
-			}
-		}
-	case "gcp", "azure", "digitalocean", "github", "linode", "slack", "twitter":
-		if resp.Config != nil {
-			for k, v := range *resp.Config {
+	if resp.Config != nil {
+
+		for k, v := range *resp.Config {
+			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				d.Set(strings.ToLower(k), v.([]interface{}))
+			} else {
 				d.Set(k, v.(string))
 			}
 		}
 	}
 	d.SetId(resp.Id)
-
 	return nil
 }
 
@@ -408,11 +424,6 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf("handle must be configured")
 	}
 
-	plugin := d.Get("plugin")
-	if newHandle.(string) == "" {
-		return fmt.Errorf("handle must be configured")
-	}
-
 	var err error
 	var config map[string]interface{}
 	var resp openapiclient.TypesConnection
@@ -421,72 +432,86 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		Handle: types.String(newHandle.(string)),
 	}
 
-	switch plugin.(string) {
-	case "aws", "alicloud":
-		var awsConfig AwsConnectionConfigWithSecrets
-		if value, ok := d.GetOkExists("regions"); ok {
-			var regions []string
-			for _, item := range value.([]interface{}) {
-				regions = append(regions, item.(string))
-			}
-			awsConfig.Regions = regions
+	// Get config to create connection
+	var connConfig ConnectionConfig
+	if value, ok := d.GetOk("regions"); ok {
+		var regions []string
+		for _, item := range value.([]interface{}) {
+			regions = append(regions, item.(string))
 		}
-		if value, ok := d.GetOkExists("secretKey"); ok {
-			awsConfig.SecretKey = value.(string)
+		connConfig.Regions = regions
+	}
+	if value, ok := d.GetOk("secret_key"); ok {
+		connConfig.SecretKey = value.(string)
+	}
+	if value, ok := d.GetOk("access_key"); ok {
+		connConfig.AccessKey = value.(string)
+	}
+	if value, ok := d.GetOk("session_token"); ok {
+		connConfig.SessionToken = value.(string)
+	}
+	if value, ok := d.GetOk("project"); ok {
+		connConfig.Project = value.(string)
+	}
+	if value, ok := d.GetOk("credentials"); ok {
+		creds := value.(string)
+		buffer := new(bytes.Buffer)
+		if err := json.Compact(buffer, []byte(creds)); err != nil {
+			log.Println(err)
 		}
-		if value, ok := d.GetOkExists("access_key"); ok {
-			awsConfig.AccessKey = value.(string)
+		connConfig.Credentials = buffer.String()
+	}
+	if value, ok := d.GetOk("environment"); ok {
+		connConfig.Environment = value.(string)
+	}
+	if value, ok := d.GetOk("tenant_id"); ok {
+		connConfig.TenantID = value.(string)
+	}
+	if value, ok := d.GetOk("subscription_id"); ok {
+		connConfig.SubscriptionID = value.(string)
+	}
+	if value, ok := d.GetOk("client_id"); ok {
+		connConfig.ClientID = value.(string)
+	}
+	if value, ok := d.GetOk("client_secret"); ok {
+		connConfig.ClientSecret = value.(string)
+	}
+	if value, ok := d.GetOk("token"); ok {
+		connConfig.Token = value.(string)
+	}
+	if value, ok := d.GetOk("bearer_token"); ok {
+		connConfig.BearerToken = value.(string)
+	}
+	if value, ok := d.GetOk("database_id"); ok {
+		connConfig.DatabaseID = value.(string)
+	}
+	if value, ok := d.GetOk("tables"); ok {
+		var tables []string
+		for _, item := range value.([]interface{}) {
+			tables = append(tables, item.(string))
 		}
-		if value, ok := d.GetOkExists("session_token"); ok {
-			awsConfig.SessionToken = value.(string)
-		}
-		data, _ := json.Marshal(awsConfig)
-		json.Unmarshal(data, &config)
-	case "gcp":
-		var gcpConfig GcpConnectionConfigWithSecrets
-		if value, ok := d.GetOk("project"); ok {
-			gcpConfig.Project = value.(string)
-		}
-		if value, ok := d.GetOk("credentials"); ok {
-			creds := value.(string)
-			buffer := new(bytes.Buffer)
-			if err := json.Compact(buffer, []byte(creds)); err != nil {
-				log.Println(err)
-			}
-			gcpConfig.Credentials = string(buffer.Bytes())
-		}
-		data, _ := json.Marshal(gcpConfig)
-		json.Unmarshal(data, &config)
-	case "azure":
-		var azureConfig AzureConnectionConfigWithSecrets
-		if value, ok := d.GetOk("environment"); ok {
-			azureConfig.Environment = value.(string)
-		}
-		if value, ok := d.GetOk("tenant_id"); ok {
-			azureConfig.TenantID = value.(string)
-		}
-		if value, ok := d.GetOk("subscription_id"); ok {
-			azureConfig.SubscriptionID = value.(string)
-		}
-		if value, ok := d.GetOk("client_id"); ok {
-			azureConfig.ClientID = value.(string)
-		}
-		if value, ok := d.GetOk("client_secret"); ok {
-			azureConfig.ClientSecret = value.(string)
-		}
-
-		data, _ := json.Marshal(azureConfig)
-		json.Unmarshal(data, &config)
-	case "digitalocean", "github", "linode", "slack", "twitter":
-		var DOConfig ConnectionConfigWithOnlyToken
-		if value, ok := d.GetOk("token"); ok {
-			DOConfig.Token = value.(string)
-		}
-		if value, ok := d.GetOk("bearer_token"); ok {
-			DOConfig.BearerToken = value.(string)
-		}
-		data, _ := json.Marshal(DOConfig)
-		json.Unmarshal(data, &config)
+		connConfig.Tables = tables
+	}
+	if value, ok := d.GetOk("private_key"); ok {
+		privateKey := value.(string)
+		connConfig.PrivateKey = strings.ReplaceAll(privateKey, "\r\n", "\\n")
+	}
+	if value, ok := d.GetOk("user_ocid"); ok {
+		connConfig.UserOCID = value.(string)
+	}
+	if value, ok := d.GetOk("fingerprint"); ok {
+		connConfig.Fingerprint = value.(string)
+	}
+	if value, ok := d.GetOk("tenancy_ocid"); ok {
+		connConfig.TenancyOCID = value.(string)
+	}
+	data, err := json.Marshal(connConfig)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Marshalling connection config error  %v", err)
+	}
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Unmarshalling connection config error  %v", err)
 	}
 
 	if config != nil {
@@ -500,7 +525,6 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		}
 		resp, _, err = steampipeClient.APIClient.UserConnectionsApi.UpdateUserConnection(context.Background(), actorHandle, oldHandle.(string)).Request(req).Execute()
 	} else {
-		// return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. \n newHandle %s \n oldHandle: %s", newHandle.(string), oldHandle.(string))
 		resp, _, err = steampipeClient.APIClient.OrgConnectionsApi.UpdateOrgConnection(context.Background(), org, oldHandle.(string)).Request(req).Execute()
 	}
 	if err != nil {
@@ -513,25 +537,17 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("type", resp.Type)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-	switch *resp.Plugin {
-	case "aws", "alicloud":
-		if resp.Config != nil {
-			for k, v := range *resp.Config {
-				if k == "regions" {
-					d.Set(k, v.([]interface{}))
-				} else {
-					d.Set(k, v.(string))
-				}
-			}
-		}
-	case "gcp", "azure", "digitalocean", "github", "linode", "slack", "twitter":
-		if resp.Config != nil {
-			for k, v := range *resp.Config {
+	d.Set("plugin", *resp.Plugin)
+	if resp.Config != nil {
+		for k, v := range *resp.Config {
+			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				d.Set(strings.ToLower(k), v.([]interface{}))
+			} else {
 				d.Set(k, v.(string))
 			}
 		}
 	}
-	d.Set("plugin", *resp.Plugin)
+
 	d.SetId(resp.Id)
 
 	return nil
@@ -684,26 +700,24 @@ func ConvertArray(s string) (*[]string, bool) {
 	return &js, err == nil
 }
 
-type AwsConnectionConfigWithSecrets struct {
-	Regions      []string `json:"regions,omitempty"`
-	AccessKey    string   `json:"access_key,omitempty"`
-	SecretKey    string   `json:"secret_key,omitempty"`
-	SessionToken string   `json:"session_token,omitempty"`
-}
-
-type GcpConnectionConfigWithSecrets struct {
-	Project     string `json:"project,omitempty"`
-	Credentials string `json:"credentials,omitempty"`
-}
-type AzureConnectionConfigWithSecrets struct {
-	Environment    string `json:"environment,omitempty"`
-	TenantID       string `json:"tenant_id,omitempty"`
-	SubscriptionID string `json:"subscription_id,omitempty"`
-	ClientID       string `json:"client_id,omitempty"`
-	ClientSecret   string `json:"client_secret,omitempty"`
-}
-
-type ConnectionConfigWithOnlyToken struct {
-	Token       string `json:"token,omitempty"`
-	BearerToken string `json:"bearer_token,omitempty"`
+type ConnectionConfig struct {
+	Regions        []string `json:"regions,omitempty"`
+	Tables         []string `json:"tables,omitempty"`
+	AccessKey      string   `json:"access_key,omitempty"`
+	SecretKey      string   `json:"secret_key,omitempty"`
+	SessionToken   string   `json:"session_token,omitempty"`
+	Project        string   `json:"project,omitempty"`
+	Credentials    string   `json:"credentials,omitempty"`
+	Environment    string   `json:"environment,omitempty"`
+	TenantID       string   `json:"tenant_id,omitempty"`
+	SubscriptionID string   `json:"subscription_id,omitempty"`
+	ClientID       string   `json:"client_id,omitempty"`
+	ClientSecret   string   `json:"client_secret,omitempty"`
+	Token          string   `json:"token,omitempty"`
+	BearerToken    string   `json:"bearer_token,omitempty"`
+	DatabaseID     string   `json:"database_id,omitempty"`
+	PrivateKey     string   `json:"private_key,omitempty"`
+	UserOCID       string   `json:"user_ocid,omitempty"`
+	Fingerprint    string   `json:"fingerprint,omitempty"`
+	TenancyOCID    string   `json:"tenancy_ocid,omitempty"`
 }
