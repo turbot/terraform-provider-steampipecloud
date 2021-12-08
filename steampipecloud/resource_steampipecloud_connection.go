@@ -145,7 +145,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	}
 
 	switch plugin {
-	case "aws":
+	case "aws", "alicloud":
 		var awsConfig AwsConnectionConfigWithSecrets
 		if value, ok := d.GetOk("regions"); ok {
 			var regions []string
@@ -314,7 +314,7 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	d.Set("updated_at", resp.UpdatedAt)
 	// d.Set("identity", resp.Identity)
 	switch *resp.Plugin {
-	case "aws":
+	case "aws", "alicloud":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				if k == "regions" {
@@ -404,7 +404,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	}
 
 	switch plugin.(string) {
-	case "aws":
+	case "aws", "alicloud":
 		var awsConfig AwsConnectionConfigWithSecrets
 		if value, ok := d.GetOkExists("regions"); ok {
 			var regions []string
@@ -486,7 +486,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	switch *resp.Plugin {
-	case "aws":
+	case "aws", "alicloud":
 		if resp.Config != nil {
 			for k, v := range *resp.Config {
 				if k == "regions" {
