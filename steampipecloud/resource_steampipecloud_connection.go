@@ -155,7 +155,6 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 			if err := json.Compact(buffer, []byte(creds)); err != nil {
 				log.Println(err)
 			}
-			log.Println(string(buffer.Bytes()))
 			gcpConfig.Credentials = string(buffer.Bytes())
 		}
 		data, _ := json.Marshal(gcpConfig)
@@ -390,7 +389,12 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 			gcpConfig.Project = value.(string)
 		}
 		if value, ok := d.GetOk("credentials"); ok {
-			gcpConfig.Credentials = value.(string)
+			creds := value.(string)
+			buffer := new(bytes.Buffer)
+			if err := json.Compact(buffer, []byte(creds)); err != nil {
+				log.Println(err)
+			}
+			gcpConfig.Credentials = string(buffer.Bytes())
 		}
 		data, _ := json.Marshal(gcpConfig)
 		json.Unmarshal(data, &config)
