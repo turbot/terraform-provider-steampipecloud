@@ -92,7 +92,7 @@ func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interfac
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceExists.\ngetHandler Error: \n%v", err)
 		}
-		_, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), handle, userHandler).Execute()
+		_, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), userHandler, handle).Execute()
 	}
 
 	// Error check
