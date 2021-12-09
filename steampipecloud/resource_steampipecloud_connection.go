@@ -1,13 +1,18 @@
 package steampipecloud
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	_nethttp "net/http"
+	"reflect"
+	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/turbot/go-kit/types"
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	openapiclient "github.com/turbot/steampipecloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 
@@ -60,10 +65,141 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"config": {
-				Type:             schema.TypeString,
-				Optional:         true,
-				DiffSuppressFunc: suppressIfDataMatches,
+			// AWS, Alicloud
+			"access_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AWS, Alicloud
+			"secret_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AWS
+			"session_token": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// GCP
+			"project": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// GCP
+			"credentials": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AZURE, AzureAD
+			"environment": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AZURE, AzureAD
+			"tenant_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AZURE, AzureAD
+			"subscription_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AZURE, AzureAD
+			"client_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AZURE, AzureAD
+			"client_secret": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Digital Ocean, GitHub, Airtable, Jira, Linode, Slack
+			"token": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Digital Ocean
+			"bearer_token": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Airtable
+			"database_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			//  OCI
+			"user_ocid": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			//  OCI
+			"fingerprint": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			//  OCI
+			"tenancy_ocid": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			//  OCI
+			"private_key": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Jira, Bitbucket
+			"username": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Jira, Bitbucket
+			"base_url": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Bitbucket
+			"password": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// Hacker News
+			"max_items": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// hackernews, Zendesk, DataDog, IBM, Cloudflare, Stripe
+			"api_key": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// Zendesk, Cloudflare
+			"subdomain": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// Zendesk, Cloudflare
+			"email": {
+				Type:     schema.TypeInt,
+				Optional: true,
+			},
+			// AWS, OCI, Alicloud, IBM
+			"regions": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
+			},
+			// Airtable
+			"tables": {
+				Type:     schema.TypeList,
+				Optional: true,
+				Elem: &schema.Schema{
+					Type: schema.TypeString,
+				},
 			},
 		},
 	}
@@ -90,13 +226,20 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	if value, ok := d.GetOk("plugin"); ok {
 		plugin = value.(string)
 	}
-	var ok bool
-	var err error
-	var dataString interface{}
-	if dataString, ok = d.GetOk("config"); ok {
-		if config, err = helpers.JsonStringToMap(dataString.(string)); err != nil {
-			return fmt.Errorf("error build connection config, failed to unmarshal data: \n%s\nerror: %s", dataString, err.Error())
-		}
+
+	// Get config to create connection
+	connConfig, err := CreateConnectionCofiguration(d)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
+	}
+
+	configByteData, err := json.Marshal(connConfig)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Marshalling connection config error  %v", err)
+	}
+	err = json.Unmarshal(configByteData, &config)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Unmarshalling connection config error  %v", err)
 	}
 
 	req := openapiclient.TypesCreateConnectionRequest{
@@ -130,10 +273,18 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	d.Set("plugin", resp.Plugin)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
-	if data, ok := d.GetOk("config"); ok {
-		d.Set("config", helpers.FormatJson(data.(string)))
+	d.SetId(resp.Id)
+	// Save the config
+	if resp.Config != nil {
+		for k, v := range *resp.Config {
+			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				d.Set(strings.ToLower(k), v.([]interface{}))
+			} else {
+				d.Set(k, v.(string))
+			}
+		}
 	}
+
 	d.SetId(resp.Id)
 
 	return nil
@@ -182,16 +333,16 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	// d.Set("identity", resp.Identity)
-	if _, ok := d.GetOk("config"); ok {
-		// if data is set, only include the properties that are specified in the resource config
-		data, err := getStringValueForKey(d, "data", *resp.Config)
-		if err != nil {
-			return err
+	if resp.Config != nil {
+		for k, v := range *resp.Config {
+			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				d.Set(strings.ToLower(k), v.([]interface{}))
+			} else {
+				d.Set(k, v.(string))
+			}
 		}
-		d.Set("config", data)
 	}
 	d.SetId(resp.Id)
-
 	return nil
 }
 
@@ -249,9 +400,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf("handle must be configured")
 	}
 
-	var ok bool
 	var err error
-	var dataProperty string
 	var config map[string]interface{}
 	var resp openapiclient.TypesConnection
 
@@ -259,19 +408,24 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		Handle: types.String(newHandle.(string)),
 	}
 
-	if _, ok = d.GetOk("config"); ok {
-		dataProperty = "config"
+	// Get config to create connection
+	connConfig, err := CreateConnectionCofiguration(d)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
-	if ok {
-		config, err = buildUpdatePayloadForData(d, dataProperty)
-		if err != nil {
-			return err
-		}
+	data, err := json.Marshal(connConfig)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Marshalling connection config error  %v", err)
+	}
+	err = json.Unmarshal(data, &config)
+	if err != nil {
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Unmarshalling connection config error  %v", err)
 	}
 
 	if config != nil {
 		req.SetConfig(config)
 	}
+	// return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate\n %s\nUpdateConnection error %v", string(data), err)
 
 	if IsUser {
 		actorHandle, err = getUserHandler(meta)
@@ -280,11 +434,11 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		}
 		resp, _, err = steampipeClient.APIClient.UserConnectionsApi.UpdateUserConnection(context.Background(), actorHandle, oldHandle.(string)).Request(req).Execute()
 	} else {
-		// return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. \n newHandle %s \n oldHandle: %s", newHandle.(string), oldHandle.(string))
 		resp, _, err = steampipeClient.APIClient.OrgConnectionsApi.UpdateOrgConnection(context.Background(), org, oldHandle.(string)).Request(req).Execute()
 	}
+
 	if err != nil {
-		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. UpdateConnection error %v", err)
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate.\nConfig: %s \nUpdateConnection error %v", config, err)
 	}
 
 	d.Set("handle", resp.Handle)
@@ -293,12 +447,17 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("type", resp.Type)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
-	if data, ok := d.GetOk("config"); ok {
-		d.Set("config", helpers.FormatJson(data.(string)))
-	}
-	d.Set("plugin", resp.Plugin)
+	d.Set("plugin", *resp.Plugin)
 	d.SetId(resp.Id)
+	if resp.Config != nil {
+		for k, v := range *resp.Config {
+			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				d.Set(strings.ToLower(k), v.([]interface{}))
+			} else {
+				d.Set(k, v.(string))
+			}
+		}
+	}
 
 	return nil
 }
@@ -358,88 +517,143 @@ func getUserHandler(meta interface{}) (string, error) {
 	return resp.Handle, nil
 }
 
-// data is a json string
-// apply standard formatting to old and new data then compare
-func suppressIfDataMatches(k, old, new string, d *schema.ResourceData) bool {
-	if old == "" || new == "" {
-		return false
-	}
-
-	oldFormatted := helpers.FormatJson(old)
-	newFormatted := helpers.FormatJson(new)
-	return oldFormatted == newFormatted
+func ConvertArray(s string) (*[]string, bool) {
+	var js []string
+	err := json.Unmarshal([]byte(s), &js)
+	return &js, err == nil
 }
 
-// - get properties for a given key from config
-// - build a map only including the properties fetched from config
-// - convert map to string
-func getStringValueForKey(d *schema.ResourceData, key string, readResponse map[string]interface{}) (string, error) {
-	propertiesOfKey, err := getPropertiesFromConfig(d, key)
-	if err != nil {
-		return "", err
-	}
-	metadata := buildResourceMapFromProperties(readResponse, propertiesOfKey)
-	metadataString, err := helpers.MapToJsonString(metadata)
-	if err != nil {
-		return "", fmt.Errorf("error building resource data: %s", err.Error())
-	}
-	return metadataString, nil
+type ConnectionConfig struct {
+	AccessKey      string   `json:"access_key,omitempty"`
+	ApiKey         string   `json:"api_key,omitempty"`
+	BaseURL        string   `json:"base_url,omitempty"`
+	BearerToken    string   `json:"bearer_token,omitempty"`
+	ClientID       string   `json:"client_id,omitempty"`
+	ClientSecret   string   `json:"client_secret,omitempty"`
+	Credentials    string   `json:"credentials,omitempty"`
+	DatabaseID     string   `json:"database_id,omitempty"`
+	Email          string   `json:"email,omitempty"`
+	Environment    string   `json:"environment,omitempty"`
+	Fingerprint    string   `json:"fingerprint,omitempty"`
+	MaxItems       int      `json:"max_items,omitempty"`
+	Password       string   `json:"password,omitempty"`
+	PrivateKey     string   `json:"private_key,omitempty"`
+	Project        string   `json:"project,omitempty"`
+	Regions        []string `json:"regions,omitempty"`
+	SecretKey      string   `json:"secret_key,omitempty"`
+	SessionToken   string   `json:"session_token,omitempty"`
+	Subdomain      string   `json:"subdomain,omitempty"`
+	SubscriptionID string   `json:"subscription_id,omitempty"`
+	Tables         []string `json:"tables,omitempty"`
+	TenancyOCID    string   `json:"tenancy_ocid,omitempty"`
+	TenantID       string   `json:"tenant_id,omitempty"`
+	Token          string   `json:"token,omitempty"`
+	UserOCID       string   `json:"user_ocid,omitempty"`
 }
 
-func getPropertiesFromConfig(d *schema.ResourceData, key string) (map[string]string, error) {
-	var properties map[string]string = nil
-	var err error = nil
-	if keyValue, ok := d.GetOk(key); ok {
-		if properties, err = helpers.PropertyMapFromJson(keyValue.(string)); err != nil {
-			return nil, fmt.Errorf("error retrieving properties: %s", err.Error())
-		}
+func CreateConnectionCofiguration(d *schema.ResourceData) (ConnectionConfig, error) {
+	var connConfig ConnectionConfig
+
+	if value, ok := d.GetOk("access_key"); ok {
+		connConfig.AccessKey = value.(string)
 	}
-	return properties, nil
+	if value, ok := d.GetOk("api_key"); ok {
+		connConfig.ApiKey = value.(string)
+	}
+	if value, ok := d.GetOk("base_url"); ok {
+		connConfig.BaseURL = value.(string)
+	}
+	if value, ok := d.GetOk("bearer_token"); ok {
+		connConfig.BearerToken = value.(string)
+	}
+	if value, ok := d.GetOk("client_id"); ok {
+		connConfig.ClientID = value.(string)
+	}
+	if value, ok := d.GetOk("client_secret"); ok {
+		connConfig.ClientSecret = value.(string)
+	}
+	if value, ok := d.GetOk("credentials"); ok {
+		creds := value.(string)
+		buffer := new(bytes.Buffer)
+		if err := json.Compact(buffer, []byte(creds)); err != nil {
+			log.Println(err)
+		}
+		connConfig.Credentials = buffer.String()
+	}
+	if value, ok := d.GetOk("database_id"); ok {
+		connConfig.DatabaseID = value.(string)
+	}
+	if value, ok := d.GetOk("email"); ok {
+		connConfig.Email = value.(string)
+	}
+	if value, ok := d.GetOk("environment"); ok {
+		connConfig.Environment = value.(string)
+	}
+	if value, ok := d.GetOk("fingerprint"); ok {
+		connConfig.Fingerprint = value.(string)
+	}
+	if value, ok := d.GetOk("max_items"); ok {
+		connConfig.MaxItems = value.(int)
+	}
+	if value, ok := d.GetOk("password"); ok {
+		connConfig.Password = value.(string)
+	}
+	if value, ok := d.GetOk("private_key"); ok {
+		privateKey := value.(string)
+		connConfig.PrivateKey = strings.ReplaceAll(privateKey, "\r\n", "\\n")
+	}
+	if value, ok := d.GetOk("project"); ok {
+		connConfig.Project = value.(string)
+	}
+	if value, ok := d.GetOk("regions"); ok {
+		var regions []string
+		for _, item := range value.([]interface{}) {
+			regions = append(regions, item.(string))
+		}
+		connConfig.Regions = regions
+	}
+	if value, ok := d.GetOk("secret_key"); ok {
+		connConfig.SecretKey = value.(string)
+	}
+	if value, ok := d.GetOk("session_token"); ok {
+		connConfig.SessionToken = value.(string)
+	}
+	if value, ok := d.GetOk("subdomain"); ok {
+		connConfig.Subdomain = value.(string)
+	}
+	if value, ok := d.GetOk("subscription_id"); ok {
+		connConfig.SubscriptionID = value.(string)
+	}
+	if value, ok := d.GetOk("tables"); ok {
+		var tables []string
+		for _, item := range value.([]interface{}) {
+			tables = append(tables, item.(string))
+		}
+		connConfig.Tables = tables
+	}
+	if value, ok := d.GetOk("tenancy_ocid"); ok {
+		connConfig.TenancyOCID = value.(string)
+	}
+	if value, ok := d.GetOk("tenant_id"); ok {
+		connConfig.TenantID = value.(string)
+	}
+	if value, ok := d.GetOk("token"); ok {
+		connConfig.Token = value.(string)
+	}
+	if value, ok := d.GetOk("user_ocid"); ok {
+		connConfig.UserOCID = value.(string)
+	}
+
+	return connConfig, nil
 }
 
-func buildResourceMapFromProperties(input map[string]interface{}, properties map[string]string) map[string]interface{} {
-	for key, _ := range input {
-		// delete external keys from response data
-		if _, ok := properties[key]; !ok {
-			delete(input, key)
-		}
-	}
-	return input
-}
+func (cc ConnectionConfig) GetJsonTagsFieldMapping() map[string]string {
+	tags := map[string]string{}
+	val := reflect.ValueOf(cc)
+	for i := 0; i < val.Type().NumField(); i++ {
+		tagSlice := strings.Split(val.Type().Field(i).Tag.Get("json"), ",")
+		tags[tagSlice[0]] = val.Type().Field(i).Name
 
-// - build a map from the data or full_data property (specified by 'key' parameter)
-// - add a `nil` value for deleted properties
-// - remove any properties disallowed by the updateSchema
-func buildUpdatePayloadForData(d *schema.ResourceData, key string) (map[string]interface{}, error) {
-	var err error
-	dataMap, err := markPropertiesForDeletion(d, key)
-	if err != nil {
-		return nil, err
 	}
-	return dataMap, nil
-}
-
-func markPropertiesForDeletion(d *schema.ResourceData, key string) (map[string]interface{}, error) {
-	var oldContent, newContent map[string]interface{}
-	var err error
-	// fetch old(state-file) and new(config) content
-	if old, new := d.GetChange(key); old != nil {
-		if oldContent, err = helpers.JsonStringToMap(old.(string)); err != nil {
-			return nil, fmt.Errorf("error build resource mutation input, failed to unmarshal content: \n%s\nerror: %s", old.(string), err.Error())
-		}
-		if newContent, err = helpers.JsonStringToMap(new.(string)); err != nil {
-			return nil, fmt.Errorf("error build resource mutation input, failed to unmarshal content: \n%s\nerror: %s", new.(string), err.Error())
-		}
-		// extract keys from old content not in new
-		excludeContentProperties := helpers.GetOldMapProperties(oldContent, newContent)
-		for _, key := range excludeContentProperties {
-			// set keys of old content to `nil` in new content
-			// any property which doesn't exist in config is set to nil
-			// NOTE: for folder we cannot currently delete the description property
-			if _, ok := oldContent[key.(string)]; ok {
-				newContent[key.(string)] = nil
-			}
-		}
-	}
-	return newContent, nil
+	return tags
 }
