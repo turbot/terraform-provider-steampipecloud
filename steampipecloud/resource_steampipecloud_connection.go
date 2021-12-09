@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"log"
 	_nethttp "net/http"
+	"reflect"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
@@ -412,7 +413,6 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
-
 	data, err := json.Marshal(connConfig)
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Marshalling connection config error  %v", err)
@@ -425,6 +425,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	if config != nil {
 		req.SetConfig(config)
 	}
+	// return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate\n %s\nUpdateConnection error %v", string(data), err)
 
 	if IsUser {
 		actorHandle, err = getUserHandler(meta)
@@ -435,8 +436,9 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	} else {
 		resp, _, err = steampipeClient.APIClient.OrgConnectionsApi.UpdateOrgConnection(context.Background(), org, oldHandle.(string)).Request(req).Execute()
 	}
+
 	if err != nil {
-		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. UpdateConnection error %v", err)
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate.\nConfig: %s \nUpdateConnection error %v", config, err)
 	}
 
 	d.Set("handle", resp.Handle)
@@ -446,6 +448,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("plugin", *resp.Plugin)
+	d.SetId(resp.Id)
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
 			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
@@ -455,8 +458,6 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 			}
 		}
 	}
-
-	d.SetId(resp.Id)
 
 	return nil
 }
@@ -644,4 +645,15 @@ func CreateConnectionCofiguration(d *schema.ResourceData) (ConnectionConfig, err
 	}
 
 	return connConfig, nil
+}
+
+func (cc ConnectionConfig) GetJsonTagsFieldMapping() map[string]string {
+	tags := map[string]string{}
+	val := reflect.ValueOf(cc)
+	for i := 0; i < val.Type().NumField(); i++ {
+		tagSlice := strings.Split(val.Type().Field(i).Tag.Get("json"), ",")
+		tags[tagSlice[0]] = val.Type().Field(i).Name
+
+	}
+	return tags
 }
