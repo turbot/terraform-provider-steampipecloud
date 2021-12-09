@@ -34,9 +34,10 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"steampipecloud_connection":   resourceSteampipeCloudConnection(),
-			"steampipecloud_organization": resourceSteampipeCloudOrganization(),
-			"steampipecloud_workspace":    resourceSteampipeCloudWorkspace(),
+			"steampipecloud_connection":                       resourceSteampipeCloudConnection(),
+			"steampipecloud_organization":                     resourceSteampipeCloudOrganization(),
+			"steampipecloud_workspace":                        resourceSteampipeCloudWorkspace(),
+			"steampipecloud_workspace_connection_association": resourceSteampipeCloudWorkspaceConnectionAssociation(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipecloud_user": dataSourceSteampipeCloudUser(),
@@ -98,5 +99,5 @@ func CreateClient(config *Config) (*openapiclient.APIClient, error) {
 		configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", steampipeCloudToken))
 		return openapiclient.NewAPIClient(configuration), nil
 	}
-	return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider config.")
+	return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider config")
 }
