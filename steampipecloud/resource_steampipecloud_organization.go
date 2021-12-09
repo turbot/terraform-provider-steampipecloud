@@ -8,7 +8,7 @@ import (
 	"github.com/turbot/go-kit/types"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	openapiclient "github.com/turbot/steampipecloud-sdk-go"
 )
 
 func resourceSteampipeCloudOrganization() *schema.Resource {

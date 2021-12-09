@@ -7,10 +7,8 @@ require github.com/turbot/go-kit v0.3.0
 require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/terraform v0.12.0
-	github.com/iancoleman/strcase v0.2.0
 	github.com/stretchr/testify v1.7.0
 	github.com/turbot/steampipecloud-sdk-go v0.0.0-20211207141746-973451180df0
-	github.com/turbot/terraform-provider-turbot v1.8.2
 )
 
 require (
@@ -76,7 +74,6 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.0.0 // indirect
-	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/posener/complete v1.2.1 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
