@@ -4,6 +4,7 @@ VERSION_PLACEHOLDER=version.ProviderVersion
 PKG_NAME=steampipecloud
 VERSION=0.0.1
 DIR=~/.terraform.d/plugins
+TEST?=$$(go list ./... |grep -v 'vendor')
 
 default: build
 
@@ -25,3 +26,10 @@ fmt:
 fmtcheck:
 	@sh -c "'$(CURDIR)/scripts/gofmtcheck.sh'"
 
+test: fmtcheck
+	go test -i $(TEST) || exit 1
+	echo $(TEST) | \
+		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
+
+testacc: fmtcheck
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -parallel 1 -timeout 120m

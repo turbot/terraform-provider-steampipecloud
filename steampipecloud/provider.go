@@ -8,7 +8,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
 
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	openapiclient "github.com/turbot/steampipecloud-sdk-go"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -35,6 +35,7 @@ func Provider() terraform.ResourceProvider {
 
 		ResourcesMap: map[string]*schema.Resource{
 			"steampipecloud_connection":                       resourceSteampipeCloudConnection(),
+			"steampipecloud_organization":                     resourceSteampipeCloudOrganization(),
 			"steampipecloud_workspace":                        resourceSteampipeCloudWorkspace(),
 			"steampipecloud_workspace_connection_association": resourceSteampipeCloudWorkspaceConnectionAssociation(),
 		},

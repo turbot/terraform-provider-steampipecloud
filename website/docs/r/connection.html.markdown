@@ -32,7 +32,6 @@ provider "steampipecloud" {
 }
 
 resource "steampipecloud_connection" "test_org_connection" {
-  resource "steampipecloud_connection" "test" {
     plugin = "aws"
     handle = "test"
     config   = <<EOT
@@ -42,8 +41,30 @@ resource "steampipecloud_connection" "test_org_connection" {
         "secret_key": "redacted"
       }
     EOT
+}
+resource "steampipecloud_connection" "test_org_connection" {
+    plugin = "aws"
+    handle = "test"
+    config   = <<EOT
+      {
+        "regions": [ "us-east-1" ],
+        "access_key": "redacted",
+        "secret_key": "redacted"
+      }
+    EOT
+}
+
+resource "steampipecloud_connection" "b" {
+  plugin = "aws"
+  handle = "test"
+
+  config   = {
+    regions = [ "us-east-1" ]
+    access_key = "redacted"
+    secret_key = "redacted"
   }
 }
+
 ```
 
 ## Argument Reference
