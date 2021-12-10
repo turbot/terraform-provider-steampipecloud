@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	_nethttp "net/http"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	openapiclient "github.com/turbot/steampipecloud-sdk-go"
 )
 
@@ -22,14 +24,16 @@ func resourceSteampipeCloudWorkspaceConnectionAssociation() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"connection_handle": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{1,37}[a-z0-9]$`), "must satisfy regular expression pattern: ^[a-z][a-z0-9_]{1,37}[a-z0-9]$"),
 			},
 			"workspace_handle": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ForceNew:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "must satisfy regular expression pattern: ^[a-z0-9]{1,23}$"),
 			},
 			"association_id": {
 				Type:     schema.TypeString,
@@ -146,7 +150,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationExists(d *schema.Resour
 	} else {
 		userHandler, userErr := getUserHandler(meta)
 		if userErr != nil {
-			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationExists.\ngetHandler Error: \n%v", userErr)
+			return false, fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
 		}
 		_, r, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.GetUserWorkspaceConnectionAssociation(context.Background(), userHandler, workspaceHandle, connHandle).Execute()
 	}
@@ -174,11 +178,6 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	workspaceHandle := d.Get("workspace_handle").(string)
 	connHandle := d.Get("connection_handle").(string)
 
-	// Empty check
-	if workspaceHandle == "" || connHandle == "" {
-		return fmt.Errorf("missing required parameters workspace_handle or connection_handle")
-	}
-
 	// Create request
 	req := openapiclient.TypesCreateWorkspaceConnRequest{
 		ConnectionHandle: connHandle,
@@ -196,7 +195,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 		// Get current actor information
 		userHandler, userErr := getUserHandler(meta)
 		if userErr != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationCreate.\ngetHandler Error: \n%v", userErr)
+			return fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
 		}
 		resp, _, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.CreateUserWorkspaceConnectionAssociation(context.Background(), userHandler, workspaceHandle).Request(req).Execute()
 	}
@@ -213,6 +212,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	d.Set("association_id", resp.Id)
 	d.Set("connection_id", resp.ConnectionId)
 	d.Set("workspace_id", resp.WorkspaceId)
+	d.Set("workspace_handle", workspaceHandle)
 	d.Set("connection_handle", resp.Connection.Handle)
 	d.Set("connection_created_at", resp.Connection.CreatedAt)
 	d.Set("connection_updated_at", resp.Connection.UpdatedAt)
@@ -223,7 +223,6 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	d.Set("connection_config", resp.Connection.Config)
 
 	if resp.Workspace != nil {
-		d.Set("workspace_handle", resp.Workspace.Handle)
 		d.Set("workspace_state", resp.Workspace.WorkspaceState)
 		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
 		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
@@ -258,7 +257,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 	} else {
 		userHandler, userErr := getUserHandler(meta)
 		if userErr != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationRead.\ngetHandler Error: \n%v", userErr)
+			return fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
 		}
 		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.GetUserWorkspaceConnectionAssociation(context.Background(), userHandler, workspaceHandle, connHandle).Execute()
 	}
@@ -269,8 +268,9 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 			d.SetId("")
 			return nil
 		}
-		log.Printf("\n[DEBUG] Association received: %s", resp.Id)
+		return fmt.Errorf("error reading %s: %s", d.Id(), err)
 	}
+	log.Printf("\n[DEBUG] Association received: %s", resp.Id)
 
 	d.Set("association_id", resp.Id)
 	d.Set("workspace_id", resp.WorkspaceId)
@@ -310,10 +310,6 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.Resour
 	workspaceHandle := idParts[0]
 	connHandle := idParts[1]
 
-	// Empty check
-	if workspaceHandle == "" || connHandle == "" {
-		return fmt.Errorf("missing required parameters workspace_handle or connection_handle")
-	}
 	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s/%s", workspaceHandle, connHandle))
 
 	var err error
@@ -323,7 +319,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.Resour
 	} else {
 		userHandler, userErr := getUserHandler(meta)
 		if userErr != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationDelete.\ngetHandler Error: \n%v", userErr)
+			return fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
 		}
 		_, _, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.DeleteUserWorkspaceConnectionAssociation(context.Background(), userHandler, workspaceHandle, connHandle).Execute()
 	}
@@ -332,6 +328,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.Resour
 	if err != nil {
 		return fmt.Errorf("error deleting workspace connection association: %s", err)
 	}
+	d.SetId("")
 
 	return nil
 }

@@ -8,9 +8,11 @@ import (
 	"log"
 	_nethttp "net/http"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/go-kit/types"
 	openapiclient "github.com/turbot/steampipecloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
@@ -34,8 +36,9 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Computed: true,
 			},
 			"handle": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{1,37}[a-z0-9]$`), "must satisfy regular expression pattern: ^[a-z][a-z0-9_]{1,37}[a-z0-9]$"),
 			},
 			"identity_id": {
 				Type:     schema.TypeString,
@@ -228,7 +231,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	}
 
 	// Get config to create connection
-	connConfig, err := CreateConnectionCofiguration(d)
+	connConfig, err := CreateConnectionConfiguration(d)
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
@@ -409,7 +412,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	}
 
 	// Get config to create connection
-	connConfig, err := CreateConnectionCofiguration(d)
+	connConfig, err := CreateConnectionConfiguration(d)
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
@@ -551,7 +554,7 @@ type ConnectionConfig struct {
 	UserOCID       string   `json:"user_ocid,omitempty"`
 }
 
-func CreateConnectionCofiguration(d *schema.ResourceData) (ConnectionConfig, error) {
+func CreateConnectionConfiguration(d *schema.ResourceData) (ConnectionConfig, error) {
 	var connConfig ConnectionConfig
 
 	if value, ok := d.GetOk("access_key"); ok {
