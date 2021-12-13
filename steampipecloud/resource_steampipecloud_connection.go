@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/go-kit/types"
-	openapiclient "github.com/turbot/steampipecloud-sdk-go"
+	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 

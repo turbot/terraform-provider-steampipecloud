@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	openapiclient "github.com/turbot/steampipecloud-sdk-go"
+	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudWorkspaceConnectionAssociation() *schema.Resource {
