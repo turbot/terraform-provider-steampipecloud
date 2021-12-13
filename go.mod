@@ -8,7 +8,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/terraform v0.12.0
 	github.com/stretchr/testify v1.7.0
-	github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211210192429-5bc3e7d885eb
+	github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211213095254-41341708e626
 )
 
 require (
@@ -100,5 +100,3 @@ require (
 	gopkg.in/check.v1 v1.0.0-20201130134442-10cb98267c6c // indirect
 	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
-
-// replace github.com/turbot/steampipecloud-sdk-go => ../steampipecloud-sdk-go
