@@ -109,9 +109,9 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 		req.Url = types.String(value.(string))
 	}
 
-	resp, _, err := client.APIClient.OrgsApi.CreateOrg(context.Background()).Request(req).Execute()
+	resp, r, err := client.APIClient.OrgsApi.CreateOrg(context.Background()).Request(req).Execute()
 	if err != nil {
-		return fmt.Errorf("error creating organization: %s", err)
+		return fmt.Errorf("error creating organization: \n	StatusCode: %d \n	Body: %v", r.StatusCode, r.Body)
 	}
 	log.Printf("\n[DEBUG] Organization created: %s", resp.Handle)
 

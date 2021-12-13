@@ -4,9 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
-	"math/rand"
 	"net/http"
-	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform/helper/resource"
@@ -26,7 +24,7 @@ func TestAccConnection_Basic(t *testing.T) {
 				Config: testAccConnectionConfig(),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckConnectionExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "handle", "awstest"),
+					resource.TestCheckResourceAttr(resourceName, "handle", "aws_conn_test"),
 					resource.TestCheckResourceAttr(resourceName, "plugin", "aws"),
 					resource.TestCheckResourceAttr(resourceName, "access_key", "redacted"),
 					resource.TestCheckResourceAttr(resourceName, "secret_key", "redacted"),
@@ -34,19 +32,49 @@ func TestAccConnection_Basic(t *testing.T) {
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName: resourceName,
+				ImportState:  true,
+				// ImportStateVerify: true,
 			},
 			{
 				Config: testAccConnectionHandleUpdateConfig(),
-				Check:  resource.TestCheckResourceAttr("steampipecloud_organization.test", "handle", "awstest"),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("steampipecloud_connection.test", "handle", "aws_conn_update"),
+					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-2"),
+					resource.TestCheckResourceAttr(resourceName, "regions.1", "us-east-1"),
+				),
 			},
-			// {
-			// 	Config: testAccOrganizationUpdateHandleConfig(),
-			// 	Check: resource.TestCheckResourceAttr(
-			// 		"steampipecloud_organization.test", "handle", "terraformtestorg"),
-			// },
+		},
+	})
+}
+
+func TestAccOrgConnection_Basic(t *testing.T) {
+	resourceName := "steampipecloud_connection.test_org"
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckOrganizationDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccOrgConnectionConfig(),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckConnectionOrganizationExists("terraformtestorg"),
+					testAccCheckConnectionExists(resourceName),
+					resource.TestCheckResourceAttr(resourceName, "handle", "aws_conn_test"),
+					resource.TestCheckResourceAttr(resourceName, "plugin", "aws"),
+					resource.TestCheckResourceAttr(resourceName, "access_key", "redacted"),
+					resource.TestCheckResourceAttr(resourceName, "secret_key", "redacted"),
+					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-1"),
+				),
+			},
+			{
+				Config: testAccOrgConnectionUpdateConfig(),
+				Check: resource.ComposeTestCheckFunc(
+					resource.TestCheckResourceAttr("steampipecloud_connection.test_org", "handle", "aws_conn_update"),
+					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-2"),
+					resource.TestCheckResourceAttr(resourceName, "regions.1", "us-east-1"),
+				),
+			},
 		},
 	})
 }
@@ -57,9 +85,9 @@ func testAccConnectionConfig() string {
 provider "steampipecloud" {}
 
 resource "steampipecloud_connection" "test" {
-	handle = "awstest1"
-	plugin = "aws"
-	regions = ["us-east-1"]
+	handle     = "aws_conn_test"
+	plugin     = "aws"
+	regions    = ["us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
 }`
@@ -67,23 +95,63 @@ resource "steampipecloud_connection" "test" {
 
 func testAccConnectionHandleUpdateConfig() string {
 	return `
+provider "steampipecloud" {}
+
+resource "steampipecloud_connection" "test" {
+	handle     = "aws_conn_update"
+	plugin     = "aws"
+	regions    = ["us-east-2", "us-east-1"]
+	access_key = "redacted"
+  secret_key = "redacted"
+}`
+}
+
+func testAccOrgConnectionConfig() string {
+	return `
+provider "steampipecloud" {}
+
 resource "steampipecloud_organization" "test" {
-	handle       = "terraformtest"
+	handle       = "terraformtestorg"
 	display_name = "Terraform Test Org"
 }
-`
+
+provider "steampipecloud" {
+	alias = "turbie"
+	org 	= steampipecloud_organization.test.handle
 }
 
-// func testAccConnectionUpdateHandleConfig() string {
-// 	return `
-// resource "steampipecloud_organization" "test" {
-// 	handle       = "terraformtestorg"
-// 	display_name = "Terraform Test Org"
-// }
-// `
-// }
+resource "steampipecloud_connection" "test_org" {
+	provider   = steampipecloud.turbie
+	handle     = "aws_conn_test"
+	plugin     = "aws"
+	regions    = ["us-east-1"]
+	access_key = "redacted"
+	secret_key = "redacted"
+}`
+}
+func testAccOrgConnectionUpdateConfig() string {
+	return `
+provider "steampipecloud" {}
 
-// helper functions
+resource "steampipecloud_organization" "test" {
+	handle       = "terraformtestorg"
+	display_name = "Terraform Test Org"
+}
+
+provider "steampipecloud" {
+	alias = "turbie"
+	org 	= steampipecloud_organization.test.handle
+}
+
+resource "steampipecloud_connection" "test_org" {
+	provider   = steampipecloud.turbie
+	handle     = "aws_conn_update"
+	plugin     = "aws"
+	regions    = ["us-east-2", "us-east-1"]
+	access_key = "redacted"
+	secret_key = "redacted"
+}`
+}
 
 // testAccCheckConnectionDestroy verifies the connection has been destroyed
 func testAccCheckConnectionDestroy(s *terraform.State) error {
@@ -116,14 +184,8 @@ func testAccCheckConnectionDestroy(s *terraform.State) error {
 				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. getUserHandler Error: \n%v", r)
 			}
 			_, r, err = client.APIClient.UserConnectionsApi.GetUserConnection(ctx, actorHandle, connectionHandle).Execute()
-			if err != nil {
-				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
-			}
 		} else {
 			_, r, err = client.APIClient.OrgConnectionsApi.GetOrgConnection(ctx, orgHandle, connectionHandle).Execute()
-			if err != nil {
-				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\nGetConnection.error in organization %s:	\n	status_code: %d\n	body: %v", orgHandle, r.StatusCode, r.Body)
-			}
 		}
 		if err == nil {
 			return fmt.Errorf("Connection %s still exists in organization %s", connectionHandle, client.Config.Org)
@@ -140,41 +202,6 @@ func testAccCheckConnectionDestroy(s *terraform.State) error {
 
 	return nil
 }
-
-func testAccEndpointsConfig(endpoints string) string {
-	//lintignore:AT004
-	return ConfigCompose(
-		testAccProviderConfigBase,
-		fmt.Sprintf(`
-provider "aws" {
-  skip_credentials_validation = true
-  skip_get_ec2_platforms      = true
-  skip_metadata_api_check     = true
-  skip_requesting_account_id  = true
-  endpoints {
-    %[1]s
-  }
-}
-`, endpoints))
-}
-
-func ConfigCompose(config ...string) string {
-	var str strings.Builder
-
-	for _, conf := range config {
-		str.WriteString(conf)
-	}
-
-	return str.String()
-}
-
-const testAccProviderConfigBase = `
-data "aws_partition" "provider_test" {}
-# Required to initialize the provider
-data "aws_arn" "test" {
-  arn = "arn:${data.aws_partition.provider_test.partition}:s3:::test"
-}
-`
 
 func testAccCheckConnectionExists(n string) resource.TestCheckFunc {
 	isUser := true
@@ -211,12 +238,12 @@ func testAccCheckConnectionExists(n string) resource.TestCheckFunc {
 			}
 			_, r, err = client.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, connectionHandle).Execute()
 			if err != nil {
-				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
+				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetUserConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 			}
 		} else {
 			_, r, err = client.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), orgHandle, connectionHandle).Execute()
 			if err != nil {
-				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\nGetConnection.error in organization %s:	\n	status_code: %d\n	body: %v", orgHandle, r.StatusCode, r.Body)
+				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\n GetOrgConnection.error in organization %s:	\n	status_code: %d\n	body: %v", orgHandle, r.StatusCode, r.Body)
 			}
 		}
 
@@ -236,20 +263,14 @@ func testAccCheckConnectionExists(n string) resource.TestCheckFunc {
 func testAccCheckConnectionOrganizationExists(orgHandle string) resource.TestCheckFunc {
 	return func(state *terraform.State) error {
 		client := testAccProvider.Meta().(*SteampipeClient)
-		_, _, err := client.APIClient.OrgsApi.GetOrg(context.Background(), orgHandle).Execute()
+		ctx := context.Background()
+		var err error
+
+		// check if organization  is created
+		_, _, err = client.APIClient.OrgsApi.GetOrg(ctx, orgHandle).Execute()
 		if err != nil {
 			return fmt.Errorf("error fetching organization with handle %s. %s", orgHandle, err)
 		}
 		return nil
 	}
-}
-
-const letterBytes = "abcdefghijklmnopqrstuvwxyz"
-
-func RandStringBytes(n int) string {
-	b := make([]byte, n)
-	for i := range b {
-		b[i] = letterBytes[rand.Intn(len(letterBytes))]
-	}
-	return string(b)
 }

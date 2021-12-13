@@ -33,7 +33,4 @@ func testAccPreCheck(t *testing.T) {
 	if token == "" {
 		t.Fatal("No credentials are set - please configure the token using STEAMPIPE_CLOUD_TOKEN")
 	}
-
-	// TO DO
-	// Create organization to do testing for organization level resources
 }

@@ -8,9 +8,11 @@ import (
 	"log"
 	_nethttp "net/http"
 	"reflect"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/go-kit/types"
 	"github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
@@ -34,8 +36,9 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 				Computed: true,
 			},
 			"handle": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{0,37}[a-z0-9]?$`), "Handle must be between 1 and 39 characters, and may only contain alphanumeric characters or single underscores, cannot start with a number or underscore and cannot end with an underscore."),
 			},
 			"plugin": {
 				Type:     schema.TypeString,
@@ -233,7 +236,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	}
 
 	// Get config to create connection
-	connConfig, err := CreateConnectionCofiguration(d)
+	connConfig, err := CreateConnectionConfiguration(d)
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
@@ -297,7 +300,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 }
 
 func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface{}) error {
-	var actorHandle, org string
+	var actorHandle, orgHandle string
 	var err error
 	var r *_nethttp.Response
 	var resp steampipe.TypesConnection
@@ -312,7 +315,7 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	steampipeClient := meta.(*SteampipeClient)
 	if steampipeClient.Config != nil {
 		if steampipeClient.Config.Org != "" {
-			org = steampipeClient.Config.Org
+			orgHandle = steampipeClient.Config.Org
 			IsUser = false
 		}
 	}
@@ -327,9 +330,9 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
 	} else {
-		resp, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), org, id).Execute()
+		resp, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), orgHandle, id).Execute()
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\nGetConnection.error in organization %s:	\n	status_code: %d\n	body: %v", org, r.StatusCode, r.Body)
+			return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\nGetConnection.error in organization %s:	\n	status_code: %d\n	body: %v", orgHandle, r.StatusCode, r.Body)
 		}
 	}
 
@@ -425,7 +428,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	}
 
 	// Get config to create connection
-	connConfig, err := CreateConnectionCofiguration(d)
+	connConfig, err := CreateConnectionConfiguration(d)
 	if err != nil {
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. Error while creating connection:  %v", err)
 	}
@@ -564,7 +567,7 @@ type ConnectionConfig struct {
 	UserOCID       string   `json:"user_ocid,omitempty"`
 }
 
-func CreateConnectionCofiguration(d *schema.ResourceData) (ConnectionConfig, error) {
+func CreateConnectionConfiguration(d *schema.ResourceData) (ConnectionConfig, error) {
 	var connConfig ConnectionConfig
 
 	if value, ok := d.GetOk("access_key"); ok {

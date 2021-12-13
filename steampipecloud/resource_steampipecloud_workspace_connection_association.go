@@ -272,7 +272,6 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 			return nil
 		}
 		return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationRead.\nGetUserWorkspaceConnectionAssociation Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
-		log.Printf("\n[DEBUG] Association received: %s", resp.Id)
 	}
 
 	d.Set("association_id", resp.Id)
