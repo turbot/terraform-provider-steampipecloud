@@ -27,7 +27,7 @@ func resourceSteampipeCloudOrganization() *schema.Resource {
 			"handle": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,37}[a-z0-9]$`), "must satisfy regular expression pattern: ^[a-z0-9][a-z0-9-]{1,37}[a-z0-9]$"),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,37}[a-z0-9]$`), "Handle must be between 1 and 39 characters, and may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen."),
 			},
 			"avatar_url": {
 				Type:     schema.TypeString,

@@ -18,6 +18,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociation() *schema.Resource {
 		Create: resourceSteampipeCloudWorkspaceConnectionAssociationCreate,
 		Read:   resourceSteampipeCloudWorkspaceConnectionAssociationRead,
 		Delete: resourceSteampipeCloudWorkspaceConnectionAssociationDelete,
+		Update: resourceSteampipeCloudWorkspaceConnectionAssociationUpdate,
 		Exists: resourceSteampipeCloudWorkspaceConnectionAssociationExists,
 		Importer: &schema.ResourceImporter{
 			State: resourceSteampipeCloudWorkspaceConnectionAssociationImport,
@@ -26,14 +27,12 @@ func resourceSteampipeCloudWorkspaceConnectionAssociation() *schema.Resource {
 			"connection_handle": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{1,37}[a-z0-9]$`), "must satisfy regular expression pattern: ^[a-z][a-z0-9_]{1,37}[a-z0-9]$"),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{0,37}[a-z0-9]?$`), "Handle must be between 1 and 39 characters, and may only contain alphanumeric characters or single underscores, cannot start with a number or underscore and cannot end with an underscore."),
 			},
 			"workspace_handle": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ForceNew:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "must satisfy regular expression pattern: ^[a-z0-9]{1,23}$"),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
 			},
 			"association_id": {
 				Type:     schema.TypeString,
@@ -295,6 +294,29 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 		d.Set("workspace_public_key", resp.Workspace.PublicKey)
 		d.Set("workspace_updated_at", resp.Workspace.UpdatedAt)
 		d.Set("workspace_version_id", resp.Workspace.VersionId)
+	}
+
+	return nil
+}
+
+func resourceSteampipeCloudWorkspaceConnectionAssociationUpdate(d *schema.ResourceData, meta interface{}) error {
+	workspaceHandle := d.State().Attributes["workspace_handle"]
+	connHandle := d.State().Attributes["connection_handle"]
+
+	if d.HasChange("workspace_handle") {
+		_, newWorkspaceHandle := d.GetChange("workspace_handle")
+		workspaceHandle = newWorkspaceHandle.(string)
+	}
+	if d.HasChange("connection_handle") {
+		_, newConnHandle := d.GetChange("connection_handle")
+		connHandle = newConnHandle.(string)
+	}
+
+	if workspaceHandle != "" && connHandle != "" {
+		id := fmt.Sprintf("%s/%s", workspaceHandle, connHandle)
+		d.SetId(id)
+		d.Set("workspace_handle", workspaceHandle)
+		d.Set("connection_handle", connHandle)
 	}
 
 	return nil

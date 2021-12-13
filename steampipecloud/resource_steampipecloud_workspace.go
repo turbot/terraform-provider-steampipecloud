@@ -28,7 +28,7 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 			"handle": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "must satisfy regular expression pattern: ^[a-z0-9]{1,23}$"),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
 			},
 			"workspace_id": {
 				Type:     schema.TypeString,

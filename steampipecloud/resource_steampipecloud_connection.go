@@ -38,7 +38,7 @@ func resourceSteampipeCloudConnection() *schema.Resource {
 			"handle": {
 				Type:         schema.TypeString,
 				Required:     true,
-				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{1,37}[a-z0-9]$`), "must satisfy regular expression pattern: ^[a-z][a-z0-9_]{1,37}[a-z0-9]$"),
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{0,37}[a-z0-9]?$`), "Handle must be between 1 and 39 characters, and may only contain alphanumeric characters or single underscores, cannot start with a number or underscore and cannot end with an underscore."),
 			},
 			"identity_id": {
 				Type:     schema.TypeString,
