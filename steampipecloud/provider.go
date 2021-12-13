@@ -7,8 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-
-	openapiclient "github.com/turbot/steampipecloud-sdk-go"
+	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -68,7 +67,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 type SteampipeClient struct {
-	APIClient *openapiclient.APIClient
+	APIClient *steampipe.APIClient
 	Config    *Config
 }
 
@@ -84,10 +83,18 @@ type Config struct {
 	- token set in config
 	- ENV vars {STEAMPIPE_CLOUD_TOKEN}
 */
-func CreateClient(config *Config) (*openapiclient.APIClient, error) {
-	configuration := openapiclient.NewConfiguration()
+func CreateClient(config *Config) (*steampipe.APIClient, error) {
+	configuration := steampipe.NewConfiguration()
+
+	if config.Hostname != "" {
+		configuration.Servers = []steampipe.ServerConfiguration{
+			{
+				URL: config.Hostname,
+			},
+		}
+	}
 	var steampipeCloudToken string
-	if config != nil && config.Token != "" {
+	if config.Token != "" {
 		steampipeCloudToken = config.Token
 	} else {
 		// return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider to config. STEAMPIPE_CLOUD_TOKEN")
@@ -97,7 +104,8 @@ func CreateClient(config *Config) (*openapiclient.APIClient, error) {
 	}
 	if steampipeCloudToken != "" {
 		configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", steampipeCloudToken))
-		return openapiclient.NewAPIClient(configuration), nil
+		return steampipe.NewAPIClient(configuration), nil
 	}
+
 	return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider config")
 }

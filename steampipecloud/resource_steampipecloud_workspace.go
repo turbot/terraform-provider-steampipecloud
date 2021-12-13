@@ -5,11 +5,13 @@ import (
 	"fmt"
 	"log"
 	_nethttp "net/http"
+	"regexp"
 
 	"github.com/turbot/go-kit/types"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	openapiclient "github.com/turbot/steampipecloud-sdk-go"
+	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudWorkspace() *schema.Resource {
@@ -24,8 +26,9 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"handle": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
 			},
 			"workspace_id": {
 				Type:     schema.TypeString,
@@ -78,7 +81,6 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 
 func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
 	client := meta.(*SteampipeClient)
-
 	handle := d.Id()
 
 	var err error
@@ -88,7 +90,7 @@ func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interfac
 	if client.Config != nil && client.Config.Org != "" {
 		_, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
-		userHandler, err = getUserHandler(meta)
+		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceExists.\ngetHandler Error: \n%v", err)
 		}
@@ -117,17 +119,12 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 	client := meta.(*SteampipeClient)
 	handle := d.Get("handle")
 
-	// Empty check
-	if handle.(string) == "" {
-		return fmt.Errorf("handle can not be empty")
-	}
-
 	// Create request
-	req := openapiclient.TypesCreateWorkspaceRequest{
+	req := steampipe.TypesCreateWorkspaceRequest{
 		Handle: handle.(string),
 	}
 
-	var resp openapiclient.TypesWorkspace
+	var resp steampipe.TypesWorkspace
 	var userHandler string
 	var err error
 
@@ -138,7 +135,7 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 		resp, _, err = client.APIClient.OrgWorkspacesApi.CreateOrgWorkspace(context.Background(), client.Config.Org).Request(req).Execute()
 	} else {
 		// Get current actor information
-		userHandler, err = getUserHandler(meta)
+		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceCreate.\ngetHandler Error: \n%v", err)
 		}
@@ -169,10 +166,9 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 
 func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*SteampipeClient)
-
 	handle := d.Id()
 
-	var resp openapiclient.TypesWorkspace
+	var resp steampipe.TypesWorkspace
 	var userHandler string
 	var err error
 	var r *_nethttp.Response
@@ -180,7 +176,7 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 	if client.Config != nil && client.Config.Org != "" {
 		resp, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
-		userHandler, err = getUserHandler(meta)
+		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceRead.\ngetHandler Error: \n%v", err)
 		}
@@ -193,8 +189,9 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 			d.SetId("")
 			return nil
 		}
-		log.Printf("\n[DEBUG] Workspace received: %s", resp.Handle)
+		return fmt.Errorf("error reading %s: %s", handle, err)
 	}
+	log.Printf("\n[DEBUG] Workspace received: %s", resp.Handle)
 
 	d.Set("handle", handle)
 	d.Set("workspace_id", resp.Id)
@@ -215,17 +212,13 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 
 	oldHandle, newHandle := d.GetChange("handle")
 
-	if newHandle.(string) == "" {
-		return fmt.Errorf("handle can not be empty")
-	}
-
 	// Create request
-	req := openapiclient.TypesUpdateWorkspaceRequest{
+	req := steampipe.TypesUpdateWorkspaceRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 	log.Printf("\n[DEBUG] Updating Workspace: %s", *req.Handle)
 
-	var resp openapiclient.TypesWorkspace
+	var resp steampipe.TypesWorkspace
 	var userHandler string
 	var err error
 
@@ -233,7 +226,7 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 		resp, _, err = client.APIClient.OrgWorkspacesApi.UpdateOrgWorkspace(context.Background(), client.Config.Org, oldHandle.(string)).Request(req).Execute()
 	} else {
 		// Get user handler
-		userHandler, err = getUserHandler(meta)
+		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceUpdate.\ngetHandler Error: \n%v", err)
 		}
@@ -264,22 +257,15 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 
 func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*SteampipeClient)
-
 	handle := d.Id()
-
-	// Empty check
-	if handle == "" {
-		return fmt.Errorf("handle can not be empty")
-	}
 	log.Printf("\n[DEBUG] Deleting Workspace: %s", handle)
 
 	var err error
 	var userHandler string
-
 	if client.Config != nil && client.Config.Org != "" {
 		_, _, err = client.APIClient.OrgWorkspacesApi.DeleteOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
-		userHandler, err = getUserHandler(meta)
+		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceDelete.\ngetHandler Error: \n%v", err)
 		}
@@ -290,6 +276,7 @@ func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interfac
 	if err != nil {
 		return fmt.Errorf("error deleting workspace: %s", err)
 	}
+	d.SetId("")
 
 	return nil
 }
