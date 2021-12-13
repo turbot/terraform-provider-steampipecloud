@@ -11,7 +11,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudWorkspace() *schema.Resource {
@@ -84,14 +84,15 @@ func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interfac
 	handle := d.Id()
 
 	var err error
+	var userHandler string
 	var r *_nethttp.Response
 
 	if client.Config != nil && client.Config.Org != "" {
 		_, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
-		userHandler, userErr := getUserHandler(meta)
-		if userErr != nil {
-			return false, fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
+		userHandler, _, err = getUserHandler(client)
+		if err != nil {
+			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceExists.\ngetHandler Error: \n%v", err)
 		}
 		_, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), userHandler, handle).Execute()
 	}
@@ -119,11 +120,12 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 	handle := d.Get("handle")
 
 	// Create request
-	req := openapiclient.TypesCreateWorkspaceRequest{
+	req := steampipe.TypesCreateWorkspaceRequest{
 		Handle: handle.(string),
 	}
 
-	var resp openapiclient.TypesWorkspace
+	var resp steampipe.TypesWorkspace
+	var userHandler string
 	var err error
 
 	// Check for organization
@@ -133,9 +135,9 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 		resp, _, err = client.APIClient.OrgWorkspacesApi.CreateOrgWorkspace(context.Background(), client.Config.Org).Request(req).Execute()
 	} else {
 		// Get current actor information
-		userHandler, userErr := getUserHandler(meta)
-		if userErr != nil {
-			return fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
+		userHandler, _, err = getUserHandler(client)
+		if err != nil {
+			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceCreate.\ngetHandler Error: \n%v", err)
 		}
 		resp, _, err = client.APIClient.UserWorkspacesApi.CreateUserWorkspace(context.Background(), userHandler).Request(req).Execute()
 	}
@@ -166,16 +168,17 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
 
-	var resp openapiclient.TypesWorkspace
+	var resp steampipe.TypesWorkspace
+	var userHandler string
 	var err error
 	var r *_nethttp.Response
 
 	if client.Config != nil && client.Config.Org != "" {
 		resp, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
-		userHandler, userErr := getUserHandler(meta)
-		if userErr != nil {
-			return fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
+		userHandler, _, err = getUserHandler(client)
+		if err != nil {
+			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceRead.\ngetHandler Error: \n%v", err)
 		}
 		resp, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), userHandler, handle).Execute()
 	}
@@ -210,21 +213,22 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 	oldHandle, newHandle := d.GetChange("handle")
 
 	// Create request
-	req := openapiclient.TypesUpdateWorkspaceRequest{
+	req := steampipe.TypesUpdateWorkspaceRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 	log.Printf("\n[DEBUG] Updating Workspace: %s", *req.Handle)
 
-	var resp openapiclient.TypesWorkspace
+	var resp steampipe.TypesWorkspace
+	var userHandler string
 	var err error
 
 	if client.Config != nil && client.Config.Org != "" {
 		resp, _, err = client.APIClient.OrgWorkspacesApi.UpdateOrgWorkspace(context.Background(), client.Config.Org, oldHandle.(string)).Request(req).Execute()
 	} else {
 		// Get user handler
-		userHandler, userErr := getUserHandler(meta)
-		if userErr != nil {
-			return fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
+		userHandler, _, err = getUserHandler(client)
+		if err != nil {
+			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceUpdate.\ngetHandler Error: \n%v", err)
 		}
 		resp, _, err = client.APIClient.UserWorkspacesApi.UpdateUserWorkspace(context.Background(), userHandler, oldHandle.(string)).Request(req).Execute()
 	}
@@ -257,12 +261,13 @@ func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interfac
 	log.Printf("\n[DEBUG] Deleting Workspace: %s", handle)
 
 	var err error
+	var userHandler string
 	if client.Config != nil && client.Config.Org != "" {
 		_, _, err = client.APIClient.OrgWorkspacesApi.DeleteOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
-		userHandler, userErr := getUserHandler(meta)
-		if userErr != nil {
-			return fmt.Errorf("failed to get user handle. Verify the token has been set correctly, error %s", userErr)
+		userHandler, _, err = getUserHandler(client)
+		if err != nil {
+			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceDelete.\ngetHandler Error: \n%v", err)
 		}
 		_, _, err = client.APIClient.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), userHandler, handle).Execute()
 	}

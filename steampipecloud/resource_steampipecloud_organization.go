@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudOrganization() *schema.Resource {
@@ -91,7 +91,7 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 	handle := d.Get("handle")
 
 	// Create request
-	req := openapiclient.TypesCreateOrgRequest{
+	req := steampipe.TypesCreateOrgRequest{
 		Handle: handle.(string),
 	}
 
@@ -107,9 +107,9 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 		req.Url = types.String(value.(string))
 	}
 
-	resp, _, err := client.APIClient.OrgsApi.CreateOrg(context.Background()).Request(req).Execute()
+	resp, r, err := client.APIClient.OrgsApi.CreateOrg(context.Background()).Request(req).Execute()
 	if err != nil {
-		return fmt.Errorf("error creating organization: %s", err)
+		return fmt.Errorf("error creating organization: \n	StatusCode: %d \n	Body: %v", r.StatusCode, r.Body)
 	}
 	log.Printf("\n[DEBUG] Organization created: %s", resp.Handle)
 
@@ -160,7 +160,7 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 	oldHandle, newHandle := d.GetChange("handle")
 
 	// Create request
-	req := openapiclient.TypesUpdateOrgRequest{
+	req := steampipe.TypesUpdateOrgRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 
