@@ -443,8 +443,8 @@ github.com/tkrajina/go-reflector v0.5.4/go.mod h1:9PyLgEOzc78ey/JmQQHbW8cQJ1oucL
 github.com/tmc/grpc-websocket-proxy v0.0.0-20171017195756-830351dc03c6/go.mod h1:ncp9v5uamzpCO7NfCPTXjqaC+bZgJeR0sMTm6dMHP7U=
 github.com/turbot/go-kit v0.3.0 h1:o4zZIO1ovdmJ2bHWOdXnnt8jJMIDGqYSkZvBREzFeMQ=
 github.com/turbot/go-kit v0.3.0/go.mod h1:SBdPRngbEfYubiR81iAVtO43oPkg1+ASr+XxvgbH7/k=
-github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211213084425-b7ede43e6f95 h1:Q7nt4pluJSmEP9p8QRT/91PnElJYCHqepO++0feLz6s=
-github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211213084425-b7ede43e6f95/go.mod h1:dsckBrMhBwfHSPVTMg8V6eElr9NL6/b3T583o0I3NGk=
+github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211213095254-41341708e626 h1:9M9b9SU+YBiiB58SWnatN0eQCWWiTfYGYiorVvWol/Q=
+github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211213095254-41341708e626/go.mod h1:dsckBrMhBwfHSPVTMg8V6eElr9NL6/b3T583o0I3NGk=
 github.com/ugorji/go v0.0.0-20180813092308-00b869d2f4a5/go.mod h1:hnLbHMwcvSihnDhEfx2/BzKp2xb0Y+ErdfYcrs9tkJQ=
 github.com/ulikunitz/xz v0.5.5/go.mod h1:2bypXElzHzzJZwzH67Y6wb67pO62Rzfn7BSiF4ABRW8=
 github.com/ulikunitz/xz v0.5.8 h1:ERv8V6GKqVi23rgu5cj9pVfVzJbOqAY2Ntl88O6c2nQ=
