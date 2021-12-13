@@ -5,9 +5,11 @@ import (
 	"fmt"
 	"log"
 	_nethttp "net/http"
+	"regexp"
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
@@ -16,20 +18,21 @@ func resourceSteampipeCloudWorkspaceConnectionAssociation() *schema.Resource {
 		Create: resourceSteampipeCloudWorkspaceConnectionAssociationCreate,
 		Read:   resourceSteampipeCloudWorkspaceConnectionAssociationRead,
 		Delete: resourceSteampipeCloudWorkspaceConnectionAssociationDelete,
+		Update: resourceSteampipeCloudWorkspaceConnectionAssociationUpdate,
 		Exists: resourceSteampipeCloudWorkspaceConnectionAssociationExists,
 		Importer: &schema.ResourceImporter{
 			State: resourceSteampipeCloudWorkspaceConnectionAssociationImport,
 		},
 		Schema: map[string]*schema.Schema{
 			"connection_handle": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z][a-z0-9_]{0,37}[a-z0-9]?$`), "Handle must be between 1 and 39 characters, and may only contain alphanumeric characters or single underscores, cannot start with a number or underscore and cannot end with an underscore."),
 			},
 			"workspace_handle": {
-				Type:     schema.TypeString,
-				Required: true,
-				ForceNew: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
 			},
 			"association_id": {
 				Type:     schema.TypeString,
@@ -178,11 +181,6 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	workspaceHandle := d.Get("workspace_handle").(string)
 	connHandle := d.Get("connection_handle").(string)
 
-	// Empty check
-	if workspaceHandle == "" || connHandle == "" {
-		return fmt.Errorf("missing required parameters workspace_handle or connection_handle")
-	}
-
 	// Create request
 	req := steampipe.TypesCreateWorkspaceConnRequest{
 		ConnectionHandle: connHandle,
@@ -214,6 +212,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	d.Set("association_id", resp.Id)
 	d.Set("connection_id", resp.ConnectionId)
 	d.Set("workspace_id", resp.WorkspaceId)
+	d.Set("workspace_handle", workspaceHandle)
 	d.Set("connection_handle", resp.Connection.Handle)
 	d.Set("connection_created_at", resp.Connection.CreatedAt)
 	d.Set("connection_updated_at", resp.Connection.UpdatedAt)
@@ -224,7 +223,6 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	d.Set("connection_config", resp.Connection.Config)
 
 	if resp.Workspace != nil {
-		d.Set("workspace_handle", resp.Workspace.Handle)
 		d.Set("workspace_state", resp.Workspace.WorkspaceState)
 		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
 		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
@@ -273,6 +271,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 		}
 		return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationRead.\nGetUserWorkspaceConnectionAssociation Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 	}
+	log.Printf("\n[DEBUG] Association received: %s", resp.Id)
 
 	d.Set("association_id", resp.Id)
 	d.Set("workspace_id", resp.WorkspaceId)
@@ -302,6 +301,29 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 	return nil
 }
 
+func resourceSteampipeCloudWorkspaceConnectionAssociationUpdate(d *schema.ResourceData, meta interface{}) error {
+	workspaceHandle := d.State().Attributes["workspace_handle"]
+	connHandle := d.State().Attributes["connection_handle"]
+
+	if d.HasChange("workspace_handle") {
+		_, newWorkspaceHandle := d.GetChange("workspace_handle")
+		workspaceHandle = newWorkspaceHandle.(string)
+	}
+	if d.HasChange("connection_handle") {
+		_, newConnHandle := d.GetChange("connection_handle")
+		connHandle = newConnHandle.(string)
+	}
+
+	if workspaceHandle != "" && connHandle != "" {
+		id := fmt.Sprintf("%s/%s", workspaceHandle, connHandle)
+		d.SetId(id)
+		d.Set("workspace_handle", workspaceHandle)
+		d.Set("connection_handle", connHandle)
+	}
+
+	return nil
+}
+
 func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.ResourceData, meta interface{}) error {
 	var err error
 	var r *_nethttp.Response
@@ -315,10 +337,6 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.Resour
 	workspaceHandle := idParts[0]
 	connHandle := idParts[1]
 
-	// Empty check
-	if workspaceHandle == "" || connHandle == "" {
-		return fmt.Errorf("missing required parameters workspace_handle or connection_handle")
-	}
 	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s/%s", workspaceHandle, connHandle))
 
 	if client.Config != nil && client.Config.Org != "" {
@@ -335,6 +353,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.Resour
 	if err != nil {
 		return fmt.Errorf("error deleting workspace connection association:	\n status_code: %d\n	body: %v", r.StatusCode, r.Body)
 	}
+	d.SetId("")
 
 	return nil
 }

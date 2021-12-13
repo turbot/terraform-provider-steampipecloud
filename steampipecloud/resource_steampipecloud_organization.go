@@ -4,10 +4,12 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"regexp"
 
 	"github.com/turbot/go-kit/types"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
@@ -23,8 +25,9 @@ func resourceSteampipeCloudOrganization() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"handle": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9][a-z0-9-]{0,37}[a-z0-9]$`), "Handle must be between 1 and 39 characters, and may only contain alphanumeric characters or single hyphens, and cannot begin or end with a hyphen."),
 			},
 			"avatar_url": {
 				Type:     schema.TypeString,
@@ -87,11 +90,6 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 	client := meta.(*SteampipeClient)
 	handle := d.Get("handle")
 
-	// Empty check
-	if handle.(string) == "" {
-		return fmt.Errorf("handle must be configured")
-	}
-
 	// Create request
 	req := steampipe.TypesCreateOrgRequest{
 		Handle: handle.(string),
@@ -140,8 +138,9 @@ func resourceSteampipeCloudOrganizationRead(d *schema.ResourceData, meta interfa
 			d.SetId("")
 			return nil
 		}
-		log.Printf("\n[DEBUG] Organization received: %s", resp.Handle)
+		return fmt.Errorf("error reading %s: %s", handle, err)
 	}
+	log.Printf("\n[DEBUG] Organization received: %s", resp.Handle)
 
 	d.Set("handle", handle)
 	d.Set("avatar_url", resp.AvatarUrl)
@@ -159,9 +158,6 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 	client := meta.(*SteampipeClient)
 
 	oldHandle, newHandle := d.GetChange("handle")
-	if newHandle.(string) == "" {
-		return fmt.Errorf("handle must be configured")
-	}
 
 	// Create request
 	req := steampipe.TypesUpdateOrgRequest{
@@ -205,11 +201,6 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 func resourceSteampipeCloudOrganizationDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
-
-	// Empty check
-	if handle == "" {
-		return fmt.Errorf("handle must be configured")
-	}
 	log.Printf("\n[DEBUG] Deleting Organization: %s", handle)
 
 	_, _, err := client.APIClient.OrgsApi.DeleteOrg(context.Background(), handle).Execute()

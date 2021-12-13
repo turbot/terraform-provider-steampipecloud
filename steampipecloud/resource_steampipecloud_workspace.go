@@ -5,10 +5,12 @@ import (
 	"fmt"
 	"log"
 	_nethttp "net/http"
+	"regexp"
 
 	"github.com/turbot/go-kit/types"
 
 	"github.com/hashicorp/terraform/helper/schema"
+	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
@@ -24,8 +26,9 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"handle": {
-				Type:     schema.TypeString,
-				Required: true,
+				Type:         schema.TypeString,
+				Required:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
 			},
 			"workspace_id": {
 				Type:     schema.TypeString,
@@ -78,7 +81,6 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 
 func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
 	client := meta.(*SteampipeClient)
-
 	handle := d.Id()
 
 	var err error
@@ -92,7 +94,7 @@ func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interfac
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceExists.\ngetHandler Error: \n%v", err)
 		}
-		_, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), handle, userHandler).Execute()
+		_, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), userHandler, handle).Execute()
 	}
 
 	// Error check
@@ -116,11 +118,6 @@ func resourceSteampipeCloudWorkspaceImport(d *schema.ResourceData, meta interfac
 func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*SteampipeClient)
 	handle := d.Get("handle")
-
-	// Empty check
-	if handle.(string) == "" {
-		return fmt.Errorf("handle can not be empty")
-	}
 
 	// Create request
 	req := steampipe.TypesCreateWorkspaceRequest{
@@ -169,7 +166,6 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 
 func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*SteampipeClient)
-
 	handle := d.Id()
 
 	var resp steampipe.TypesWorkspace
@@ -193,8 +189,9 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 			d.SetId("")
 			return nil
 		}
-		log.Printf("\n[DEBUG] Workspace received: %s", resp.Handle)
+		return fmt.Errorf("error reading %s: %s", handle, err)
 	}
+	log.Printf("\n[DEBUG] Workspace received: %s", resp.Handle)
 
 	d.Set("handle", handle)
 	d.Set("workspace_id", resp.Id)
@@ -214,10 +211,6 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 	client := meta.(*SteampipeClient)
 
 	oldHandle, newHandle := d.GetChange("handle")
-
-	if newHandle.(string) == "" {
-		return fmt.Errorf("handle can not be empty")
-	}
 
 	// Create request
 	req := steampipe.TypesUpdateWorkspaceRequest{
@@ -264,18 +257,11 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 
 func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*SteampipeClient)
-
 	handle := d.Id()
-
-	// Empty check
-	if handle == "" {
-		return fmt.Errorf("handle can not be empty")
-	}
 	log.Printf("\n[DEBUG] Deleting Workspace: %s", handle)
 
 	var err error
 	var userHandler string
-
 	if client.Config != nil && client.Config.Org != "" {
 		_, _, err = client.APIClient.OrgWorkspacesApi.DeleteOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
 	} else {
@@ -290,6 +276,7 @@ func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interfac
 	if err != nil {
 		return fmt.Errorf("error deleting workspace: %s", err)
 	}
+	d.SetId("")
 
 	return nil
 }
