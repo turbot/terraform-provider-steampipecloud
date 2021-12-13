@@ -144,7 +144,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationExists(d *schema.Resour
 	if client.Config != nil && client.Config.Org != "" {
 		_, r, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.GetOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
 	} else {
-		userHandler, r, err = getUserHandler(meta)
+		userHandler, r, err = getUserHandler(client)
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationExists.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -195,7 +195,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 		resp, _, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.CreateOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle).Request(req).Execute()
 	} else {
 		// Get current actor information
-		userHandler, r, err = getUserHandler(meta)
+		userHandler, r, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationCreate.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -258,7 +258,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 	if client.Config != nil && client.Config.Org != "" {
 		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.GetOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
 	} else {
-		userHandle, r, err = getUserHandler(meta)
+		userHandle, r, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationRead.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -325,7 +325,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.Resour
 	if client.Config != nil && client.Config.Org != "" {
 		_, _, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.DeleteOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
 	} else {
-		userHandle, r, err = getUserHandler(meta)
+		userHandle, r, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationDelete.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}

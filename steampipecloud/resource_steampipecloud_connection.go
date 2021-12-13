@@ -266,7 +266,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	var actorHandle string
 	var r *_nethttp.Response
 	if IsUser {
-		actorHandle, r, err = getUserHandler(meta)
+		actorHandle, r, err = getUserHandler(steampipeClient)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. getUserHandler Error: \n%v", r)
 		}
@@ -285,14 +285,16 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 	d.Set("plugin", resp.Plugin)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-	d.SetId(resp.Id)
+	d.SetId(resp.Handle)
 	// Save the config
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
-			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
-				d.Set(strings.ToLower(k), v.([]interface{}))
-			} else {
-				d.Set(k, v.(string))
+			if v != nil {
+				if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+					d.Set(strings.ToLower(k), v.([]interface{}))
+				} else {
+					d.Set(k, v.(string))
+				}
 			}
 		}
 	}
@@ -303,11 +305,10 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 }
 
 func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface{}) error {
-	var org string
-	var resp steampipe.TypesConnection
-	var r *_nethttp.Response
+	var actorHandle, org string
 	var err error
-	var actorHandle string
+	var r *_nethttp.Response
+	var resp steampipe.TypesConnection
 	IsUser := true
 
 	steampipeClient := meta.(*SteampipeClient)
@@ -323,14 +324,22 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. connection handle not present.")
 	}
 
+	log.Printf("IsUser: %t", IsUser)
+
 	if IsUser {
-		actorHandle, r, err = getUserHandler(meta)
+		actorHandle, r, err = getUserHandler(steampipeClient)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. getUserHandler Error: \n%v", r)
 		}
 		resp, r, err = steampipeClient.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, id).Execute()
+		// if err != nil {
+		// 	return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
+		// }
 	} else {
 		resp, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), org, id).Execute()
+		// if err != nil {
+		// 	return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\nGetConnection.error in organization %s:	\n	status_code: %d\n	body: %v", org, r.StatusCode, r.Body)
+		// }
 	}
 
 	if err != nil {
@@ -348,14 +357,16 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	// d.Set("identity", resp.Identity)
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
-			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
-				d.Set(strings.ToLower(k), v.([]interface{}))
-			} else {
-				d.Set(k, v.(string))
+			if v != nil {
+				if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+					d.Set(strings.ToLower(k), v.([]interface{}))
+				} else {
+					d.Set(k, v.(string))
+				}
 			}
 		}
 	}
-	d.SetId(resp.Id)
+	d.SetId(resp.Handle)
 	return nil
 }
 
@@ -382,7 +393,7 @@ func resourceSteampipeCloudConnectionDelete(d *schema.ResourceData, meta interfa
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionDelete. DeleteOrgConnection Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
 	} else {
-		actorHandle, r, err = getUserHandler(meta)
+		actorHandle, r, err = getUserHandler(steampipeClient)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionDelete. getUserHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -444,7 +455,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	// return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate\n %s\nUpdateConnection error %v", string(data), err)
 
 	if IsUser {
-		actorHandle, r, err = getUserHandler(meta)
+		actorHandle, r, err = getUserHandler(steampipeClient)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. getUserHandler error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -467,10 +478,12 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	d.SetId(resp.Id)
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
-			if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
-				d.Set(strings.ToLower(k), v.([]interface{}))
-			} else {
-				d.Set(k, v.(string))
+			if v != nil {
+				if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+					d.Set(strings.ToLower(k), v.([]interface{}))
+				} else {
+					d.Set(k, v.(string))
+				}
 			}
 		}
 	}
@@ -499,7 +512,7 @@ func resourceSteampipeCloudConnectionExists(d *schema.ResourceData, meta interfa
 	}
 
 	if IsUser {
-		actorHandle, r, err = getUserHandler(meta)
+		actorHandle, r, err = getUserHandler(steampipeClient)
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudConnectionExists. getUserHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -524,9 +537,8 @@ func resourceSteampipeCloudConnectionImport(d *schema.ResourceData, meta interfa
 	return []*schema.ResourceData{d}, nil
 }
 
-func getUserHandler(meta interface{}) (string, *_nethttp.Response, error) {
-	steampipeClient := meta.(*SteampipeClient)
-	resp, r, err := steampipeClient.APIClient.UsersApi.GetActor(context.Background()).Execute()
+func getUserHandler(client *SteampipeClient) (string, *_nethttp.Response, error) {
+	resp, r, err := client.APIClient.UsersApi.GetActor(context.Background()).Execute()
 	if err != nil {
 		return "", r, err
 	}

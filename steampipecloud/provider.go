@@ -85,8 +85,16 @@ type Config struct {
 */
 func CreateClient(config *Config) (*steampipe.APIClient, error) {
 	configuration := steampipe.NewConfiguration()
+
+	if config.Hostname != "" {
+		configuration.Servers = []steampipe.ServerConfiguration{
+			{
+				URL: config.Hostname,
+			},
+		}
+	}
 	var steampipeCloudToken string
-	if config != nil && config.Token != "" {
+	if config.Token != "" {
 		steampipeCloudToken = config.Token
 	} else {
 		// return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider to config. STEAMPIPE_CLOUD_TOKEN")
@@ -98,5 +106,6 @@ func CreateClient(config *Config) (*steampipe.APIClient, error) {
 		configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", steampipeCloudToken))
 		return steampipe.NewAPIClient(configuration), nil
 	}
+
 	return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider config")
 }
