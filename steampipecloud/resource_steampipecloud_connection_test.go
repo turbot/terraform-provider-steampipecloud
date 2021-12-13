@@ -3,6 +3,7 @@ package steampipecloud
 import (
 	"context"
 	"fmt"
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -52,9 +53,14 @@ func TestAccOrgConnection_Basic(t *testing.T) {
 
 // configs
 func testAccOrgConnectionConfig() string {
-	return `
+	return fmt.Sprintf(`
+resource "steampipecloud_organization" "test_org" {
+	handle       = %s
+	display_name = "Terraform Test Org"
+}
+
 provider "steampipecloud" {
-  org   = "netaji"
+  org   = steampipecloud_organization.test_org.id
 }
 
 resource "steampipecloud_connection" "test" {
@@ -63,26 +69,26 @@ resource "steampipecloud_connection" "test" {
 	regions = ["us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
-}`
+}`, RandStringBytes(16))
 }
 
-func testAccConnectionUpdateDisplayNameConfig() string {
-	return `
-resource "steampipecloud_organization" "test" {
-	handle       = "terraformtest"
-	display_name = "Terraform Test Org"
-}
-`
-}
+// func testAccConnectionUpdateDisplayNameConfig() string {
+// 	return `
+// resource "steampipecloud_organization" "test" {
+// 	handle       = "terraformtest"
+// 	display_name = "Terraform Test Org"
+// }
+// `
+// }
 
-func testAccConnectionUpdateHandleConfig() string {
-	return `
-resource "steampipecloud_organization" "test" {
-	handle       = "terraformtestorg"
-	display_name = "Terraform Test Org"
-}
-`
-}
+// func testAccConnectionUpdateHandleConfig() string {
+// 	return `
+// resource "steampipecloud_organization" "test" {
+// 	handle       = "terraformtestorg"
+// 	display_name = "Terraform Test Org"
+// }
+// `
+// }
 
 // helper functions
 
@@ -188,4 +194,14 @@ func testAccCheckConnectionOrganizationExists(orgHandle string) resource.TestChe
 		}
 		return nil
 	}
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
+
+func RandStringBytes(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }

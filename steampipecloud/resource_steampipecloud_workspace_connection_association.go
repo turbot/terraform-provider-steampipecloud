@@ -8,7 +8,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/terraform/helper/schema"
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudWorkspaceConnectionAssociation() *schema.Resource {
@@ -172,7 +172,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationImport(d *schema.Resour
 func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.ResourceData, meta interface{}) error {
 	var r *_nethttp.Response
 	client := meta.(*SteampipeClient)
-	var resp openapiclient.TypesWorkspaceConn
+	var resp steampipe.TypesWorkspaceConn
 	var userHandler string
 	var err error
 	workspaceHandle := d.Get("workspace_handle").(string)
@@ -184,7 +184,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	}
 
 	// Create request
-	req := openapiclient.TypesCreateWorkspaceConnRequest{
+	req := steampipe.TypesCreateWorkspaceConnRequest{
 		ConnectionHandle: connHandle,
 	}
 
@@ -250,7 +250,7 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 	workspaceHandle := idParts[0]
 	connHandle := idParts[1]
 
-	var resp openapiclient.TypesWorkspaceConn
+	var resp steampipe.TypesWorkspaceConn
 	var err error
 	var r *_nethttp.Response
 	var userHandle string

@@ -12,7 +12,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/turbot/go-kit/types"
-	openapiclient "github.com/turbot/steampipe-cloud-sdk-go"
+	"github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 
@@ -253,7 +253,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Unmarshalling connection config error  %v", err)
 	}
 
-	req := openapiclient.TypesCreateConnectionRequest{
+	req := steampipe.TypesCreateConnectionRequest{
 		Handle: connHandle,
 		Plugin: plugin,
 	}
@@ -262,7 +262,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		req.SetConfig(config)
 	}
 
-	var resp openapiclient.TypesConnection
+	var resp steampipe.TypesConnection
 	var actorHandle string
 	var r *_nethttp.Response
 	if IsUser {
@@ -304,7 +304,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 
 func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface{}) error {
 	var org string
-	var resp openapiclient.TypesConnection
+	var resp steampipe.TypesConnection
 	var r *_nethttp.Response
 	var err error
 	var actorHandle string
@@ -418,9 +418,9 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 
 	var err error
 	var config map[string]interface{}
-	var resp openapiclient.TypesConnection
+	var resp steampipe.TypesConnection
 
-	req := openapiclient.TypesUpdateConnectionRequest{
+	req := steampipe.TypesUpdateConnectionRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 
@@ -454,7 +454,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	}
 
 	if err != nil {
-		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate.\nConfig: %s \nUpdateConnection error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
+		return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate.\nUpdateConnection error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 	}
 
 	d.Set("handle", resp.Handle)

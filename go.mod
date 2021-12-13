@@ -8,7 +8,7 @@ require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
 	github.com/hashicorp/terraform v0.12.0
 	github.com/stretchr/testify v1.7.0
-	github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211210192429-5bc3e7d885eb
+	github.com/turbot/steampipe-cloud-sdk-go v0.0.0-20211213084425-b7ede43e6f95
 )
 
 require (
