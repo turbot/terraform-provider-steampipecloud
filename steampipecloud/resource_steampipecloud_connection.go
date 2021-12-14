@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	"reflect"
 	"regexp"
 	"strings"
 
@@ -253,11 +252,11 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	client := meta.(*SteampipeClient)
 	var resp steampipe.TypesConnection
-	var actorHandle string
 	var r *http.Response
 
 	isUser, orgHandle := isUserConnection(client)
 	if isUser {
+		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
 			return diag.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
@@ -295,13 +294,13 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*SteampipeClient)
+
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 	var err error
 	var r *http.Response
 	var resp steampipe.TypesConnection
-
-	client := meta.(*SteampipeClient)
 
 	connectionHandle := d.Id()
 	if connectionHandle == "" {
@@ -356,22 +355,22 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 }
 
 func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*SteampipeClient)
+
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
-
-	client := meta.(*SteampipeClient)
 
 	oldConnectionHandle, newConnectionHandle := d.GetChange("handle")
 	if newConnectionHandle.(string) == "" {
 		return diag.Errorf("handle must be configured")
 	}
 
-	req := steampipe.TypesUpdateConnectionRequest{Handle: types.String(newConnectionHandle.(string))}
-
-	// Create connection config to be updated
+	var r *http.Response
+	var resp steampipe.TypesConnection
 	var err error
 	var config map[string]interface{}
 
+	// Create connection config to be updated
 	connConfig, err := CreateConnectionConfiguration(d)
 	if err != nil {
 		return diag.Errorf("resourceConnectionUpdate. Error while creating connection:  %v", err)
@@ -385,12 +384,11 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("resourceConnectionUpdate. Unmarshalling connection config error  %v", err)
 	}
 
+	req := steampipe.TypesUpdateConnectionRequest{Handle: types.String(newConnectionHandle.(string))}
 	if config != nil {
 		req.SetConfig(config)
 	}
 
-	var r *http.Response
-	var resp steampipe.TypesConnection
 	isUser, orgHandle := isUserConnection(client)
 	if isUser {
 		var actorHandle string
@@ -429,17 +427,17 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 }
 
 func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*SteampipeClient)
+
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 	var connectionHandle string
-	var err error
-	var r *http.Response
-
 	if value, ok := d.GetOk("handle"); ok {
 		connectionHandle = value.(string)
 	}
 
-	client := meta.(*SteampipeClient)
+	var err error
+	var r *http.Response
 	isUser, orgHandle := isUserConnection(client)
 	if isUser {
 		var actorHandle string
@@ -460,15 +458,6 @@ func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta 
 	d.SetId("")
 
 	return diags
-}
-
-// helper functions
-func getUserHandler(ctx context.Context, client *SteampipeClient) (string, *http.Response, error) {
-	resp, r, err := client.APIClient.Actors.Get(ctx).Execute()
-	if err != nil {
-		return "", r, err
-	}
-	return resp.Handle, r, nil
 }
 
 func CreateConnectionConfiguration(d *schema.ResourceData) (ConnectionConfig, error) {
@@ -565,29 +554,6 @@ func CreateConnectionConfiguration(d *schema.ResourceData) (ConnectionConfig, er
 	}
 
 	return connConfig, nil
-}
-
-func (cc ConnectionConfig) GetJsonTagsFieldMapping() map[string]string {
-	tags := map[string]string{}
-	val := reflect.ValueOf(cc)
-	for i := 0; i < val.Type().NumField(); i++ {
-		tagSlice := strings.Split(val.Type().Field(i).Tag.Get("json"), ",")
-		tags[tagSlice[0]] = val.Type().Field(i).Name
-
-	}
-	return tags
-}
-
-// isUserConnection:: Check if the connection is scoped on an user or a specific organization
-func isUserConnection(client *SteampipeClient) (ok bool, orgHandle string) {
-	ok = true
-	if client.Config != nil {
-		if client.Config.Organization != "" {
-			orgHandle = client.Config.Organization
-			ok = false
-		}
-	}
-	return
 }
 
 type ConnectionConfig struct {

@@ -155,7 +155,6 @@ resource "steampipecloud_connection" "test_org" {
 
 // testAccCheckConnectionDestroy verifies the connection has been destroyed
 func testAccCheckConnectionDestroy(s *terraform.State) error {
-	isUser := true
 	var r *http.Response
 	var err error
 	ctx := context.Background()

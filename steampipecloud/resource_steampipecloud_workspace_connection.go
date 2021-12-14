@@ -4,24 +4,24 @@ import (
 	"context"
 	"fmt"
 	"log"
-	_nethttp "net/http"
+	"net/http"
 	"regexp"
 	"strings"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
-func resourceSteampipeCloudWorkspaceConnection() *schema.Resource {
+func resourceWorkspaceConnection() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceSteampipeCloudWorkspaceConnectionCreate,
-		Read:   resourceSteampipeCloudWorkspaceConnectionRead,
-		Delete: resourceSteampipeCloudWorkspaceConnectionDelete,
-		Update: resourceSteampipeCloudWorkspaceConnectionUpdate,
-		Exists: resourceSteampipeCloudWorkspaceConnectionExists,
+		CreateContext: resourceWorkspaceConnectionCreate,
+		ReadContext:   resourceWorkspaceConnectionRead,
+		UpdateContext: resourceWorkspaceConnectionUpdate,
+		DeleteContext: resourceWorkspaceConnectionDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceSteampipeCloudWorkspaceConnectionImport,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"connection_handle": {
@@ -131,80 +131,36 @@ func resourceSteampipeCloudWorkspaceConnection() *schema.Resource {
 	}
 }
 
-func resourceSteampipeCloudWorkspaceConnectionExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	var r *_nethttp.Response
-	var err error
-	var userHandler string
-	client := meta.(*SteampipeClient)
-
-	idParts := strings.Split(d.Id(), "/")
-	if len(idParts) < 2 {
-		return false, fmt.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
-	}
-	workspaceHandle := idParts[0]
-	connHandle := idParts[1]
-
-	if client.Config != nil && client.Config.Org != "" {
-		_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
-	} else {
-		userHandler, r, err = getUserHandler(client)
-		if err != nil {
-			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionExists.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
-		}
-		_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(context.Background(), userHandler, workspaceHandle, connHandle).Execute()
-	}
-
-	// Error check
-	if err != nil {
-		if r.StatusCode == 404 {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
-}
-
-func resourceSteampipeCloudWorkspaceConnectionImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := resourceSteampipeCloudWorkspaceConnectionRead(d, meta); err != nil {
-		return nil, err
-	}
-
-	return []*schema.ResourceData{d}, nil
-}
-
-func resourceSteampipeCloudWorkspaceConnectionCreate(d *schema.ResourceData, meta interface{}) error {
-	var r *_nethttp.Response
-	client := meta.(*SteampipeClient)
-	var resp steampipe.TypesWorkspaceConn
-	var userHandler string
-	var err error
+func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	workspaceHandle := d.Get("workspace_handle").(string)
 	connHandle := d.Get("connection_handle").(string)
 
-	// Create request
-	req := steampipe.TypesCreateWorkspaceConnRequest{
-		ConnectionHandle: connHandle,
-	}
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+	var resp steampipe.TypesWorkspaceConn
+	var err error
+	var r *http.Response
 
-	// Check for organization
-	// If 'org' is set in the provider config, workspace will create in that organization
-	// else, the user identity is used.
-	if client.Config != nil && client.Config.Org != "" {
-		resp, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Create(context.Background(), client.Config.Org, workspaceHandle).Request(req).Execute()
-	} else {
-		// Get current actor information
-		userHandler, r, err = getUserHandler(client)
+	// Create request
+	req := steampipe.TypesCreateWorkspaceConnRequest{ConnectionHandle: connHandle}
+
+	client := meta.(*SteampipeClient)
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		var actorHandle string
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionCreate.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
+			return diag.Errorf("resourceWorkspaceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Create(context.Background(), userHandler, workspaceHandle).Request(req).Execute()
+		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Create(ctx, actorHandle, workspaceHandle).Request(req).Execute()
+	} else {
+		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Create(ctx, orgHandle, workspaceHandle).Request(req).Execute()
 	}
 
 	// Error check
 	if err != nil {
-		return fmt.Errorf("error creating workspace connection association: %s", err)
+		return diag.Errorf("error creating workspace connection association: %v", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Workspace Connection Association created: %s", resp.Id)
 
 	// Set property values
 	id := fmt.Sprintf("%s/%s", workspaceHandle, resp.Connection.Handle)
@@ -234,15 +190,17 @@ func resourceSteampipeCloudWorkspaceConnectionCreate(d *schema.ResourceData, met
 		d.Set("workspace_version_id", resp.Workspace.VersionId)
 	}
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudWorkspaceConnectionRead(d *schema.ResourceData, meta interface{}) error {
+func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SteampipeClient)
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
 	idParts := strings.Split(d.Id(), "/")
 	if len(idParts) < 2 {
-		return fmt.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
 	}
 
 	workspaceHandle := idParts[0]
@@ -250,26 +208,30 @@ func resourceSteampipeCloudWorkspaceConnectionRead(d *schema.ResourceData, meta 
 
 	var resp steampipe.TypesWorkspaceConn
 	var err error
-	var r *_nethttp.Response
-	var userHandle string
+	var r *http.Response
 
-	if client.Config != nil && client.Config.Org != "" {
-		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
-	} else {
-		userHandle, r, err = getUserHandler(client)
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		var actorHandle string
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionRead.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
+			return diag.Errorf("resourceConnectionRead. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(context.Background(), userHandle, workspaceHandle, connHandle).Execute()
+		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(ctx, actorHandle, workspaceHandle, connHandle).Execute()
+	} else {
+		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, orgHandle, workspaceHandle, connHandle).Execute()
 	}
 
 	if err != nil {
 		if r.StatusCode == 404 {
-			log.Printf("\n[WARN] Association (%s) not found", resp.Id)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("Association (%s) not found", resp.Id),
+			})
 			d.SetId("")
-			return nil
+			return diags
 		}
-		return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionRead.\nGetUserWorkspaceConnectionAssociation Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
+		return diag.Errorf("resourceWorkspaceConnectionRead. Get workspace connection association error: %v", decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Association received: %s", resp.Id)
 
@@ -298,10 +260,13 @@ func resourceSteampipeCloudWorkspaceConnectionRead(d *schema.ResourceData, meta 
 		d.Set("workspace_version_id", resp.Workspace.VersionId)
 	}
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudWorkspaceConnectionUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceWorkspaceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
 	workspaceHandle := d.State().Attributes["workspace_handle"]
 	connHandle := d.State().Attributes["connection_handle"]
 
@@ -321,39 +286,43 @@ func resourceSteampipeCloudWorkspaceConnectionUpdate(d *schema.ResourceData, met
 		d.Set("connection_handle", connHandle)
 	}
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudWorkspaceConnectionDelete(d *schema.ResourceData, meta interface{}) error {
-	var err error
-	var r *_nethttp.Response
-	var userHandle string
+func resourceWorkspaceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SteampipeClient)
+
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
 	idParts := strings.Split(d.Id(), "/")
 	if len(idParts) < 2 {
-		return fmt.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
 	}
+
 	workspaceHandle := idParts[0]
 	connHandle := idParts[1]
-
 	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s/%s", workspaceHandle, connHandle))
 
-	if client.Config != nil && client.Config.Org != "" {
-		_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Delete(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
-	} else {
-		userHandle, r, err = getUserHandler(client)
+	var err error
+	var r *http.Response
+
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		var actorHandle string
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionDelete.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
+			return diag.Errorf("resourceConnectionDelete. getUserHandler error: %v", decodeResponse(r))
 		}
-		_, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Delete(context.Background(), userHandle, workspaceHandle, connHandle).Execute()
+		_, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Delete(ctx, actorHandle, workspaceHandle, connHandle).Execute()
+	} else {
+		_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Delete(ctx, orgHandle, workspaceHandle, connHandle).Execute()
 	}
 
-	// Error check
 	if err != nil {
-		return fmt.Errorf("error deleting workspace connection association:	\n status_code: %d\n	body: %v", r.StatusCode, r.Body)
+		return diag.Errorf("error deleting workspace connection association:	%v", decodeResponse(r))
 	}
 	d.SetId("")
 
-	return nil
+	return diags
 }
