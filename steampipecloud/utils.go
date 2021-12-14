@@ -28,10 +28,11 @@ func getUserHandler(ctx context.Context, client *SteampipeClient) (string, *http
 }
 
 // Decode response body
-func decodeResponse(r *http.Response) interface{} {
+func decodeResponse(r *http.Response) string {
 	var errBody interface{}
 	_ = json.NewDecoder(r.Body).Decode(&errBody)
 	defer r.Body.Close()
 
-	return errBody
+	resp, _ := json.Marshal(errBody)
+	return string(resp)
 }

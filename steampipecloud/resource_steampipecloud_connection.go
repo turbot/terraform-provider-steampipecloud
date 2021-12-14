@@ -314,9 +314,9 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 		if err != nil {
 			return diag.Errorf("resourceConnectionRead. getUserHandler error  %v", decodeResponse(r))
 		}
-		_, r, err = client.APIClient.UserConnections.Get(context.Background(), actorHandle, connectionHandle).Execute()
+		resp, r, err = client.APIClient.UserConnections.Get(context.Background(), actorHandle, connectionHandle).Execute()
 	} else {
-		_, r, err = client.APIClient.OrgConnections.Get(context.Background(), orgHandle, connectionHandle).Execute()
+		resp, r, err = client.APIClient.OrgConnections.Get(context.Background(), orgHandle, connectionHandle).Execute()
 	}
 	if err != nil {
 		if r.StatusCode == 404 {
@@ -338,7 +338,6 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	d.Set("handle", resp.Handle)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
-	d.SetId(resp.Handle)
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
 			if v != nil {
