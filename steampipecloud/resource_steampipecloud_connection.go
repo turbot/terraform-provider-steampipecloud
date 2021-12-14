@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/go-kit/types"
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 
@@ -250,7 +250,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. Unmarshalling connection config error  %v", err)
 	}
 
-	req := steampipecloud.TypesCreateConnectionRequest{
+	req := steampipe.TypesCreateConnectionRequest{
 		Handle: connHandle,
 		Plugin: plugin,
 	}
@@ -259,7 +259,7 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		req.SetConfig(config)
 	}
 
-	var resp steampipecloud.TypesConnection
+	var resp steampipe.TypesConnection
 	var actorHandle string
 	var r *_nethttp.Response
 	if IsUser {
@@ -303,7 +303,7 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 	var actorHandle, orgHandle string
 	var err error
 	var r *_nethttp.Response
-	var resp steampipecloud.TypesConnection
+	var resp steampipe.TypesConnection
 	IsUser := true
 
 	id := d.Id()
@@ -406,7 +406,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 	var org, actorHandle string
 	var err error
 	var config map[string]interface{}
-	var resp steampipecloud.TypesConnection
+	var resp steampipe.TypesConnection
 
 	// Check if the connection is scoped on an user or a specific organization
 	var r *_nethttp.Response
@@ -423,7 +423,7 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		return fmt.Errorf("handle must be configured")
 	}
 
-	req := steampipecloud.TypesUpdateConnectionRequest{
+	req := steampipe.TypesUpdateConnectionRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 

@@ -7,10 +7,10 @@ import (
 	"regexp"
 
 	"github.com/turbot/go-kit/types"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudOrganization() *schema.Resource {
@@ -91,7 +91,7 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 	handle := d.Get("handle")
 
 	// Create request
-	req := steampipecloud.TypesCreateOrgRequest{
+	req := steampipe.TypesCreateOrgRequest{
 		Handle: handle.(string),
 	}
 
@@ -160,7 +160,7 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 	oldHandle, newHandle := d.GetChange("handle")
 
 	// Create request
-	req := steampipecloud.TypesUpdateOrgRequest{
+	req := steampipe.TypesUpdateOrgRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 

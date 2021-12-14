@@ -8,10 +8,10 @@ import (
 	"regexp"
 
 	"github.com/turbot/go-kit/types"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudWorkspace() *schema.Resource {
@@ -120,11 +120,11 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 	handle := d.Get("handle")
 
 	// Create request
-	req := steampipecloud.TypesCreateWorkspaceRequest{
+	req := steampipe.TypesCreateWorkspaceRequest{
 		Handle: handle.(string),
 	}
 
-	var resp steampipecloud.TypesWorkspace
+	var resp steampipe.TypesWorkspace
 	var userHandler string
 	var err error
 
@@ -168,7 +168,7 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
 
-	var resp steampipecloud.TypesWorkspace
+	var resp steampipe.TypesWorkspace
 	var userHandler string
 	var err error
 	var r *_nethttp.Response
@@ -213,12 +213,12 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 	oldHandle, newHandle := d.GetChange("handle")
 
 	// Create request
-	req := steampipecloud.TypesUpdateWorkspaceRequest{
+	req := steampipe.TypesUpdateWorkspaceRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 	log.Printf("\n[DEBUG] Updating Workspace: %s", *req.Handle)
 
-	var resp steampipecloud.TypesWorkspace
+	var resp steampipe.TypesWorkspace
 	var userHandler string
 	var err error
 

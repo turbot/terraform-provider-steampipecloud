@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func Provider() terraform.ResourceProvider {
@@ -67,7 +67,7 @@ func providerConfigure(d *schema.ResourceData) (interface{}, error) {
 }
 
 type SteampipeClient struct {
-	APIClient *steampipecloud.APIClient
+	APIClient *steampipe.APIClient
 	Config    *Config
 }
 
@@ -83,11 +83,11 @@ type Config struct {
 	- token set in config
 	- ENV vars {STEAMPIPE_CLOUD_TOKEN}
 */
-func CreateClient(config *Config) (*steampipecloud.APIClient, error) {
-	configuration := steampipecloud.NewConfiguration()
+func CreateClient(config *Config) (*steampipe.APIClient, error) {
+	configuration := steampipe.NewConfiguration()
 
 	if config.Hostname != "" {
-		configuration.Servers = []steampipecloud.ServerConfiguration{
+		configuration.Servers = []steampipe.ServerConfiguration{
 			{
 				URL: config.Hostname,
 			},
@@ -104,7 +104,7 @@ func CreateClient(config *Config) (*steampipecloud.APIClient, error) {
 	}
 	if steampipeCloudToken != "" {
 		configuration.AddDefaultHeader("Authorization", fmt.Sprintf("Bearer %s", steampipeCloudToken))
-		return steampipecloud.NewAPIClient(configuration), nil
+		return steampipe.NewAPIClient(configuration), nil
 	}
 
 	return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider config")
