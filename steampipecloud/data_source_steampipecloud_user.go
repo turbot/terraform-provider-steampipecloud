@@ -10,9 +10,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceSteampipeCloudUser() *schema.Resource {
+func dataSourceUser() *schema.Resource {
 	return &schema.Resource{
-		ReadContext: dataSourceSteampipeCloudUserRead,
+		ReadContext: dataSourceUserRead,
 		Schema: map[string]*schema.Schema{
 			"handle": {
 				Type:     schema.TypeString,
@@ -62,7 +62,7 @@ func dataSourceSteampipeCloudUser() *schema.Resource {
 	}
 }
 
-func dataSourceSteampipeCloudUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 

@@ -4,25 +4,25 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/http"
 	_nethttp "net/http"
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/turbot/go-kit/types"
 	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
-func resourceSteampipeCloudWorkspace() *schema.Resource {
+func resourceWorkspace() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceSteampipeCloudWorkspaceCreate,
-		Read:   resourceSteampipeCloudWorkspaceRead,
-		Delete: resourceSteampipeCloudWorkspaceDelete,
-		Update: resourceSteampipeCloudWorkspaceUpdate,
-		Exists: resourceSteampipeCloudWorkspaceExists,
+		CreateContext: resourceWorkspaceCreate,
+		ReadContext:   resourceWorkspaceRead,
+		UpdateContext: resourceWorkspaceUpdate,
+		DeleteContext: resourceWorkspaceDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceSteampipeCloudWorkspaceImport,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"handle": {
@@ -79,72 +79,34 @@ func resourceSteampipeCloudWorkspace() *schema.Resource {
 	}
 }
 
-func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
+func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SteampipeClient)
-	handle := d.Id()
 
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 	var err error
-	var userHandler string
 	var r *_nethttp.Response
-
-	if client.Config != nil && client.Config.Org != "" {
-		_, r, err = client.APIClient.OrgWorkspaces.Get(context.Background(), client.Config.Org, handle).Execute()
-	} else {
-		userHandler, _, err = getUserHandler(client)
-		if err != nil {
-			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceExists.\ngetHandler Error: \n%v", err)
-		}
-		_, r, err = client.APIClient.UserWorkspaces.Get(context.Background(), userHandler, handle).Execute()
-	}
-
-	// Error check
-	if err != nil {
-		if r.StatusCode == 404 {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
-}
-
-func resourceSteampipeCloudWorkspaceImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := resourceSteampipeCloudWorkspaceRead(d, meta); err != nil {
-		return nil, err
-	}
-
-	return []*schema.ResourceData{d}, nil
-}
-
-func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interface{}) error {
-	client := meta.(*SteampipeClient)
+	var resp steampipe.TypesWorkspace
 	handle := d.Get("handle")
 
 	// Create request
-	req := steampipe.TypesCreateWorkspaceRequest{
-		Handle: handle.(string),
-	}
+	req := steampipe.TypesCreateWorkspaceRequest{Handle: handle.(string)}
 
-	var resp steampipe.TypesWorkspace
-	var userHandler string
-	var err error
-
-	// Check for organization
-	// If 'org' is set in the provider config, workspace will create in that organization
-	// else, the user identity is used.
-	if client.Config != nil && client.Config.Org != "" {
-		resp, _, err = client.APIClient.OrgWorkspaces.Create(context.Background(), client.Config.Org).Request(req).Execute()
-	} else {
-		// Get current actor information
-		userHandler, _, err = getUserHandler(client)
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		var userHandler string
+		userHandler, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceCreate.\ngetHandler Error: \n%v", err)
+			return diag.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, _, err = client.APIClient.UserWorkspaces.Create(context.Background(), userHandler).Request(req).Execute()
+		resp, _, err = client.APIClient.UserWorkspaces.Create(ctx, userHandler).Request(req).Execute()
+	} else {
+		resp, _, err = client.APIClient.OrgWorkspaces.Create(ctx, orgHandle).Request(req).Execute()
 	}
 
 	// Error check
 	if err != nil {
-		return fmt.Errorf("error creating workspace: %s", err)
+		return diag.Errorf("error creating workspace: %v", decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Workspace created: %s", resp.Handle)
 
@@ -161,39 +123,46 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("version_id", resp.VersionId)
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{}) error {
+func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SteampipeClient)
-	handle := d.Id()
 
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
+	workspaceHandle := d.Id()
 	var resp steampipe.TypesWorkspace
-	var userHandler string
 	var err error
 	var r *_nethttp.Response
 
-	if client.Config != nil && client.Config.Org != "" {
-		resp, r, err = client.APIClient.OrgWorkspaces.Get(context.Background(), client.Config.Org, handle).Execute()
-	} else {
-		userHandler, _, err = getUserHandler(client)
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		var actorHandle string
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceRead.\ngetHandler Error: \n%v", err)
+			return diag.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, r, err = client.APIClient.UserWorkspaces.Get(context.Background(), userHandler, handle).Execute()
+		resp, r, err = client.APIClient.UserWorkspaces.Get(ctx, actorHandle, workspaceHandle).Execute()
+
+	} else {
+		resp, r, err = client.APIClient.OrgWorkspaces.Get(ctx, orgHandle, workspaceHandle).Execute()
 	}
 
 	if err != nil {
 		if r.StatusCode == 404 {
-			log.Printf("\n[WARN] Workspace (%s) not found", handle)
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("Workspace (%s) not found", workspaceHandle),
+			})
 			d.SetId("")
-			return nil
+			return diags
 		}
-		return fmt.Errorf("error reading %s: %s", handle, err)
+		return diag.Errorf("error reading %s: %v ", workspaceHandle, decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Workspace received: %s", resp.Handle)
 
-	d.Set("handle", handle)
+	d.Set("handle", workspaceHandle)
 	d.Set("workspace_id", resp.Id)
 	d.Set("workspace_state", resp.WorkspaceState)
 	d.Set("created_at", resp.CreatedAt)
@@ -204,10 +173,13 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("version_id", resp.VersionId)
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceWorkspaceUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
 	client := meta.(*SteampipeClient)
 
 	oldHandle, newHandle := d.GetChange("handle")
@@ -221,21 +193,22 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 	var resp steampipe.TypesWorkspace
 	var userHandler string
 	var err error
+	var r *http.Response
 
-	if client.Config != nil && client.Config.Org != "" {
-		resp, _, err = client.APIClient.OrgWorkspaces.Update(context.Background(), client.Config.Org, oldHandle.(string)).Request(req).Execute()
-	} else {
-		// Get user handler
-		userHandler, _, err = getUserHandler(client)
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		userHandler, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceUpdate.\ngetHandler Error: \n%v", err)
+			return diag.Errorf("resourceConnectionUpdate. getUserHandler error:	%v", decodeResponse(r))
 		}
-		resp, _, err = client.APIClient.UserWorkspaces.Update(context.Background(), userHandler, oldHandle.(string)).Request(req).Execute()
+		resp, r, err = client.APIClient.UserWorkspaces.Update(ctx, userHandler, oldHandle.(string)).Request(req).Execute()
+	} else {
+		resp, r, err = client.APIClient.OrgWorkspaces.Update(ctx, orgHandle, oldHandle.(string)).Request(req).Execute()
 	}
 
 	// Error check
 	if err != nil {
-		return fmt.Errorf("error updating workspace: %s", err)
+		return diag.Errorf("error updating workspace: %v", decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Workspace updated: %s", resp.Handle)
 
@@ -252,31 +225,35 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("version_id", resp.VersionId)
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceWorkspaceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
 	log.Printf("\n[DEBUG] Deleting Workspace: %s", handle)
 
 	var err error
-	var userHandler string
-	if client.Config != nil && client.Config.Org != "" {
-		_, _, err = client.APIClient.OrgWorkspaces.Delete(context.Background(), client.Config.Org, handle).Execute()
-	} else {
-		userHandler, _, err = getUserHandler(client)
+	var r *http.Response
+
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		var actorHandle string
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceDelete.\ngetHandler Error: \n%v", err)
+			return diag.Errorf("resourceConnectionDelete. getUserHandler error: %v", decodeResponse(r))
 		}
-		_, _, err = client.APIClient.UserWorkspaces.Delete(context.Background(), userHandler, handle).Execute()
+		_, r, err = client.APIClient.UserWorkspaces.Delete(ctx, actorHandle, handle).Execute()
+	} else {
+		_, r, err = client.APIClient.OrgWorkspaces.Delete(ctx, orgHandle, handle).Execute()
 	}
 
-	// Error check
 	if err != nil {
-		return fmt.Errorf("error deleting workspace: %s", err)
+		return diag.Errorf("error deleting workspace: %v", decodeResponse(r))
 	}
 	d.SetId("")
 
-	return nil
+	return diags
 }

@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"fmt"
 	"log"
-	_nethttp "net/http"
+	"net/http"
 	"reflect"
 	"regexp"
 	"strings"
@@ -250,20 +251,20 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 		req.SetConfig(config)
 	}
 
-	steampipeClient := meta.(*SteampipeClient)
+	client := meta.(*SteampipeClient)
 	var resp steampipe.TypesConnection
 	var actorHandle string
-	var r *_nethttp.Response
+	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(steampipeClient)
+	isUser, orgHandle := isUserConnection(client)
 	if isUser {
-		actorHandle, r, err = getUserHandler(ctx, steampipeClient)
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
 			return diag.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, r, err = steampipeClient.APIClient.UserConnections.Create(ctx, actorHandle).Request(req).Execute()
+		resp, r, err = client.APIClient.UserConnections.Create(ctx, actorHandle).Request(req).Execute()
 	} else {
-		resp, r, err = steampipeClient.APIClient.OrgConnections.Create(ctx, orgHandle).Request(req).Execute()
+		resp, r, err = client.APIClient.OrgConnections.Create(ctx, orgHandle).Request(req).Execute()
 	}
 
 	if err != nil {
@@ -297,31 +298,35 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 	var err error
-	var r *_nethttp.Response
+	var r *http.Response
 	var resp steampipe.TypesConnection
 
-	steampipeClient := meta.(*SteampipeClient)
+	client := meta.(*SteampipeClient)
 
-	id := d.Id()
-	if id == "" {
+	connectionHandle := d.Id()
+	if connectionHandle == "" {
 		return diag.Errorf("resourceConnectionRead. Connection handle not present.")
 	}
 
-	isUser, orgHandle := isUserConnection(steampipeClient)
+	isUser, orgHandle := isUserConnection(client)
 	if isUser {
 		var actorHandle string
-		actorHandle, r, err = getUserHandler(ctx, steampipeClient)
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
 			return diag.Errorf("resourceConnectionRead. getUserHandler error  %v", decodeResponse(r))
 		}
-		_, r, err = steampipeClient.APIClient.UserConnections.Get(context.Background(), actorHandle, id).Execute()
+		_, r, err = client.APIClient.UserConnections.Get(context.Background(), actorHandle, connectionHandle).Execute()
 	} else {
-		_, r, err = steampipeClient.APIClient.OrgConnections.Get(context.Background(), orgHandle, id).Execute()
+		_, r, err = client.APIClient.OrgConnections.Get(context.Background(), orgHandle, connectionHandle).Execute()
 	}
 	if err != nil {
 		if r.StatusCode == 404 {
+			diags = append(diags, diag.Diagnostic{
+				Severity: diag.Warning,
+				Summary:  fmt.Sprintf("Connection (%s) not found", connectionHandle),
+			})
 			d.SetId("")
-			return nil
+			return diags
 		}
 		return diag.Errorf("resourceConnectionRead. Get connection error: %v", decodeResponse(r))
 	}
@@ -350,45 +355,11 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	return diags
 }
 
-func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
-	// Warning or errors can be collected in a slice type
-	var diags diag.Diagnostics
-	var connectionHandle string
-	var err error
-	var r *_nethttp.Response
-
-	if value, ok := d.GetOk("handle"); ok {
-		connectionHandle = value.(string)
-	}
-
-	steampipeClient := meta.(*SteampipeClient)
-	isUser, orgHandle := isUserConnection(steampipeClient)
-	if isUser {
-		var actorHandle string
-		actorHandle, r, err = getUserHandler(ctx, steampipeClient)
-		if err != nil {
-			return diag.Errorf("resourceConnectionDelete. getUserHandler error: %v", decodeResponse(r))
-		}
-		_, r, err = steampipeClient.APIClient.UserConnections.Delete(ctx, actorHandle, connectionHandle).Execute()
-	} else {
-		_, r, err = steampipeClient.APIClient.OrgConnections.Delete(ctx, orgHandle, connectionHandle).Execute()
-	}
-
-	if err != nil {
-		return diag.Errorf("resourceConnectionDelete. Delete connection error:	%v", decodeResponse(r))
-	}
-
-	// clear the id to show we have deleted
-	d.SetId("")
-
-	return diags
-}
-
 func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	steampipeClient := meta.(*SteampipeClient)
+	client := meta.(*SteampipeClient)
 
 	oldConnectionHandle, newConnectionHandle := d.GetChange("handle")
 	if newConnectionHandle.(string) == "" {
@@ -418,18 +389,18 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		req.SetConfig(config)
 	}
 
-	var r *_nethttp.Response
+	var r *http.Response
 	var resp steampipe.TypesConnection
-	isUser, orgHandle := isUserConnection(steampipeClient)
+	isUser, orgHandle := isUserConnection(client)
 	if isUser {
 		var actorHandle string
-		actorHandle, r, err = getUserHandler(ctx, steampipeClient)
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
 			return diag.Errorf("resourceConnectionUpdate. getUserHandler error:	%v", decodeResponse(r))
 		}
-		resp, r, err = steampipeClient.APIClient.UserConnections.Update(context.Background(), actorHandle, oldConnectionHandle.(string)).Request(req).Execute()
+		resp, r, err = client.APIClient.UserConnections.Update(context.Background(), actorHandle, oldConnectionHandle.(string)).Request(req).Execute()
 	} else {
-		resp, r, err = steampipeClient.APIClient.OrgConnections.Update(context.Background(), orgHandle, oldConnectionHandle.(string)).Request(req).Execute()
+		resp, r, err = client.APIClient.OrgConnections.Update(context.Background(), orgHandle, oldConnectionHandle.(string)).Request(req).Execute()
 	}
 	if err != nil {
 		return diag.Errorf("resourceConnectionUpdate. Update connection error: %v", decodeResponse(r))
@@ -457,8 +428,42 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	return diags
 }
 
+func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+	var connectionHandle string
+	var err error
+	var r *http.Response
+
+	if value, ok := d.GetOk("handle"); ok {
+		connectionHandle = value.(string)
+	}
+
+	client := meta.(*SteampipeClient)
+	isUser, orgHandle := isUserConnection(client)
+	if isUser {
+		var actorHandle string
+		actorHandle, r, err = getUserHandler(ctx, client)
+		if err != nil {
+			return diag.Errorf("resourceConnectionDelete. getUserHandler error: %v", decodeResponse(r))
+		}
+		_, r, err = client.APIClient.UserConnections.Delete(ctx, actorHandle, connectionHandle).Execute()
+	} else {
+		_, r, err = client.APIClient.OrgConnections.Delete(ctx, orgHandle, connectionHandle).Execute()
+	}
+
+	if err != nil {
+		return diag.Errorf("resourceConnectionDelete. Delete connection error:	%v", decodeResponse(r))
+	}
+
+	// clear the id to show we have deleted
+	d.SetId("")
+
+	return diags
+}
+
 // helper functions
-func getUserHandler(ctx context.Context, client *SteampipeClient) (string, *_nethttp.Response, error) {
+func getUserHandler(ctx context.Context, client *SteampipeClient) (string, *http.Response, error) {
 	resp, r, err := client.APIClient.Actors.Get(ctx).Execute()
 	if err != nil {
 		return "", r, err

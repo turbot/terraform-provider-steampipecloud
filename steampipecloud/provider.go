@@ -39,13 +39,13 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"steampipecloud_connection":                       resourceConnection(),
-			"steampipecloud_organization":                     resourceOrganization(),
-			"steampipecloud_workspace":                        resourceSteampipeCloudWorkspace(),
-			"steampipecloud_workspace_connection_association": resourceSteampipeCloudWorkspaceConnectionAssociation(),
+			"steampipecloud_connection":           resourceConnection(),
+			"steampipecloud_organization":         resourceOrganization(),
+			"steampipecloud_workspace":            resourceWorkspace(),
+			"steampipecloud_workspace_connection": resourceWorkspaceConnection(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"steampipecloud_user": dataSourceSteampipeCloudUser(),
+			"steampipecloud_user": dataSourceUser(),
 		},
 
 		ConfigureContextFunc: providerConfigure,

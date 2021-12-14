@@ -58,6 +58,7 @@ resource "steampipecloud_workspace" "test" {
 
 // helper functions
 func testAccCheckUserWorkspaceExists(resource string) resource.TestCheckFunc {
+	ctx := context.Background()
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resource]
 		if !ok {
@@ -69,12 +70,12 @@ func testAccCheckUserWorkspaceExists(resource string) resource.TestCheckFunc {
 		client := testAccProvider.Meta().(*SteampipeClient)
 
 		// Get user handle
-		userData, _, userErr := client.APIClient.Actors.Get(context.Background()).Execute()
+		userData, _, userErr := client.APIClient.Actors.Get(ctx).Execute()
 		if userErr != nil {
 			return fmt.Errorf("error fetching user handle. %s", userErr)
 		}
 
-		_, _, err := client.APIClient.UserWorkspaces.Get(context.Background(), userData.Handle, rs.Primary.ID).Execute()
+		_, _, err := client.APIClient.UserWorkspaces.Get(ctx, userData.Handle, rs.Primary.ID).Execute()
 		if err != nil {
 			return fmt.Errorf("error fetching item with resource %s. %s", resource, err)
 		}
@@ -83,18 +84,19 @@ func testAccCheckUserWorkspaceExists(resource string) resource.TestCheckFunc {
 }
 
 func testAccCheckUserWorkspaceDestroy(s *terraform.State) error {
+	ctx := context.Background()
 	client := testAccProvider.Meta().(*SteampipeClient)
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "steampipecloud_workspace" {
 			// Get user handle
-			userData, _, userErr := client.APIClient.Actors.Get(context.Background()).Execute()
+			userData, _, userErr := client.APIClient.Actors.Get(ctx).Execute()
 			if userErr != nil {
 				return fmt.Errorf("error fetching user handle. %s", userErr)
 			}
 
-			_, r, err := client.APIClient.UserWorkspaces.Get(context.Background(), userData.Handle, rs.Primary.ID).Execute()
+			_, r, err := client.APIClient.UserWorkspaces.Get(ctx, userData.Handle, rs.Primary.ID).Execute()
 			if err == nil {
-				return fmt.Errorf("alert still exists")
+				return fmt.Errorf("Workspace still exists")
 			}
 
 			if r.StatusCode != 404 {
