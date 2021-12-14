@@ -7,8 +7,8 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 // test suites
@@ -117,7 +117,7 @@ resource "steampipecloud_organization" "test" {
 
 provider "steampipecloud" {
 	alias = "turbie"
-	org 	= steampipecloud_organization.test.handle
+	organization 	= steampipecloud_organization.test.handle
 }
 
 resource "steampipecloud_connection" "test_org" {
@@ -140,7 +140,7 @@ resource "steampipecloud_organization" "test" {
 
 provider "steampipecloud" {
 	alias = "turbie"
-	org 	= steampipecloud_organization.test.handle
+	organization 	= steampipecloud_organization.test.handle
 }
 
 resource "steampipecloud_connection" "test_org" {
@@ -158,16 +158,11 @@ func testAccCheckConnectionDestroy(s *terraform.State) error {
 	isUser := true
 	var r *http.Response
 	var err error
-	var actorHandle, orgHandle string
 	ctx := context.Background()
+
 	// retrieve the connection established in Provider configuration
 	client := testAccProvider.Meta().(*SteampipeClient)
-	if client.Config != nil {
-		if client.Config.Org != "" {
-			orgHandle = client.Config.Org
-			isUser = false
-		}
-	}
+	isUser, orgHandle := isUserConnection(client)
 
 	// loop through the resources in state, verifying each connection is destroyed
 	for _, rs := range s.RootModule().Resources {
@@ -179,7 +174,8 @@ func testAccCheckConnectionDestroy(s *terraform.State) error {
 		connectionHandle := rs.Primary.Attributes["handle"]
 
 		if isUser {
-			actorHandle, r, err = getUserHandler(client)
+			var actorHandle string
+			actorHandle, r, err = getUserHandler(ctx, client)
 			if err != nil {
 				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. getUserHandler Error: \n%v", r)
 			}
@@ -188,7 +184,7 @@ func testAccCheckConnectionDestroy(s *terraform.State) error {
 			_, r, err = client.APIClient.OrgConnections.Get(ctx, orgHandle, connectionHandle).Execute()
 		}
 		if err == nil {
-			return fmt.Errorf("Connection %s still exists in organization %s", connectionHandle, client.Config.Org)
+			return fmt.Errorf("Connection %s still exists in organization %s", connectionHandle, orgHandle)
 		}
 
 		// If the error is equivalent to 404 not found, the connection is destroyed.
@@ -204,8 +200,8 @@ func testAccCheckConnectionDestroy(s *terraform.State) error {
 }
 
 func testAccCheckConnectionExists(n string) resource.TestCheckFunc {
-	isUser := true
-	var orgHandle, actorHandle string
+	ctx := context.Background()
+
 	return func(s *terraform.State) error {
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
@@ -218,32 +214,25 @@ func testAccCheckConnectionExists(n string) resource.TestCheckFunc {
 		connectionHandle := rs.Primary.Attributes["handle"]
 
 		client := testAccProvider.Meta().(*SteampipeClient)
-
-		if client.Config != nil {
-			if client.Config.Org != "" {
-				orgHandle = client.Config.Org
-				isUser = false
-			}
-		}
+		isUser, orgHandle := isUserConnection(client)
 
 		var r *http.Response
 		var err error
 
-		log.Printf("[DEBUG -------]: \n	IS_USER: %t \n	orgHandle: %s", isUser, orgHandle)
-
 		if isUser {
-			actorHandle, r, err = getUserHandler(client)
+			var actorHandle string
+			actorHandle, r, err = getUserHandler(ctx, client)
 			if err != nil {
-				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. getUserHandler Error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
+				return fmt.Errorf("testAccCheckConnectionExists. getUserHandler error: %v", decodeResponse(r))
 			}
 			_, r, err = client.APIClient.UserConnections.Get(context.Background(), actorHandle, connectionHandle).Execute()
 			if err != nil {
-				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetUserConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
+				return fmt.Errorf("testAccCheckConnectionExists. Get user connection error: %v", decodeResponse(r))
 			}
 		} else {
 			_, r, err = client.APIClient.OrgConnections.Get(context.Background(), orgHandle, connectionHandle).Execute()
 			if err != nil {
-				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\n GetOrgConnection.error in organization %s:	\n	status_code: %d\n	body: %v", orgHandle, r.StatusCode, r.Body)
+				return fmt.Errorf("testAccCheckConnectionExists.\n Get organization connection error: %v", decodeResponse(r))
 			}
 		}
 
@@ -251,7 +240,7 @@ func testAccCheckConnectionExists(n string) resource.TestCheckFunc {
 		// Otherwise return the error
 		if err != nil {
 			if r.StatusCode != 404 {
-				return fmt.Errorf("Connection %s in organization %s not found.\nstatus: %d \nerr: %v", connectionHandle, client.Config.Org, r.StatusCode, r.Body)
+				return fmt.Errorf("Connection %s in organization %s not found.\nstatus: %d \nerr: %v", connectionHandle, orgHandle, r.StatusCode, r.Body)
 			}
 			log.Printf("[INFO] TestAccOrgConnection_Basic testAccCheckConnectionExists %v", err)
 			return err

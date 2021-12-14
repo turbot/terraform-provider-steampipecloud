@@ -3,6 +3,8 @@ package steampipecloud
 import (
 	"context"
 	"encoding/json"
+	"fmt"
+	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -67,11 +69,7 @@ func dataSourceSteampipeCloudUserRead(ctx context.Context, d *schema.ResourceDat
 	steampipeClient := meta.(*SteampipeClient)
 	resp, r, err := steampipeClient.APIClient.Actors.Get(context.Background()).Execute()
 	if err != nil {
-		errBody := make([]map[string]interface{}, 0)
-		err = json.NewDecoder(r.Body).Decode(&errBody)
-		if err != nil {
-			return diag.FromErr(err)
-		}
+		return diag.FromErr(fmt.Errorf("%v", decodeResponse(r)))
 	}
 	defer r.Body.Close()
 
@@ -89,4 +87,13 @@ func dataSourceSteampipeCloudUserRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("version_id", resp.VersionId)
 
 	return diags
+}
+
+// Decode response body
+func decodeResponse(r *http.Response) interface{} {
+	var errBody interface{}
+	_ = json.NewDecoder(r.Body).Decode(&errBody)
+	defer r.Body.Close()
+
+	return errBody
 }

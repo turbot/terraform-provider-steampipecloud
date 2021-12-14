@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 // test suites
@@ -99,7 +99,7 @@ func testAccCheckOrganizationDestroy(s *terraform.State) error {
 		if rs.Type == "steampipecloud_organization" {
 			_, r, err := client.APIClient.Orgs.Get(context.Background(), rs.Primary.ID).Execute()
 			if err == nil {
-				return fmt.Errorf("alert still exists")
+				return fmt.Errorf("organization still exists")
 			}
 
 			// If a organization is deleted, all the members will lost access to that organization
