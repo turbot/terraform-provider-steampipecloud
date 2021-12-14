@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"reflect"
 
-	"github.com/hashicorp/terraform/helper/encryption"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/encryption"
 )
 
 func MergeMaps(m1, m2 map[string]interface{}) {
