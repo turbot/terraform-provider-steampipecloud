@@ -10,8 +10,8 @@ import (
 	"github.com/turbot/go-kit/types"
 	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 
-	"github.com/hashicorp/terraform/helper/schema"
-	"github.com/hashicorp/terraform/helper/validation"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
 func resourceSteampipeCloudWorkspace() *schema.Resource {
