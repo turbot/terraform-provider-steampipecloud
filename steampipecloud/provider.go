@@ -33,10 +33,10 @@ func Provider() terraform.ResourceProvider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"steampipecloud_connection":                       resourceSteampipeCloudConnection(),
-			"steampipecloud_organization":                     resourceSteampipeCloudOrganization(),
-			"steampipecloud_workspace":                        resourceSteampipeCloudWorkspace(),
-			"steampipecloud_workspace_connection_association": resourceSteampipeCloudWorkspaceConnectionAssociation(),
+			"steampipecloud_connection":           resourceSteampipeCloudConnection(),
+			"steampipecloud_organization":         resourceSteampipeCloudOrganization(),
+			"steampipecloud_workspace":            resourceSteampipeCloudWorkspace(),
+			"steampipecloud_workspace_connection": resourceSteampipeCloudWorkspaceConnection(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipecloud_user": dataSourceSteampipeCloudUser(),
