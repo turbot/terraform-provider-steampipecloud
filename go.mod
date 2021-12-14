@@ -6,6 +6,7 @@ require github.com/turbot/go-kit v0.3.0
 
 require (
 	github.com/go-yaml/yaml v2.1.0+incompatible
+	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/stretchr/testify v1.7.0
 	github.com/turbot/steampipe-cloud-sdk-go v0.0.1
 )
@@ -56,7 +57,6 @@ require (
 	github.com/hashicorp/hcl v0.0.0-20170504190234-a4b07c25de5f // indirect
 	github.com/hashicorp/logutils v1.0.0 // indirect
 	github.com/hashicorp/terraform-config-inspect v0.0.0-20191212124732-c6ae6269b9d7 // indirect
-	github.com/hashicorp/terraform-plugin-sdk v1.17.2
 	github.com/hashicorp/yamux v0.0.0-20181012175058-2f1d1f20f75d // indirect
 	github.com/huandu/xstrings v1.3.2 // indirect
 	github.com/imdario/mergo v0.3.12 // indirect
