@@ -141,7 +141,7 @@ func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
 
 		if isUser {
 			var actorHandle string
-			actorHandle, r, err = getUserHandler(ctx, client)
+			actorHandle, _, err = getUserHandler(ctx, client)
 			if err != nil {
 				return fmt.Errorf("error fetching user handle. %s", err)
 			}
@@ -235,7 +235,6 @@ func testAccCheckTestWorkspaceExists(workspaceHandle string) resource.TestCheckF
 func testAccCheckTestConnectionExists(connHandle string) resource.TestCheckFunc {
 	ctx := context.Background()
 	return func(state *terraform.State) error {
-		isUser := true
 		client := testAccProvider.Meta().(*SteampipeClient)
 
 		isUser, orgHandle := isUserConnection(client)
