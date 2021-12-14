@@ -45,7 +45,7 @@ func Provider() *schema.Provider {
 			"steampipecloud_workspace_connection": resourceWorkspaceConnection(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			// "steampipecloud_user": dataSourceUser(),
+			"steampipecloud_user": dataSourceUser(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
