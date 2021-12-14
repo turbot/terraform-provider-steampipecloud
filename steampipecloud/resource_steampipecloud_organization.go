@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	"github.com/turbot/steampipe-cloud-sdk-go"
+	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudOrganization() *schema.Resource {
@@ -68,7 +68,7 @@ func resourceSteampipeCloudOrganizationExists(d *schema.ResourceData, meta inter
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
 
-	_, r, err := client.APIClient.OrgsApi.GetOrg(context.Background(), handle).Execute()
+	_, r, err := client.APIClient.Orgs.Get(context.Background(), handle).Execute()
 	if err != nil {
 		if r.StatusCode == 404 {
 			return false, nil
@@ -91,7 +91,7 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 	handle := d.Get("handle")
 
 	// Create request
-	req := steampipe.TypesCreateOrgRequest{
+	req := steampipecloud.TypesCreateOrgRequest{
 		Handle: handle.(string),
 	}
 
@@ -107,7 +107,7 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 		req.Url = types.String(value.(string))
 	}
 
-	resp, r, err := client.APIClient.OrgsApi.CreateOrg(context.Background()).Request(req).Execute()
+	resp, r, err := client.APIClient.Orgs.Create(context.Background()).Request(req).Execute()
 	if err != nil {
 		return fmt.Errorf("error creating organization: \n	StatusCode: %d \n	Body: %v", r.StatusCode, r.Body)
 	}
@@ -131,7 +131,7 @@ func resourceSteampipeCloudOrganizationRead(d *schema.ResourceData, meta interfa
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
 
-	resp, r, err := client.APIClient.OrgsApi.GetOrg(context.Background(), handle).Execute()
+	resp, r, err := client.APIClient.Orgs.Get(context.Background(), handle).Execute()
 	if err != nil {
 		if r.StatusCode == 404 {
 			log.Printf("\n[WARN] Organization (%s) not found", handle)
@@ -160,7 +160,7 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 	oldHandle, newHandle := d.GetChange("handle")
 
 	// Create request
-	req := steampipe.TypesUpdateOrgRequest{
+	req := steampipecloud.TypesUpdateOrgRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 
@@ -178,7 +178,7 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 
 	log.Printf("\n[DEBUG] Updating Organization: %s", *req.Handle)
 
-	resp, _, err := client.APIClient.OrgsApi.UpdateOrg(context.Background(), oldHandle.(string)).Request(req).Execute()
+	resp, _, err := client.APIClient.Orgs.Update(context.Background(), oldHandle.(string)).Request(req).Execute()
 	if err != nil {
 		return fmt.Errorf("error updating organization: %s", err)
 	}
@@ -203,7 +203,7 @@ func resourceSteampipeCloudOrganizationDelete(d *schema.ResourceData, meta inter
 	handle := d.Id()
 	log.Printf("\n[DEBUG] Deleting Organization: %s", handle)
 
-	_, _, err := client.APIClient.OrgsApi.DeleteOrg(context.Background(), handle).Execute()
+	_, _, err := client.APIClient.Orgs.Delete(context.Background(), handle).Execute()
 	if err != nil {
 		return fmt.Errorf("error deleting organization: %s", err)
 	}

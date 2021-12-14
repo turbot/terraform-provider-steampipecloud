@@ -85,7 +85,7 @@ func testAccCheckOrganizationExists(resource string) resource.TestCheckFunc {
 			return fmt.Errorf("no Record ID is set")
 		}
 		client := testAccProvider.Meta().(*SteampipeClient)
-		_, _, err := client.APIClient.OrgsApi.GetOrg(context.Background(), rs.Primary.ID).Execute()
+		_, _, err := client.APIClient.Orgs.Get(context.Background(), rs.Primary.ID).Execute()
 		if err != nil {
 			return fmt.Errorf("error fetching item with resource %s. %s", resource, err)
 		}
@@ -97,7 +97,7 @@ func testAccCheckOrganizationDestroy(s *terraform.State) error {
 	client := testAccProvider.Meta().(*SteampipeClient)
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "steampipecloud_organization" {
-			_, r, err := client.APIClient.OrgsApi.GetOrg(context.Background(), rs.Primary.ID).Execute()
+			_, r, err := client.APIClient.Orgs.Get(context.Background(), rs.Primary.ID).Execute()
 			if err == nil {
 				return fmt.Errorf("alert still exists")
 			}

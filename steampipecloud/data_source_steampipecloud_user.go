@@ -61,7 +61,7 @@ func dataSourceSteampipeCloudUser() *schema.Resource {
 func dataSourceSteampipeCloudUserRead(d *schema.ResourceData, meta interface{}) error {
 	steampipeClient := meta.(*SteampipeClient)
 
-	resp, _, err := steampipeClient.APIClient.UsersApi.GetActor(context.Background()).Execute()
+	resp, _, err := steampipeClient.APIClient.Actors.Get(context.Background()).Execute()
 	if err != nil {
 		return err
 	}

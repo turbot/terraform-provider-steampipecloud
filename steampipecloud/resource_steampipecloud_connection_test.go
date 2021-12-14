@@ -183,9 +183,9 @@ func testAccCheckConnectionDestroy(s *terraform.State) error {
 			if err != nil {
 				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. getUserHandler Error: \n%v", r)
 			}
-			_, r, err = client.APIClient.UserConnectionsApi.GetUserConnection(ctx, actorHandle, connectionHandle).Execute()
+			_, r, err = client.APIClient.UserConnections.Get(ctx, actorHandle, connectionHandle).Execute()
 		} else {
-			_, r, err = client.APIClient.OrgConnectionsApi.GetOrgConnection(ctx, orgHandle, connectionHandle).Execute()
+			_, r, err = client.APIClient.OrgConnections.Get(ctx, orgHandle, connectionHandle).Execute()
 		}
 		if err == nil {
 			return fmt.Errorf("Connection %s still exists in organization %s", connectionHandle, client.Config.Org)
@@ -236,12 +236,12 @@ func testAccCheckConnectionExists(n string) resource.TestCheckFunc {
 			if err != nil {
 				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. getUserHandler Error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 			}
-			_, r, err = client.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, connectionHandle).Execute()
+			_, r, err = client.APIClient.UserConnections.Get(context.Background(), actorHandle, connectionHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetUserConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 			}
 		} else {
-			_, r, err = client.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), orgHandle, connectionHandle).Execute()
+			_, r, err = client.APIClient.OrgConnections.Get(context.Background(), orgHandle, connectionHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\n GetOrgConnection.error in organization %s:	\n	status_code: %d\n	body: %v", orgHandle, r.StatusCode, r.Body)
 			}
@@ -267,7 +267,7 @@ func testAccCheckConnectionOrganizationExists(orgHandle string) resource.TestChe
 		var err error
 
 		// check if organization  is created
-		_, _, err = client.APIClient.OrgsApi.GetOrg(ctx, orgHandle).Execute()
+		_, _, err = client.APIClient.Orgs.Get(ctx, orgHandle).Execute()
 		if err != nil {
 			return fmt.Errorf("error fetching organization with handle %s. %s", orgHandle, err)
 		}

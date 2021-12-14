@@ -10,7 +10,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	"github.com/turbot/steampipe-cloud-sdk-go"
+	steampipecloud "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudWorkspaceConnectionAssociation() *schema.Resource {
@@ -145,13 +145,13 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationExists(d *schema.Resour
 	connHandle := idParts[1]
 
 	if client.Config != nil && client.Config.Org != "" {
-		_, r, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.GetOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
+		_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
 	} else {
 		userHandler, r, err = getUserHandler(client)
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationExists.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		_, r, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.GetUserWorkspaceConnectionAssociation(context.Background(), userHandler, workspaceHandle, connHandle).Execute()
+		_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(context.Background(), userHandler, workspaceHandle, connHandle).Execute()
 	}
 
 	// Error check
@@ -175,14 +175,14 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationImport(d *schema.Resour
 func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.ResourceData, meta interface{}) error {
 	var r *_nethttp.Response
 	client := meta.(*SteampipeClient)
-	var resp steampipe.TypesWorkspaceConn
+	var resp steampipecloud.TypesWorkspaceConn
 	var userHandler string
 	var err error
 	workspaceHandle := d.Get("workspace_handle").(string)
 	connHandle := d.Get("connection_handle").(string)
 
 	// Create request
-	req := steampipe.TypesCreateWorkspaceConnRequest{
+	req := steampipecloud.TypesCreateWorkspaceConnRequest{
 		ConnectionHandle: connHandle,
 	}
 
@@ -190,14 +190,14 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationCreate(d *schema.Resour
 	// If 'org' is set in the provider config, workspace will create in that organization
 	// else, the user identity is used.
 	if client.Config != nil && client.Config.Org != "" {
-		resp, _, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.CreateOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle).Request(req).Execute()
+		resp, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Create(context.Background(), client.Config.Org, workspaceHandle).Request(req).Execute()
 	} else {
 		// Get current actor information
 		userHandler, r, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationCreate.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		resp, _, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.CreateUserWorkspaceConnectionAssociation(context.Background(), userHandler, workspaceHandle).Request(req).Execute()
+		resp, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Create(context.Background(), userHandler, workspaceHandle).Request(req).Execute()
 	}
 
 	// Error check
@@ -248,19 +248,19 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationRead(d *schema.Resource
 	workspaceHandle := idParts[0]
 	connHandle := idParts[1]
 
-	var resp steampipe.TypesWorkspaceConn
+	var resp steampipecloud.TypesWorkspaceConn
 	var err error
 	var r *_nethttp.Response
 	var userHandle string
 
 	if client.Config != nil && client.Config.Org != "" {
-		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.GetOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
+		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
 	} else {
 		userHandle, r, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationRead.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.GetUserWorkspaceConnectionAssociation(context.Background(), userHandle, workspaceHandle, connHandle).Execute()
+		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(context.Background(), userHandle, workspaceHandle, connHandle).Execute()
 	}
 
 	if err != nil {
@@ -340,13 +340,13 @@ func resourceSteampipeCloudWorkspaceConnectionAssociationDelete(d *schema.Resour
 	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s/%s", workspaceHandle, connHandle))
 
 	if client.Config != nil && client.Config.Org != "" {
-		_, _, err = client.APIClient.OrgWorkspaceConnectionAssociationsApi.DeleteOrgWorkspaceConnectionAssociation(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
+		_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Delete(context.Background(), client.Config.Org, workspaceHandle, connHandle).Execute()
 	} else {
 		userHandle, r, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceConnectionAssociationDelete.\ngetHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		_, _, err = client.APIClient.UserWorkspaceConnectionAssociationsApi.DeleteUserWorkspaceConnectionAssociation(context.Background(), userHandle, workspaceHandle, connHandle).Execute()
+		_, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Delete(context.Background(), userHandle, workspaceHandle, connHandle).Execute()
 	}
 
 	// Error check
