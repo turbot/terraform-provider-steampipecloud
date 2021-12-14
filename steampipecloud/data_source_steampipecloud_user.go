@@ -2,9 +2,7 @@ package steampipecloud
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
-	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -87,13 +85,4 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interf
 	d.Set("version_id", resp.VersionId)
 
 	return diags
-}
-
-// Decode response body
-func decodeResponse(r *http.Response) interface{} {
-	var errBody interface{}
-	_ = json.NewDecoder(r.Body).Decode(&errBody)
-	defer r.Body.Close()
-
-	return errBody
 }

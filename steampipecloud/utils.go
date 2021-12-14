@@ -2,6 +2,7 @@ package steampipecloud
 
 import (
 	"context"
+	"encoding/json"
 	"net/http"
 )
 
@@ -24,4 +25,13 @@ func getUserHandler(ctx context.Context, client *SteampipeClient) (string, *http
 		return "", r, err
 	}
 	return resp.Handle, r, nil
+}
+
+// Decode response body
+func decodeResponse(r *http.Response) interface{} {
+	var errBody interface{}
+	_ = json.NewDecoder(r.Body).Decode(&errBody)
+	defer r.Body.Close()
+
+	return errBody
 }
