@@ -14,7 +14,7 @@ import (
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
 	"github.com/turbot/go-kit/types"
-	"github.com/turbot/steampipe-cloud-sdk-go"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 
@@ -267,9 +267,9 @@ func resourceSteampipeCloudConnectionCreate(d *schema.ResourceData, meta interfa
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionCreate. getUserHandle error:	\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		resp, r, err = steampipeClient.APIClient.UserConnectionsApi.CreateUserConnection(context.Background(), actorHandle).Request(req).Execute()
+		resp, r, err = steampipeClient.APIClient.UserConnections.Create(context.Background(), actorHandle).Request(req).Execute()
 	} else {
-		resp, r, err = steampipeClient.APIClient.OrgConnectionsApi.CreateOrgConnection(context.Background(), orgHandle).Request(req).Execute()
+		resp, r, err = steampipeClient.APIClient.OrgConnections.Create(context.Background(), orgHandle).Request(req).Execute()
 	}
 
 	if err != nil {
@@ -325,12 +325,12 @@ func resourceSteampipeCloudConnectionRead(d *schema.ResourceData, meta interface
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \ngetUserHandle error:	\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		resp, r, err = steampipeClient.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, id).Execute()
+		resp, r, err = steampipeClient.APIClient.UserConnections.Get(context.Background(), actorHandle, id).Execute()
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionRead. \nGetConnection.error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
 	} else {
-		resp, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), orgHandle, id).Execute()
+		resp, r, err = steampipeClient.APIClient.OrgConnections.Get(context.Background(), orgHandle, id).Execute()
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionRead.\nGetConnection.error in organization %s:	\n	status_code: %d\n	body: %v", orgHandle, r.StatusCode, r.Body)
 		}
@@ -380,7 +380,7 @@ func resourceSteampipeCloudConnectionDelete(d *schema.ResourceData, meta interfa
 	}
 
 	if !IsUser {
-		_, r, err := steampipeClient.APIClient.OrgConnectionsApi.DeleteOrgConnection(context.Background(), org, conn_handle).Execute()
+		_, r, err := steampipeClient.APIClient.OrgConnections.Delete(context.Background(), org, conn_handle).Execute()
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionDelete. DeleteOrgConnection Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -389,7 +389,7 @@ func resourceSteampipeCloudConnectionDelete(d *schema.ResourceData, meta interfa
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionDelete. getUserHandler Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		_, r, err = steampipeClient.APIClient.UserConnectionsApi.DeleteUserConnection(context.Background(), actorHandle, conn_handle).Execute()
+		_, r, err = steampipeClient.APIClient.UserConnections.Delete(context.Background(), actorHandle, conn_handle).Execute()
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionDelete. DeleteUserConnection Error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -450,13 +450,13 @@ func resourceSteampipeCloudConnectionUpdate(d *schema.ResourceData, meta interfa
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate. getUserHandler error:	\nstatus_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		resp, r, err = steampipeClient.APIClient.UserConnectionsApi.UpdateUserConnection(context.Background(), actorHandle, oldHandle.(string)).Request(req).Execute()
+		resp, r, err = steampipeClient.APIClient.UserConnections.Update(context.Background(), actorHandle, oldHandle.(string)).Request(req).Execute()
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate.\nUpdateUserConnection error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
 
 	} else {
-		resp, r, err = steampipeClient.APIClient.OrgConnectionsApi.UpdateOrgConnection(context.Background(), org, oldHandle.(string)).Request(req).Execute()
+		resp, r, err = steampipeClient.APIClient.OrgConnections.Update(context.Background(), org, oldHandle.(string)).Request(req).Execute()
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudConnectionUpdate.\nUpdateOrgConnection error:\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
@@ -510,9 +510,9 @@ func resourceSteampipeCloudConnectionExists(d *schema.ResourceData, meta interfa
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudConnectionExists. getUserHandle error:	\n	status_code: %d\n	body: %v", r.StatusCode, r.Body)
 		}
-		_, r, err = steampipeClient.APIClient.UserConnectionsApi.GetUserConnection(context.Background(), actorHandle, id).Execute()
+		_, r, err = steampipeClient.APIClient.UserConnections.Get(context.Background(), actorHandle, id).Execute()
 	} else {
-		_, r, err = steampipeClient.APIClient.OrgConnectionsApi.GetOrgConnection(context.Background(), org, id).Execute()
+		_, r, err = steampipeClient.APIClient.OrgConnections.Get(context.Background(), org, id).Execute()
 	}
 
 	if err != nil {
@@ -532,7 +532,7 @@ func resourceSteampipeCloudConnectionImport(d *schema.ResourceData, meta interfa
 }
 
 func getUserHandler(client *SteampipeClient) (string, *_nethttp.Response, error) {
-	resp, r, err := client.APIClient.UsersApi.GetActor(context.Background()).Execute()
+	resp, r, err := client.APIClient.Actors.Get(context.Background()).Execute()
 	if err != nil {
 		return "", r, err
 	}

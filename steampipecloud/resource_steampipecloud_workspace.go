@@ -8,10 +8,10 @@ import (
 	"regexp"
 
 	"github.com/turbot/go-kit/types"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/helper/validation"
-	"github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func resourceSteampipeCloudWorkspace() *schema.Resource {
@@ -88,13 +88,13 @@ func resourceSteampipeCloudWorkspaceExists(d *schema.ResourceData, meta interfac
 	var r *_nethttp.Response
 
 	if client.Config != nil && client.Config.Org != "" {
-		_, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
+		_, r, err = client.APIClient.OrgWorkspaces.Get(context.Background(), client.Config.Org, handle).Execute()
 	} else {
 		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return false, fmt.Errorf("inside resourceSteampipeCloudWorkspaceExists.\ngetHandler Error: \n%v", err)
 		}
-		_, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), userHandler, handle).Execute()
+		_, r, err = client.APIClient.UserWorkspaces.Get(context.Background(), userHandler, handle).Execute()
 	}
 
 	// Error check
@@ -132,14 +132,14 @@ func resourceSteampipeCloudWorkspaceCreate(d *schema.ResourceData, meta interfac
 	// If 'org' is set in the provider config, workspace will create in that organization
 	// else, the user identity is used.
 	if client.Config != nil && client.Config.Org != "" {
-		resp, _, err = client.APIClient.OrgWorkspacesApi.CreateOrgWorkspace(context.Background(), client.Config.Org).Request(req).Execute()
+		resp, _, err = client.APIClient.OrgWorkspaces.Create(context.Background(), client.Config.Org).Request(req).Execute()
 	} else {
 		// Get current actor information
 		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceCreate.\ngetHandler Error: \n%v", err)
 		}
-		resp, _, err = client.APIClient.UserWorkspacesApi.CreateUserWorkspace(context.Background(), userHandler).Request(req).Execute()
+		resp, _, err = client.APIClient.UserWorkspaces.Create(context.Background(), userHandler).Request(req).Execute()
 	}
 
 	// Error check
@@ -174,13 +174,13 @@ func resourceSteampipeCloudWorkspaceRead(d *schema.ResourceData, meta interface{
 	var r *_nethttp.Response
 
 	if client.Config != nil && client.Config.Org != "" {
-		resp, r, err = client.APIClient.OrgWorkspacesApi.GetOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
+		resp, r, err = client.APIClient.OrgWorkspaces.Get(context.Background(), client.Config.Org, handle).Execute()
 	} else {
 		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceRead.\ngetHandler Error: \n%v", err)
 		}
-		resp, r, err = client.APIClient.UserWorkspacesApi.GetUserWorkspace(context.Background(), userHandler, handle).Execute()
+		resp, r, err = client.APIClient.UserWorkspaces.Get(context.Background(), userHandler, handle).Execute()
 	}
 
 	if err != nil {
@@ -223,14 +223,14 @@ func resourceSteampipeCloudWorkspaceUpdate(d *schema.ResourceData, meta interfac
 	var err error
 
 	if client.Config != nil && client.Config.Org != "" {
-		resp, _, err = client.APIClient.OrgWorkspacesApi.UpdateOrgWorkspace(context.Background(), client.Config.Org, oldHandle.(string)).Request(req).Execute()
+		resp, _, err = client.APIClient.OrgWorkspaces.Update(context.Background(), client.Config.Org, oldHandle.(string)).Request(req).Execute()
 	} else {
 		// Get user handler
 		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceUpdate.\ngetHandler Error: \n%v", err)
 		}
-		resp, _, err = client.APIClient.UserWorkspacesApi.UpdateUserWorkspace(context.Background(), userHandler, oldHandle.(string)).Request(req).Execute()
+		resp, _, err = client.APIClient.UserWorkspaces.Update(context.Background(), userHandler, oldHandle.(string)).Request(req).Execute()
 	}
 
 	// Error check
@@ -263,13 +263,13 @@ func resourceSteampipeCloudWorkspaceDelete(d *schema.ResourceData, meta interfac
 	var err error
 	var userHandler string
 	if client.Config != nil && client.Config.Org != "" {
-		_, _, err = client.APIClient.OrgWorkspacesApi.DeleteOrgWorkspace(context.Background(), client.Config.Org, handle).Execute()
+		_, _, err = client.APIClient.OrgWorkspaces.Delete(context.Background(), client.Config.Org, handle).Execute()
 	} else {
 		userHandler, _, err = getUserHandler(client)
 		if err != nil {
 			return fmt.Errorf("inside resourceSteampipeCloudWorkspaceDelete.\ngetHandler Error: \n%v", err)
 		}
-		_, _, err = client.APIClient.UserWorkspacesApi.DeleteUserWorkspace(context.Background(), userHandler, handle).Execute()
+		_, _, err = client.APIClient.UserWorkspaces.Delete(context.Background(), userHandler, handle).Execute()
 	}
 
 	// Error check

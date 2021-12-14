@@ -7,7 +7,7 @@ import (
 
 	"github.com/hashicorp/terraform/helper/schema"
 	"github.com/hashicorp/terraform/terraform"
-	"github.com/turbot/steampipe-cloud-sdk-go"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 func Provider() terraform.ResourceProvider {
