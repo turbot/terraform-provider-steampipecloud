@@ -2,26 +2,24 @@ package steampipecloud
 
 import (
 	"context"
-	"fmt"
 	"log"
 	"regexp"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
 	"github.com/turbot/go-kit/types"
 	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
-
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
-	"github.com/hashicorp/terraform-plugin-sdk/helper/validation"
 )
 
-func resourceSteampipeCloudOrganization() *schema.Resource {
+func resourceOrganization() *schema.Resource {
 	return &schema.Resource{
-		Create: resourceSteampipeCloudOrganizationCreate,
-		Read:   resourceSteampipeCloudOrganizationRead,
-		Delete: resourceSteampipeCloudOrganizationDelete,
-		Update: resourceSteampipeCloudOrganizationUpdate,
-		Exists: resourceSteampipeCloudOrganizationExists,
+		CreateContext: resourceOrganizationCreate,
+		ReadContext:   resourceOrganizationRead,
+		UpdateContext: resourceOrganizationUpdate,
+		DeleteContext: resourceOrganizationDelete,
 		Importer: &schema.ResourceImporter{
-			State: resourceSteampipeCloudOrganizationImport,
+			StateContext: schema.ImportStatePassthroughContext,
 		},
 		Schema: map[string]*schema.Schema{
 			"handle": {
@@ -64,29 +62,10 @@ func resourceSteampipeCloudOrganization() *schema.Resource {
 	}
 }
 
-func resourceSteampipeCloudOrganizationExists(d *schema.ResourceData, meta interface{}) (b bool, e error) {
-	client := meta.(*SteampipeClient)
-	handle := d.Id()
+func resourceOrganizationCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
-	_, r, err := client.APIClient.Orgs.Get(context.Background(), handle).Execute()
-	if err != nil {
-		if r.StatusCode == 404 {
-			return false, nil
-		}
-		return false, err
-	}
-	return true, nil
-}
-
-func resourceSteampipeCloudOrganizationImport(d *schema.ResourceData, meta interface{}) ([]*schema.ResourceData, error) {
-	if err := resourceSteampipeCloudOrganizationRead(d, meta); err != nil {
-		return nil, err
-	}
-
-	return []*schema.ResourceData{d}, nil
-}
-
-func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta interface{}) error {
 	client := meta.(*SteampipeClient)
 	handle := d.Get("handle")
 
@@ -107,9 +86,9 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 		req.Url = types.String(value.(string))
 	}
 
-	resp, r, err := client.APIClient.Orgs.Create(context.Background()).Request(req).Execute()
+	resp, r, err := client.APIClient.Orgs.Create(ctx).Request(req).Execute()
 	if err != nil {
-		return fmt.Errorf("error creating organization: \n	StatusCode: %d \n	Body: %v", r.StatusCode, r.Body)
+		return diag.Errorf("error creating organization: %v", decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Organization created: %s", resp.Handle)
 
@@ -124,10 +103,13 @@ func resourceSteampipeCloudOrganizationCreate(d *schema.ResourceData, meta inter
 	d.Set("url", resp.Url)
 	d.Set("version_id", resp.VersionId)
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudOrganizationRead(d *schema.ResourceData, meta interface{}) error {
+func resourceOrganizationRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
 
@@ -138,7 +120,7 @@ func resourceSteampipeCloudOrganizationRead(d *schema.ResourceData, meta interfa
 			d.SetId("")
 			return nil
 		}
-		return fmt.Errorf("error reading %s: %s", handle, err)
+		return diag.Errorf("error reading organization %s: %v", handle, decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Organization received: %s", resp.Handle)
 
@@ -151,10 +133,13 @@ func resourceSteampipeCloudOrganizationRead(d *schema.ResourceData, meta interfa
 	d.Set("url", resp.Url)
 	d.Set("version_id", resp.VersionId)
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta interface{}) error {
+func resourceOrganizationUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
+
 	client := meta.(*SteampipeClient)
 
 	oldHandle, newHandle := d.GetChange("handle")
@@ -178,9 +163,9 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 
 	log.Printf("\n[DEBUG] Updating Organization: %s", *req.Handle)
 
-	resp, _, err := client.APIClient.Orgs.Update(context.Background(), oldHandle.(string)).Request(req).Execute()
+	resp, r, err := client.APIClient.Orgs.Update(ctx, oldHandle.(string)).Request(req).Execute()
 	if err != nil {
-		return fmt.Errorf("error updating organization: %s", err)
+		return diag.Errorf("resourceOrganizationUpdate. Update organization %v", decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Organization updated: %s", resp.Handle)
 
@@ -195,17 +180,16 @@ func resourceSteampipeCloudOrganizationUpdate(d *schema.ResourceData, meta inter
 	d.Set("url", resp.Url)
 	d.Set("version_id", resp.VersionId)
 
-	return nil
+	return diags
 }
 
-func resourceSteampipeCloudOrganizationDelete(d *schema.ResourceData, meta interface{}) error {
+func resourceOrganizationDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SteampipeClient)
 	handle := d.Id()
-	log.Printf("\n[DEBUG] Deleting Organization: %s", handle)
 
-	_, _, err := client.APIClient.Orgs.Delete(context.Background(), handle).Execute()
+	_, r, err := client.APIClient.Orgs.Delete(ctx, handle).Execute()
 	if err != nil {
-		return fmt.Errorf("error deleting organization: %s", err)
+		return diag.Errorf("Deleting organization error: %v", decodeResponse(r))
 	}
 	d.SetId("")
 

@@ -29,6 +29,7 @@ require (
 	github.com/Masterminds/goutils v1.1.0 // indirect
 	github.com/Masterminds/semver v1.5.0 // indirect
 	github.com/Masterminds/sprig v2.22.0+incompatible // indirect
+	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/agext/levenshtein v1.2.2 // indirect
 	github.com/agl/ed25519 v0.0.0-20170116200512-5312a6153412 // indirect
 	github.com/apparentlymart/go-cidr v1.1.0 // indirect
@@ -90,6 +91,7 @@ require (
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/posener/complete v1.2.1 // indirect
 	github.com/spf13/afero v1.2.2 // indirect
+	github.com/tkrajina/go-reflector v0.5.4 // indirect
 	github.com/ulikunitz/xz v0.5.8 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/vmihailenco/msgpack/v4 v4.3.12 // indirect

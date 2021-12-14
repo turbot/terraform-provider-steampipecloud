@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
-	"fmt"
 	"log"
 	_nethttp "net/http"
 	"reflect"
@@ -14,9 +13,9 @@ import (
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/validation"
+	"github.com/turbot/go-kit/helpers"
 	"github.com/turbot/go-kit/types"
 	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
-	"github.com/turbot/terraform-provider-steampipecloud/helpers"
 )
 
 func resourceConnection() *schema.Resource {
@@ -217,19 +216,8 @@ func resourceConnection() *schema.Resource {
 func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
-
-	var orgHandle, plugin, connHandle string
+	var plugin, connHandle string
 	var config map[string]interface{}
-	IsUser := true
-
-	// Check if the connection is scoped on an user or a specific organization
-	steampipeClient := meta.(*SteampipeClient)
-	if steampipeClient.Config != nil {
-		if steampipeClient.Config.Organization != "" {
-			orgHandle = steampipeClient.Config.Organization
-			IsUser = false
-		}
-	}
 
 	if value, ok := d.GetOk("handle"); ok {
 		connHandle = value.(string)
@@ -241,19 +229,16 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	// Get config to create connection
 	connConfig, err := CreateConnectionConfiguration(d)
 	if err != nil {
-		return diag.FromErr(err)
-		// return fmt.Errorf("inside resourceConnectionUpdate. Error while creating connection:  %v", err)
+		return diag.Errorf("resourceConnectionUpdate. Error while creating connection:  %v", err)
 	}
 
 	configByteData, err := json.Marshal(connConfig)
 	if err != nil {
-		return diag.FromErr(err)
-		// return fmt.Errorf("inside resourceConnectionCreate. Marshalling connection config error  %v", err)
+		return diag.Errorf("resourceConnectionCreate. Marshalling connection config error  %v", err)
 	}
 	err = json.Unmarshal(configByteData, &config)
 	if err != nil {
-		return diag.FromErr(err)
-		// return fmt.Errorf("inside resourceConnectionCreate. Unmarshalling connection config error  %v", err)
+		return diag.Errorf("resourceConnectionCreate. Unmarshalling connection config error  %v", err)
 	}
 
 	req := steampipe.TypesCreateConnectionRequest{
@@ -265,13 +250,16 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 		req.SetConfig(config)
 	}
 
+	steampipeClient := meta.(*SteampipeClient)
 	var resp steampipe.TypesConnection
 	var actorHandle string
 	var r *_nethttp.Response
-	if IsUser {
+
+	isUser, orgHandle := isUserConnection(steampipeClient)
+	if isUser {
 		actorHandle, r, err = getUserHandler(ctx, steampipeClient)
 		if err != nil {
-			return diag.FromErr(fmt.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r)))
+			return diag.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
 		}
 		resp, r, err = steampipeClient.APIClient.UserConnections.Create(ctx, actorHandle).Request(req).Execute()
 	} else {
@@ -279,7 +267,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	if err != nil {
-		return diag.FromErr(fmt.Errorf("resourceConnectionCreate. Create connection api error  %v", decodeResponse(r)))
+		return diag.Errorf("resourceConnectionCreate. Create connection api error  %v", decodeResponse(r))
 	}
 
 	d.Set("connection_id", resp.Id)
@@ -293,7 +281,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
 			if v != nil {
-				if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				if helpers.StringSliceContains([]string{"regions", "Regions", "tables"}, k) {
 					d.Set(strings.ToLower(k), v.([]interface{}))
 				} else {
 					d.Set(k, v.(string))
@@ -316,7 +304,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 
 	id := d.Id()
 	if id == "" {
-		return diag.FromErr(fmt.Errorf("resourceConnectionRead. Connection handle not present."))
+		return diag.Errorf("resourceConnectionRead. Connection handle not present.")
 	}
 
 	isUser, orgHandle := isUserConnection(steampipeClient)
@@ -324,7 +312,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, steampipeClient)
 		if err != nil {
-			return diag.FromErr(fmt.Errorf("resourceConnectionRead. getUserHandler error  %v", decodeResponse(r)))
+			return diag.Errorf("resourceConnectionRead. getUserHandler error  %v", decodeResponse(r))
 		}
 		_, r, err = steampipeClient.APIClient.UserConnections.Get(context.Background(), actorHandle, id).Execute()
 	} else {
@@ -333,7 +321,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	if err != nil {
 		if r.StatusCode == 404 {
 			d.SetId("")
-			return diag.FromErr(err)
+			return nil
 		}
 		return diag.Errorf("resourceConnectionRead. Get connection error: %v", decodeResponse(r))
 	}
@@ -350,7 +338,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
 			if v != nil {
-				if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				if helpers.StringSliceContains([]string{"regions", "Regions", "tables"}, k) {
 					d.Set(strings.ToLower(k), v.([]interface{}))
 				} else {
 					d.Set(k, v.(string))
@@ -415,15 +403,15 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	connConfig, err := CreateConnectionConfiguration(d)
 	if err != nil {
-		return diag.Errorf("inside resourceConnectionUpdate. Error while creating connection:  %v", err)
+		return diag.Errorf("resourceConnectionUpdate. Error while creating connection:  %v", err)
 	}
 	data, err := json.Marshal(connConfig)
 	if err != nil {
-		return diag.Errorf("inside resourceConnectionUpdate. Marshalling connection config error  %v", err)
+		return diag.Errorf("resourceConnectionUpdate. Marshalling connection config error  %v", err)
 	}
 	err = json.Unmarshal(data, &config)
 	if err != nil {
-		return diag.Errorf("inside resourceConnectionUpdate. Unmarshalling connection config error  %v", err)
+		return diag.Errorf("resourceConnectionUpdate. Unmarshalling connection config error  %v", err)
 	}
 
 	if config != nil {
@@ -458,7 +446,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	if resp.Config != nil {
 		for k, v := range *resp.Config {
 			if v != nil {
-				if helpers.SliceContains([]string{"regions", "Regions", "tables"}, k) {
+				if helpers.StringSliceContains([]string{"regions", "Regions", "tables"}, k) {
 					d.Set(strings.ToLower(k), v.([]interface{}))
 				} else {
 					d.Set(k, v.(string))
