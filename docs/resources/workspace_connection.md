@@ -83,7 +83,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Connections can be imported using the `id`. For example,
+Workspace Connections can be imported using an ID made up of `workspace_handle/connection_handle`. For example,
 
 ```sh
 terraform import steampipecloud_workspace_connection_association.test_import dev/devconn
