@@ -27,11 +27,11 @@ func Provider() *schema.Provider {
 				Optional:    true,
 				Description: "Steampipe Organizations, include multiple users and are intended for organizations to collaborate and share workspaces and connections.",
 			},
-			"insecure_skip_verify": {
-				Type:     schema.TypeBool,
-				Optional: true,
-				Default:  false,
-			},
+			// "insecure_skip_verify": {
+			// 	Type:     schema.TypeBool,
+			// 	Optional: true,
+			// 	Default:  false,
+			// },
 			"host": {
 				Type:        schema.TypeString,
 				Optional:    true,
@@ -65,9 +65,9 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	if val, ok := d.GetOk("organization"); ok {
 		config.Organization = val.(string)
 	}
-	if val, ok := d.GetOk("insecure_skip_verify"); ok {
-		config.InsecureSkipVerify = val.(bool)
-	}
+	// if val, ok := d.GetOk("insecure_skip_verify"); ok {
+	// 	config.InsecureSkipVerify = val.(bool)
+	// }
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
@@ -90,10 +90,10 @@ type SteampipeClient struct {
 }
 
 type Config struct {
-	Organization       string
-	Token              string
-	Host               string
-	InsecureSkipVerify bool
+	Organization string
+	Token        string
+	Host         string
+	// InsecureSkipVerify bool
 }
 
 /*
