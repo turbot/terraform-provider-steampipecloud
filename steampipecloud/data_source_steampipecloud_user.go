@@ -2,13 +2,15 @@ package steampipecloud
 
 import (
 	"context"
+	"fmt"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
-func dataSourceSteampipeCloudUser() *schema.Resource {
+func dataSourceUser() *schema.Resource {
 	return &schema.Resource{
-		Read: dataSourceSteampipeCloudUserRead,
+		ReadContext: dataSourceUserRead,
 		Schema: map[string]*schema.Schema{
 			"handle": {
 				Type:     schema.TypeString,
@@ -58,13 +60,16 @@ func dataSourceSteampipeCloudUser() *schema.Resource {
 	}
 }
 
-func dataSourceSteampipeCloudUserRead(d *schema.ResourceData, meta interface{}) error {
-	steampipeClient := meta.(*SteampipeClient)
+func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	// Warning or errors can be collected in a slice type
+	var diags diag.Diagnostics
 
-	resp, _, err := steampipeClient.APIClient.Actors.Get(context.Background()).Execute()
+	steampipeClient := meta.(*SteampipeClient)
+	resp, r, err := steampipeClient.APIClient.Actors.Get(context.Background()).Execute()
 	if err != nil {
-		return err
+		return diag.FromErr(fmt.Errorf("%v", decodeResponse(r)))
 	}
+	defer r.Body.Close()
 
 	d.SetId(resp.Handle)
 	d.Set("avatar_url", resp.AvatarUrl)
@@ -79,5 +84,5 @@ func dataSourceSteampipeCloudUserRead(d *schema.ResourceData, meta interface{}) 
 	d.Set("url", resp.Url)
 	d.Set("version_id", resp.VersionId)
 
-	return nil
+	return diags
 }

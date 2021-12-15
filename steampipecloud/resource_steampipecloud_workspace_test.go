@@ -5,59 +5,61 @@ import (
 	"fmt"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
 // test suites
 func TestAccUserWorkspace_Basic(t *testing.T) {
 	resourceName := "steampipecloud_workspace.test"
+	workspaceHandle := "workspace" + randomString(3)
+	newWorkspaceHandle := "workspace" + randomString(4)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckUserWorkspaceDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserWorkspaceConfig(),
+				Config: testAccUserWorkspaceConfig(workspaceHandle),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckUserWorkspaceExists("steampipecloud_workspace.test"),
 					resource.TestCheckResourceAttr(
-						"steampipecloud_workspace.test", "handle", "terraformtest"),
+						"steampipecloud_workspace.test", "handle", workspaceHandle),
 				),
 			},
 			{
-				ResourceName:      resourceName,
-				ImportState:       true,
-				ImportStateVerify: true,
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"updated_at"},
 			},
 			{
-				Config: testAccUserWorkspaceUpdateHandleConfig(),
+				Config: testAccUserWorkspaceUpdateHandleConfig(newWorkspaceHandle),
 				Check: resource.TestCheckResourceAttr(
-					"steampipecloud_workspace.test", "handle", "terraformtestworkspace"),
+					"steampipecloud_workspace.test", "handle", newWorkspaceHandle),
 			},
 		},
 	})
 }
 
 // configs
-func testAccUserWorkspaceConfig() string {
-	return `
+func testAccUserWorkspaceConfig(workspaceHandle string) string {
+	return fmt.Sprintf(`
 resource "steampipecloud_workspace" "test" {
-	handle = "terraformtest"
-}
-`
+	handle = "%s"
+}`, workspaceHandle)
 }
 
-func testAccUserWorkspaceUpdateHandleConfig() string {
-	return `
+func testAccUserWorkspaceUpdateHandleConfig(newWorkspaceHandle string) string {
+	return fmt.Sprintf(`
 resource "steampipecloud_workspace" "test" {
-	handle = "terraformtestworkspace"
-}
-`
+	handle = "%s"
+}`, newWorkspaceHandle)
 }
 
 // helper functions
 func testAccCheckUserWorkspaceExists(resource string) resource.TestCheckFunc {
+	ctx := context.Background()
 	return func(state *terraform.State) error {
 		rs, ok := state.RootModule().Resources[resource]
 		if !ok {
@@ -69,12 +71,12 @@ func testAccCheckUserWorkspaceExists(resource string) resource.TestCheckFunc {
 		client := testAccProvider.Meta().(*SteampipeClient)
 
 		// Get user handle
-		userData, _, userErr := client.APIClient.Actors.Get(context.Background()).Execute()
+		userData, _, userErr := client.APIClient.Actors.Get(ctx).Execute()
 		if userErr != nil {
 			return fmt.Errorf("error fetching user handle. %s", userErr)
 		}
 
-		_, _, err := client.APIClient.UserWorkspaces.Get(context.Background(), userData.Handle, rs.Primary.ID).Execute()
+		_, _, err := client.APIClient.UserWorkspaces.Get(ctx, userData.Handle, rs.Primary.ID).Execute()
 		if err != nil {
 			return fmt.Errorf("error fetching item with resource %s. %s", resource, err)
 		}
@@ -83,18 +85,19 @@ func testAccCheckUserWorkspaceExists(resource string) resource.TestCheckFunc {
 }
 
 func testAccCheckUserWorkspaceDestroy(s *terraform.State) error {
+	ctx := context.Background()
 	client := testAccProvider.Meta().(*SteampipeClient)
 	for _, rs := range s.RootModule().Resources {
 		if rs.Type == "steampipecloud_workspace" {
 			// Get user handle
-			userData, _, userErr := client.APIClient.Actors.Get(context.Background()).Execute()
+			userData, _, userErr := client.APIClient.Actors.Get(ctx).Execute()
 			if userErr != nil {
 				return fmt.Errorf("error fetching user handle. %s", userErr)
 			}
 
-			_, r, err := client.APIClient.UserWorkspaces.Get(context.Background(), userData.Handle, rs.Primary.ID).Execute()
+			_, r, err := client.APIClient.UserWorkspaces.Get(ctx, userData.Handle, rs.Primary.ID).Execute()
 			if err == nil {
-				return fmt.Errorf("alert still exists")
+				return fmt.Errorf("Workspace still exists")
 			}
 
 			if r.StatusCode != 404 {

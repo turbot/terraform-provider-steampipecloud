@@ -7,27 +7,27 @@ import (
 	"net/http"
 	"testing"
 
-	"github.com/hashicorp/terraform-plugin-sdk/helper/resource"
-	"github.com/hashicorp/terraform-plugin-sdk/terraform"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
 )
 
-// test suites
-
 func TestAccWorkspaceConnection_Basic(t *testing.T) {
-	resourceName := "steampipecloud_workspace_connection.test"
+	resourceName := "steampipecloud_workspace_connection.test_conn"
+	workspaceHandle := "workspace" + randomString(6)
+	connHandle := "aws_" + randomString(4)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckWorkspaceConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccWorkspaceConnectionConfig(),
+				Config: testAccWorkspaceConnectionConfig(workspaceHandle, connHandle),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTestWorkspaceExists("testworkspaceconnection"),
-					testAccCheckTestConnectionExists("aws_connection_test"),
+					testAccCheckTestWorkspaceExists(workspaceHandle),
+					testAccCheckTestConnectionExists(connHandle),
 					testAccCheckWorkspaceConnectionExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "workspace_handle", "testworkspaceconnection"),
-					resource.TestCheckResourceAttr(resourceName, "connection_handle", "aws_connection_test"),
+					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
+					resource.TestCheckResourceAttr(resourceName, "connection_handle", connHandle),
 				),
 			},
 			{
@@ -40,20 +40,23 @@ func TestAccWorkspaceConnection_Basic(t *testing.T) {
 
 func TestAccOrgWorkspaceConnection_Basic(t *testing.T) {
 	resourceName := "steampipecloud_workspace_connection.test_org"
+	orgName := "terraform-" + randomString(11)
+	workspaceHandle := "workspace" + randomString(5)
+	connHandle := "aws_" + randomString(3)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccOrgWorkspaceConnectionConfig(),
+				Config: testAccOrgWorkspaceConnectionConfig(orgName, workspaceHandle, connHandle),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckConnectionOrganizationExists("terraformtestorganization"),
-					testAccCheckTestWorkspaceExists("testworkspaceconnection"),
-					testAccCheckTestConnectionExists("aws_connection_test"),
+					testAccCheckConnectionOrganizationExists(orgName),
+					testAccCheckTestWorkspaceExists(workspaceHandle),
+					testAccCheckTestConnectionExists(connHandle),
 					testAccCheckWorkspaceConnectionExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "workspace_handle", "testworkspaceconnection"),
-					resource.TestCheckResourceAttr(resourceName, "connection_handle", "aws_connection_test"),
+					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
+					resource.TestCheckResourceAttr(resourceName, "connection_handle", connHandle),
 				),
 			},
 		},
@@ -61,52 +64,51 @@ func TestAccOrgWorkspaceConnection_Basic(t *testing.T) {
 }
 
 // User Workspace Connection association config
-func testAccWorkspaceConnectionConfig() string {
-	return `
+func testAccWorkspaceConnectionConfig(workspace string, conn string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
-resource "steampipecloud_workspace" "test" {
-  handle = "testworkspaceconnection"
+resource "steampipecloud_workspace" "test_conn" {
+  handle = "%s"
 }
 
-resource "steampipecloud_connection" "test" {
-	handle     = "aws_connection_test"
+resource "steampipecloud_connection" "test_conn" {
+	handle     = "%s"
 	plugin     = "aws"
 	regions    = ["us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
 }
 
-resource "steampipecloud_workspace_connection" "test" {
-  workspace_handle  = steampipecloud_workspace.test.handle
-  connection_handle = steampipecloud_connection.test.handle
-}
-`
+resource "steampipecloud_workspace_connection" "test_conn" {
+  workspace_handle  = steampipecloud_workspace.test_conn.handle
+  connection_handle = steampipecloud_connection.test_conn.handle
+}`, workspace, conn)
 }
 
 // Organization Workspace Connection association config
-func testAccOrgWorkspaceConnectionConfig() string {
-	return `
+func testAccOrgWorkspaceConnectionConfig(org string, workspace string, conn string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
 resource "steampipecloud_organization" "test_org" {
-	handle       = "terraformtestorganization"
+	handle       = "%s"
 	display_name = "Terraform Test Org"
 }
 
 provider "steampipecloud" {
 	alias = "turbie"
-	org 	= steampipecloud_organization.test_org.handle
+	organization 	= steampipecloud_organization.test_org.handle
 }
 
 resource "steampipecloud_workspace" "test_org" {
 	provider = steampipecloud.turbie
-  handle   = "testworkspaceconnection"
+  handle   = "%s"
 }
 
 resource "steampipecloud_connection" "test_org" {
 	provider   = steampipecloud.turbie
-	handle     = "aws_connection_test"
+	handle     = "%s"
 	plugin     = "aws"
 	regions    = ["us-east-1"]
 	access_key = "redacted"
@@ -117,25 +119,18 @@ resource "steampipecloud_workspace_connection" "test_org" {
 	provider          = steampipecloud.turbie
   workspace_handle  = steampipecloud_workspace.test_org.handle
   connection_handle = steampipecloud_connection.test_org.handle
-}
-`
+}`, org, workspace, conn)
 }
 
 // testAccCheckWorkspaceConnectionDestroy verifies the workspace connection association has been destroyed
 func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
-	isUser := true
-	var r *http.Response
+	ctx := context.Background()
 	var err error
-	var actorHandle, orgHandle string
+	var r *http.Response
 
 	// retrieve the connection established in Provider configuration
 	client := testAccProvider.Meta().(*SteampipeClient)
-	if client.Config != nil {
-		if client.Config.Org != "" {
-			orgHandle = client.Config.Org
-			isUser = false
-		}
-	}
+	isUser, orgHandle := isUserConnection(client)
 
 	// loop through the resources in state, verifying each managed resource is destroyed
 	for _, rs := range s.RootModule().Resources {
@@ -148,13 +143,14 @@ func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
 		workspaceHandle := rs.Primary.Attributes["workspace_handle"]
 
 		if isUser {
-			actorHandle, _, err = getUserHandler(client)
+			var actorHandle string
+			actorHandle, _, err = getUserHandler(ctx, client)
 			if err != nil {
 				return fmt.Errorf("error fetching user handle. %s", err)
 			}
-			_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(context.Background(), actorHandle, workspaceHandle, connectionHandle).Execute()
+			_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(ctx, actorHandle, workspaceHandle, connectionHandle).Execute()
 		} else {
-			_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(context.Background(), orgHandle, workspaceHandle, connectionHandle).Execute()
+			_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, orgHandle, workspaceHandle, connectionHandle).Execute()
 		}
 		if err == nil {
 			return fmt.Errorf("Workspace Connection association %s/%s still exists", workspaceHandle, connectionHandle)
@@ -173,9 +169,10 @@ func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
 }
 
 func testAccCheckWorkspaceConnectionExists(n string) resource.TestCheckFunc {
+	ctx := context.Background()
 	return func(s *terraform.State) error {
-		isUser := true
-		var orgHandle, actorHandle string
+		var err error
+
 		rs, ok := s.RootModule().Resources[n]
 		if !ok {
 			return fmt.Errorf("Not found: %s", n)
@@ -188,26 +185,20 @@ func testAccCheckWorkspaceConnectionExists(n string) resource.TestCheckFunc {
 		workspaceHandle := rs.Primary.Attributes["workspace_handle"]
 
 		client := testAccProvider.Meta().(*SteampipeClient)
-
-		if client.Config != nil {
-			if client.Config.Org != "" {
-				orgHandle = client.Config.Org
-				isUser = false
-			}
-		}
-		var err error
+		isUser, orgHandle := isUserConnection(client)
 
 		if isUser {
-			actorHandle, _, err = getUserHandler(client)
+			var actorHandle string
+			actorHandle, _, err = getUserHandler(ctx, client)
 			if err != nil {
 				return fmt.Errorf("error fetching user handle. %s", err)
 			}
-			_, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(context.Background(), actorHandle, workspaceHandle, connectionHandle).Execute()
+			_, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(ctx, actorHandle, workspaceHandle, connectionHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("error reading user workspace connection: %s/%s.\nerr: %s", workspaceHandle, connectionHandle, err)
 			}
 		} else {
-			_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(context.Background(), orgHandle, workspaceHandle, connectionHandle).Execute()
+			_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, orgHandle, workspaceHandle, connectionHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("error reading organization workspace connection: %s/%s.\nerr: %s", workspaceHandle, connectionHandle, err)
 			}
@@ -218,30 +209,24 @@ func testAccCheckWorkspaceConnectionExists(n string) resource.TestCheckFunc {
 }
 
 func testAccCheckTestWorkspaceExists(workspaceHandle string) resource.TestCheckFunc {
+	ctx := context.Background()
 	return func(s *terraform.State) error {
-		isUser := true
-		var orgHandle, actorHandle string
 		client := testAccProvider.Meta().(*SteampipeClient)
+		isUser, orgHandle := isUserConnection(client)
 
-		if client.Config != nil {
-			if client.Config.Org != "" {
-				orgHandle = client.Config.Org
-				isUser = false
-			}
-		}
 		var err error
-
 		if isUser {
-			actorHandle, _, err = getUserHandler(client)
+			var actorHandle string
+			actorHandle, _, err = getUserHandler(ctx, client)
 			if err != nil {
 				return fmt.Errorf("error fetching user handle. %s", err)
 			}
-			_, _, err = client.APIClient.UserWorkspaces.Get(context.Background(), actorHandle, workspaceHandle).Execute()
+			_, _, err = client.APIClient.UserWorkspaces.Get(ctx, actorHandle, workspaceHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("error fetching user workspace with handle %s. %s", workspaceHandle, err)
 			}
 		} else {
-			_, _, err = client.APIClient.OrgWorkspaces.Get(context.Background(), orgHandle, workspaceHandle).Execute()
+			_, _, err = client.APIClient.OrgWorkspaces.Get(ctx, orgHandle, workspaceHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("error fetching org workspace with handle %s. %s", workspaceHandle, err)
 			}
@@ -251,30 +236,25 @@ func testAccCheckTestWorkspaceExists(workspaceHandle string) resource.TestCheckF
 }
 
 func testAccCheckTestConnectionExists(connHandle string) resource.TestCheckFunc {
+	ctx := context.Background()
 	return func(state *terraform.State) error {
-		isUser := true
-		var orgHandle, actorHandle string
 		client := testAccProvider.Meta().(*SteampipeClient)
 
-		if client.Config != nil {
-			if client.Config.Org != "" {
-				orgHandle = client.Config.Org
-				isUser = false
-			}
-		}
+		isUser, orgHandle := isUserConnection(client)
 		var err error
 
 		if isUser {
-			actorHandle, _, err = getUserHandler(client)
+			var actorHandle string
+			actorHandle, _, err = getUserHandler(ctx, client)
 			if err != nil {
 				return fmt.Errorf("error fetching user handle. %s", err)
 			}
-			_, _, err = client.APIClient.UserConnections.Get(context.Background(), actorHandle, connHandle).Execute()
+			_, _, err = client.APIClient.UserConnections.Get(ctx, actorHandle, connHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("error fetching user connection with handle %s. %s", connHandle, err)
 			}
 		} else {
-			_, _, err = client.APIClient.OrgConnections.Get(context.Background(), orgHandle, connHandle).Execute()
+			_, _, err = client.APIClient.OrgConnections.Get(ctx, orgHandle, connHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("error fetching org connection with handle %s. %s", connHandle, err)
 			}
