@@ -7,10 +7,13 @@ description: "Terraform provider for interacting with SteampipeCloud API."
 
 # SteampipeCloud Provider
 
+<!-- Steampipe Cloud provides a hosted platform for Steampipe, simplifying setup and operation, accelerating integration, and providing solutions for collaborating and sharing insights. -->
+
 The [Steampipe Cloud](https://cloud.steampipe.io/) provider is used to interact with the resources supported by Steampipe Cloud.
 The provider needs to be configured with the proper credentials before it can
 be used.
 
+Use the navigation to the left to read about the available resources.
 **Example Usage**
 
 ```hcl
@@ -37,10 +40,6 @@ resource "steampipecloud_workspace" "my_org_workspace" {
   # ...
 }
 ```
-
-### Environment Variables
-
-You can provide your credentials via `STEAMPIPE_CLOUD_TOKEN` environment variable, representing your Steampipe Cloud API token.
 
 ## Schema
 
