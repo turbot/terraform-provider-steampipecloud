@@ -23,8 +23,9 @@ user will be removed.
 
 ```hcl
 resource "steampipecloud_organization_member" "example" {
-  user_handle = "someuser"
-  role        = "member"
+  organization = "myorg"
+  user_handle  = "someuser"
+  role         = "member"
 }
 ```
 
@@ -32,8 +33,9 @@ resource "steampipecloud_organization_member" "example" {
 
 ```hcl
 resource "steampipecloud_organization_member" "example" {
-  email = "user@domain.com"
-  role  = "member"
+  organization = "myorg"
+  email        = "user@domain.com"
+  role         = "member"
 }
 ```
 
