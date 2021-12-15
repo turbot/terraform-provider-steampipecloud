@@ -10,40 +10,41 @@ description: |-
 
 # Resource `steampipecloud_connection`
 
-The order resource allows you to configure a HashiCups order.
+Manages a connection, which is defined at the user account or organization level.
 
 ## Example Usage
 
-**Creating Your First Connection**
+**Create a user connection**
 
 ```hcl
 resource "steampipecloud_connection" "test" {
-  plugin = "aws"
-  handle = "test"
-}
-```
-
-**Creating a Organization Connection**
-
-```hcl
-provider "steampipecloud" {
-  org = "testorg"
-}
-
-resource "steampipecloud_connection" "aws_aaa" {
   plugin     = "aws"
   handle     = "aws_aaa"
   access_key = "redacted"
   secret_key = "redacted"
   regions    = ["us-east-1"]
 }
+```
+
+**Create an organization connection**
+
+```hcl
+resource "steampipecloud_connection" "aws_aaa" {
+  organization = "myorg"
+  plugin       = "aws"
+  handle       = "aws_aaa"
+  access_key   = "redacted"
+  secret_key   = "redacted"
+  regions      = ["us-east-1"]
+}
 
 resource "steampipecloud_connection" "aws_aab" {
-  plugin     = "aws"
-  handle     = "aws_aab"
-  access_key = "redacted"
-  secret_key = "redacted"
-  regions    = ["us-east-1"]
+  organization = "myorg"
+  plugin       = "aws"
+  handle       = "aws_aab"
+  access_key   = "redacted"
+  secret_key   = "redacted"
+  regions      = ["us-east-1"]
 }
 ```
 
@@ -53,20 +54,19 @@ The following arguments are supported:
 
 - `handle` - (Required) A friendly identifier for your connection, and must be unique across your connections.
 - `plugin` - (Required) The name of the plugin.
-
-## Attributes Reference
-
-In addition to all arguments above, the following attributes are exported:
-
-- `connection_id` - An unique identifier of the connection.
-- `identity_id` - A unique identifier of the entity(i.e. `User` or `Organization`), where the connection is created.
-- `type` - The type of the resource.
+- `organization` - (Optional) An organization ID or handle to create the workspace in.
 
 ### Airtable connection arguments
 
 - `database_id` (String) Airtable Base ID.
 - `token` (String) Airtable API Key. You can generate an API key by visiting [here](https://support.airtable.com/hc/en-us/articles/360056249614-Creating-a-read-only-API-key).
 - `tables` (List of String) Names of the tables in database.
+
+### Alicloud connection arguments
+
+- `access_key` (String)
+- `secret_key` (String)
+- `regions` (List of String)
 
 ### AWS access key mode connection arguments
 
@@ -96,6 +96,17 @@ In addition to all arguments above, the following attributes are exported:
 - `client_id` (String)
 - `client_secret` (String)
 
+### BitBucket connection arguments
+
+- `username` (String)
+- `password` (String)
+- `base_url` (String)
+
+### Cloudflare connection arguments
+
+- `api_key` (String)
+- `email` (String)
+
 ### GCP connection arguments
 
 - `project` (String) GCP project to query
@@ -113,16 +124,20 @@ resource "steampipecloud_connection" "gcp_aaa" {
 }
 ```
 
-### Alicloud connection arguments
+### Hacker News connection arguments
 
-- `access_key` (String)
-- `secret_key` (String)
-- `regions` (List of String)
+- `max_items` (Number) The maximum number of items to be returned.
 
 ### IBM connection arguments
 
 - `api_key` (String)
 - `regions` (List of String)
+
+### Jira connection arguments
+
+- `username` (String)
+- `token` (String)
+- `base_url` (String)
 
 ### OCI connection arguments
 
@@ -143,38 +158,16 @@ resource "steampipecloud_connection" "oci_aaa" {
   tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaah......"
   regions      = ["ap-mumbai-1", "us-ashburn-1"]
   private_key  = file("/Users/turbot/Downloads/12-08-13-32.cer")
-  # private_key = file("PATH_TO_CREDENTIALS_FILE")
 }
 ```
-
-### JIRA connection arguments
-
-- `username` (String)
-- `token` (String)
-- `base_url` (String)
-
-### BitBucket connection arguments
-
-- `username` (String)
-- `password` (String)
-- `base_url` (String)
-
-### Cloudflare connection arguments
-
-- `api_key` (String)
-- `email` (String)
-
-### DigitalOcean, GitHub, Linode, Slack connection arguments
-
-- `token` (String)
-
-### Twitter connection arguments
-
-- `bearer_token` (String)
 
 ### Stripe connection arguments
 
 - `api_key` (String) You can generate your API key by visiting [here](https://stripe.com/docs/keys).
+
+### Twitter connection arguments
+
+- `bearer_token` (String)
 
 ### Zendesk connection arguments
 
@@ -182,14 +175,22 @@ resource "steampipecloud_connection" "oci_aaa" {
 - `email` (string)
 - `api_key` (String)
 
-### Hacker News connection arguments
+### DigitalOcean, GitHub, Linode, Slack connection arguments
 
-- `max_items` (Number) The maximum number of items to be returned.
+- `token` (String)
+
+## Attributes Reference
+
+In addition to all arguments above, the following attributes are exported:
+
+- `connection_id` - An unique identifier of the connection.
+- `identity_id` - A unique identifier of the entity where the connection is created.
+- `type` - The type of the resource.
 
 ## Import
 
-Connections can be imported using the `handle`. For example,
+Connections can be imported using an organization ID or handle, or a user ID or handle, e.g.,
 
 ```sh
-terraform import steampipecloud_connection.aws_aaa aws_aaa
+terraform import steampipecloud_connection.example aws_aaa
 ```
