@@ -8,7 +8,7 @@ description: |-
   Connections are defined at the user account or organization level, and they can be shared by multiple workspaces within the account or organization.
 ---
 
-# Resource `steampipecloud_connection`
+# Resource: steampipecloud_connection
 
 Manages a connection, which is defined at the user account or organization level.
 
