@@ -10,23 +10,32 @@ description: |-
 
 # steampipecloud_organization_member
 
+Manages an organization membership.
+
+This resource allows you to add/remove users from your organization. When
+applied, an invitation will be sent to the user to become part of the
+organization. When destroyed, either the invitation will be cancelled or the
+user will be removed.
+
 ## Example Usage
 
-**Invite an user using user handle**
+**Invite a user using user handle**
 
 ```hcl
-resource "steampipecloud_organization_member" "test" {
-  user_handle = "someuser"
-  role        = "member"
+resource "steampipecloud_organization_member" "example" {
+  organization = "myorg"
+  user_handle  = "someuser"
+  role         = "member"
 }
 ```
 
-**Invite an user using an email**
+**Invite a user using an email address**
 
 ```hcl
-resource "steampipecloud_organization_member" "test" {
-  email = "user@domain.com"
-  role  = "member"
+resource "steampipecloud_organization_member" "example" {
+  organization = "myorg"
+  email        = "user@domain.com"
+  role         = "member"
 }
 ```
 
@@ -34,11 +43,12 @@ resource "steampipecloud_organization_member" "test" {
 
 The following arguments are supported:
 
+- `organization` - (Required) The organization ID or handle to invite the user to.
 - `role` - (Required) The role of the user within the organization. Must be one of `member` or `owner`.
 
-~> **Note:** An member can be invited either using an email, or an user handle. Providing both at the ame time will cause conflict error.
+~> **Note:** An member can be invited either using an email address or a user handle. Providing both at the same time will result in an error.
 
-- `email` - (Optional) The email id of the user to add to the organization.
+- `email` - (Optional) The email address of the user to add to the organization.
 - `user_handle` - (Optional) The handle of the user to add to the organization.
 
 ## Attributes Reference
@@ -56,8 +66,8 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Organization Membership can be imported using an ID made up of `organization_handle:user_handle`. For example,
+Organization memberships can be imported using an ID made up of `organization_handle:user_handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_organization_member.test hashicorp:someuser
+terraform import steampipecloud_organization_member.example hashicorp:someuser
 ```
