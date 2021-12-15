@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"log"
 	"net/http"
-	_nethttp "net/http"
 	"regexp"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -85,7 +84,7 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 	var err error
-	var r *_nethttp.Response
+	var r *http.Response
 	var resp steampipe.Workspace
 	handle := d.Get("handle")
 
@@ -99,9 +98,9 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 		if err != nil {
 			return diag.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, _, err = client.APIClient.UserWorkspaces.Create(ctx, userHandler).Request(req).Execute()
+		resp, r, err = client.APIClient.UserWorkspaces.Create(ctx, userHandler).Request(req).Execute()
 	} else {
-		resp, _, err = client.APIClient.OrgWorkspaces.Create(ctx, orgHandle).Request(req).Execute()
+		resp, r, err = client.APIClient.OrgWorkspaces.Create(ctx, orgHandle).Request(req).Execute()
 	}
 
 	// Error check
@@ -135,7 +134,7 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	workspaceHandle := d.Id()
 	var resp steampipe.Workspace
 	var err error
-	var r *_nethttp.Response
+	var r *http.Response
 
 	isUser, orgHandle := isUserConnection(client)
 	if isUser {

@@ -86,10 +86,6 @@ func resourceWorkspaceConnection() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
-			"connection_config": {
-				Type:     schema.TypeMap,
-				Computed: true,
-			},
 			"workspace_created_at": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -176,7 +172,6 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("connection_plugin", resp.Connection.Plugin)
 	d.Set("connection_type", resp.Connection.Type)
 	d.Set("connection_version_id", resp.Connection.VersionId)
-	d.Set("connection_config", resp.Connection.Config)
 
 	if resp.Workspace != nil {
 		d.Set("workspace_state", resp.Workspace.WorkspaceState)
@@ -246,7 +241,6 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	d.Set("connection_plugin", resp.Connection.Plugin)
 	d.Set("connection_type", resp.Connection.Type)
 	d.Set("connection_version_id", resp.Connection.VersionId)
-	d.Set("connection_config", resp.Connection.Config)
 
 	if resp.Workspace != nil {
 		d.Set("workspace_state", resp.Workspace.WorkspaceState)
@@ -314,13 +308,13 @@ func resourceWorkspaceConnectionDelete(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("resourceConnectionDelete. getUserHandler error: %v", decodeResponse(r))
 		}
-		_, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Delete(ctx, actorHandle, workspaceHandle, connHandle).Execute()
+		_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Delete(ctx, actorHandle, workspaceHandle, connHandle).Execute()
 	} else {
-		_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Delete(ctx, orgHandle, workspaceHandle, connHandle).Execute()
+		_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Delete(ctx, orgHandle, workspaceHandle, connHandle).Execute()
 	}
 
 	if err != nil {
-		return diag.Errorf("error deleting workspace connection association:	%v", decodeResponse(r))
+		return diag.Errorf("error deleting workspace connection association: %v", decodeResponse(r))
 	}
 	d.SetId("")
 

@@ -12,9 +12,9 @@ import (
 )
 
 func TestAccWorkspaceConnection_Basic(t *testing.T) {
-	resourceName := "steampipecloud_workspace_connection.test"
-	workspaceHandle := "workspace" + randomString(5)
-	connHandle := "aws_" + randomString(6)
+	resourceName := "steampipecloud_workspace_connection.test_conn"
+	workspaceHandle := "workspace" + randomString(6)
+	connHandle := "aws_" + randomString(4)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -40,9 +40,9 @@ func TestAccWorkspaceConnection_Basic(t *testing.T) {
 
 func TestAccOrgWorkspaceConnection_Basic(t *testing.T) {
 	resourceName := "steampipecloud_workspace_connection.test_org"
-	orgName := "terraform-" + randomString(10)
+	orgName := "terraform-" + randomString(11)
 	workspaceHandle := "workspace" + randomString(5)
-	connHandle := "aws_" + randomString(6)
+	connHandle := "aws_" + randomString(3)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -68,21 +68,21 @@ func testAccWorkspaceConnectionConfig(workspace string, conn string) string {
 	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
-resource "steampipecloud_workspace" "test" {
+resource "steampipecloud_workspace" "test_conn" {
   handle = "%s"
 }
 
-resource "steampipecloud_connection" "test" {
+resource "steampipecloud_connection" "test_conn" {
 	handle     = "%s"
 	plugin     = "aws"
-	regions    = [ "us-east-1" ]
+	regions    = ["us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
 }
 
-resource "steampipecloud_workspace_connection" "test" {
-  workspace_handle  = steampipecloud_workspace.test.handle
-  connection_handle = steampipecloud_connection.test.handle
+resource "steampipecloud_workspace_connection" "test_conn" {
+  workspace_handle  = steampipecloud_workspace.test_conn.handle
+  connection_handle = steampipecloud_connection.test_conn.handle
 }`, workspace, conn)
 }
 
@@ -110,7 +110,7 @@ resource "steampipecloud_connection" "test_org" {
 	provider   = steampipecloud.turbie
 	handle     = "%s"
 	plugin     = "aws"
-	regions    = [ "us-east-1" ]
+	regions    = ["us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
 }
