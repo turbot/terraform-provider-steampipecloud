@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"net/url"
 	"os"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -22,8 +23,9 @@ func Provider() *schema.Provider {
 				DefaultFunc: schema.EnvDefaultFunc("STEAMPIPE_CLOUD_TOKEN", nil),
 			},
 			"organization": {
-				Type:     schema.TypeString,
-				Optional: true,
+				Type:        schema.TypeString,
+				Optional:    true,
+				Description: "Steampipe Organizations, include multiple users and are intended for organizations to collaborate and share workspaces and connections.",
 			},
 			"insecure_skip_verify": {
 				Type:     schema.TypeBool,
@@ -96,16 +98,22 @@ type Config struct {
 
 /*
 	precedence of credentials:
-	- token set in config
-	- ENV vars {STEAMPIPE_CLOUD_TOKEN}
+	1. token set in config
+	2. ENV vars {STEAMPIPE_CLOUD_TOKEN}
 */
 func CreateClient(config *Config, diags diag.Diagnostics) (*steampipe.APIClient, diag.Diagnostics) {
 	configuration := steampipe.NewConfiguration()
-
 	if config.Host != "" {
+		parsedAPIURL, parseErr := url.Parse(config.Host)
+		if parseErr != nil {
+			return nil, diag.Errorf(`invalid host: %v`, parseErr)
+		}
+		if parsedAPIURL.Host == "" {
+			return nil, diag.Errorf(`missing protocol or host : %v`, config.Host)
+		}
 		configuration.Servers = []steampipe.ServerConfiguration{
 			{
-				URL: fmt.Sprintf("https://%s/api/v1", config.Host),
+				URL: fmt.Sprintf("https://%s/api/v1", parsedAPIURL.Host),
 			},
 		}
 	}
@@ -114,7 +122,6 @@ func CreateClient(config *Config, diags diag.Diagnostics) (*steampipe.APIClient,
 	if config.Token != "" {
 		steampipeCloudToken = config.Token
 	} else {
-		// return nil, fmt.Errorf("failed to get token to authenticate. Please set 'token' in provider to config. STEAMPIPE_CLOUD_TOKEN")
 		if token, ok := os.LookupEnv("STEAMPIPE_CLOUD_TOKEN"); ok {
 			steampipeCloudToken = token
 		}
