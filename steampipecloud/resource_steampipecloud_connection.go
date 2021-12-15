@@ -118,13 +118,13 @@ func resourceConnection() *schema.Resource {
 				Sensitive: true,
 				Optional:  true,
 			},
-			// Digital Ocean, GitHub, Airtable, Jira, Linode, Slack
+			// DigitalOcean, GitHub, Airtable, Jira, Linode, Slack
 			"token": {
 				Type:      schema.TypeString,
 				Sensitive: true,
 				Optional:  true,
 			},
-			// Digital Ocean
+			// bearer_token
 			"bearer_token": {
 				Type:      schema.TypeString,
 				Sensitive: true,
@@ -183,7 +183,7 @@ func resourceConnection() *schema.Resource {
 				Sensitive: true,
 				Optional:  true,
 			},
-			// Zendesk, Cloudflare
+			// Zendesk
 			"subdomain": {
 				Type:     schema.TypeInt,
 				Optional: true,
