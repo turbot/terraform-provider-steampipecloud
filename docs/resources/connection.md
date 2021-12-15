@@ -68,7 +68,13 @@ In addition to all arguments above, the following attributes are exported:
 - `token` (String) Airtable API Key. You can generate an API key by visiting [here](https://support.airtable.com/hc/en-us/articles/360056249614-Creating-a-read-only-API-key).
 - `tables` (List of String) Names of the tables in database.
 
-### AWS connection arguments
+### AWS access key mode connection arguments
+
+- `role_arn` (String) ARN of the role to assume.
+- `external_id` (String) External id required to trust role.
+- `regions` (List of String) List of AWS regions to query. Example `["us-east-1", "us-east-2"]`.
+
+### AWS role key mode arguments
 
 - `access_key` (String) AWS access key.
 - `secret_key` (String) AWS secret key.

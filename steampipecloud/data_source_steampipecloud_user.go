@@ -54,7 +54,7 @@ func dataSourceUser() *schema.Resource {
 				Optional: true,
 			},
 			"version_id": {
-				Type:     schema.TypeString,
+				Type:     schema.TypeInt,
 				Optional: true,
 			},
 		},

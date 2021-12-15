@@ -64,6 +64,17 @@ func resourceConnection() *schema.Resource {
 			},
 
 			// Specific plugin configs arguments
+			// AWS Role Mode
+			"role_arn": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
+			// AWS Role Mode
+			"external_id": {
+				Type:         schema.TypeString,
+				Optional:     true,
+				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^(?:u|o)_[a-z0-9]{20}:[a-z0-9]{8}$`), "External Id for the trusting role is invalid."),
+			},
 			// AWS, Alicloud
 			"access_key": {
 				Type:     schema.TypeString,
@@ -551,6 +562,12 @@ func CreateConnectionConfiguration(d *schema.ResourceData) (ConnectionConfig, er
 	if value, ok := d.GetOk("user_ocid"); ok {
 		connConfig.UserOCID = value.(string)
 	}
+	if value, ok := d.GetOk("role_arn"); ok {
+		connConfig.RoleArn = value.(string)
+	}
+	if value, ok := d.GetOk("external_id"); ok {
+		connConfig.ExternalID = value.(string)
+	}
 
 	return connConfig, nil
 }
@@ -558,6 +575,8 @@ func CreateConnectionConfiguration(d *schema.ResourceData) (ConnectionConfig, er
 type ConnectionConfig struct {
 	AccessKey      string   `json:"access_key,omitempty"`
 	ApiKey         string   `json:"api_key,omitempty"`
+	RoleArn        string   `json:"role_arn,omitempty"`
+	ExternalID     string   `json:"external_id,omitempty"`
 	BaseURL        string   `json:"base_url,omitempty"`
 	BearerToken    string   `json:"bearer_token,omitempty"`
 	ClientID       string   `json:"client_id,omitempty"`
