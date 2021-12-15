@@ -6,7 +6,7 @@ description: |-
   The `Steampipe Cloud Workspace Connection` represents a set of connections that are currently attached to the workspace. This resource can be used multiple times with the same connection for non-overlapping workspaces.
 ---
 
-# steampipecloud_workspace_connection
+# Resource `steampipecloud_workspace_connection`
 
 ## Example Usage
 

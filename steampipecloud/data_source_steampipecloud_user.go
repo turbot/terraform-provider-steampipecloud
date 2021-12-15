@@ -11,6 +11,7 @@ import (
 func dataSourceUser() *schema.Resource {
 	return &schema.Resource{
 		ReadContext: dataSourceUserRead,
+		Description: "",
 		Schema: map[string]*schema.Schema{
 			"handle": {
 				Type:     schema.TypeString,
@@ -72,17 +73,39 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interf
 	defer r.Body.Close()
 
 	d.SetId(resp.Handle)
-	d.Set("avatar_url", resp.AvatarUrl)
-	d.Set("created_at", resp.CreatedAt)
-	d.Set("display_name", resp.DisplayName)
-	d.Set("email", resp.Email)
-	d.Set("handle", resp.Handle)
-	d.Set("user_id", resp.Id)
-	d.Set("preview_access_mode", resp.PreviewAccessMode)
-	d.Set("status", resp.Status)
-	d.Set("updated_at", resp.UpdatedAt)
-	d.Set("url", resp.Url)
-	d.Set("version_id", resp.VersionId)
+	if err := d.Set("avatar_url", resp.AvatarUrl); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("created_at", resp.CreatedAt); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("display_name", resp.DisplayName); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("email", resp.Email); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("handle", resp.Handle); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("user_id", resp.Id); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("preview_access_mode", resp.PreviewAccessMode); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("status", resp.Status); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("updated_at", resp.UpdatedAt); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("url", resp.Url); err != nil {
+		return diag.FromErr(err)
+	}
+	if err := d.Set("version_id", resp.VersionId); err != nil {
+		return diag.FromErr(err)
+	}
 
 	return diags
 }

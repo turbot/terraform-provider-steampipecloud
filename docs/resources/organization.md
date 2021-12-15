@@ -6,7 +6,7 @@ description: |-
   The `Steampipe Cloud Organization` include multiple users and are intended for organizations to collaborate and share workspaces and connections.
 ---
 
-# steampipecloud_organization
+# Resource `steampipecloud_organization`
 
 ## Example Usage
 
