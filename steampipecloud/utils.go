@@ -3,6 +3,7 @@ package steampipecloud
 import (
 	"context"
 	"encoding/json"
+	"math/rand"
 	"net/http"
 )
 
@@ -35,4 +36,15 @@ func decodeResponse(r *http.Response) string {
 
 	resp, _ := json.Marshal(errBody)
 	return string(resp)
+}
+
+const letterBytes = "abcdefghijklmnopqrstuvwxyz"
+
+// randomString:: To generate random names for handle for testing
+func randomString(n int) string {
+	b := make([]byte, n)
+	for i := range b {
+		b[i] = letterBytes[rand.Intn(len(letterBytes))]
+	}
+	return string(b)
 }

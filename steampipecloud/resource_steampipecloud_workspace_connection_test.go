@@ -13,19 +13,21 @@ import (
 
 func TestAccWorkspaceConnection_Basic(t *testing.T) {
 	resourceName := "steampipecloud_workspace_connection.test"
+	workspaceHandle := "workspace" + randomString(5)
+	connHandle := "aws_" + randomString(6)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckWorkspaceConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccWorkspaceConnectionConfig(),
+				Config: testAccWorkspaceConnectionConfig(workspaceHandle, connHandle),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckTestWorkspaceExists("testworkspaceconnection"),
-					testAccCheckTestConnectionExists("aws_connection_test"),
+					testAccCheckTestWorkspaceExists(workspaceHandle),
+					testAccCheckTestConnectionExists(connHandle),
 					testAccCheckWorkspaceConnectionExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "workspace_handle", "testworkspaceconnection"),
-					resource.TestCheckResourceAttr(resourceName, "connection_handle", "aws_connection_test"),
+					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
+					resource.TestCheckResourceAttr(resourceName, "connection_handle", connHandle),
 				),
 			},
 			{
@@ -38,20 +40,23 @@ func TestAccWorkspaceConnection_Basic(t *testing.T) {
 
 func TestAccOrgWorkspaceConnection_Basic(t *testing.T) {
 	resourceName := "steampipecloud_workspace_connection.test_org"
+	orgName := "terraform-" + randomString(10)
+	workspaceHandle := "workspace" + randomString(5)
+	connHandle := "aws_" + randomString(6)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccOrgWorkspaceConnectionConfig(),
+				Config: testAccOrgWorkspaceConnectionConfig(orgName, workspaceHandle, connHandle),
 				Check: resource.ComposeTestCheckFunc(
-					testAccCheckConnectionOrganizationExists("terraformtestorganization"),
-					testAccCheckTestWorkspaceExists("testworkspaceconnection"),
-					testAccCheckTestConnectionExists("aws_connection_test"),
+					testAccCheckConnectionOrganizationExists(orgName),
+					testAccCheckTestWorkspaceExists(workspaceHandle),
+					testAccCheckTestConnectionExists(connHandle),
 					testAccCheckWorkspaceConnectionExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "workspace_handle", "testworkspaceconnection"),
-					resource.TestCheckResourceAttr(resourceName, "connection_handle", "aws_connection_test"),
+					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
+					resource.TestCheckResourceAttr(resourceName, "connection_handle", connHandle),
 				),
 			},
 		},
@@ -59,18 +64,18 @@ func TestAccOrgWorkspaceConnection_Basic(t *testing.T) {
 }
 
 // User Workspace Connection association config
-func testAccWorkspaceConnectionConfig() string {
-	return `
+func testAccWorkspaceConnectionConfig(workspace string, conn string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
 resource "steampipecloud_workspace" "test" {
-  handle = "testworkspaceconnection"
+  handle = "%s"
 }
 
 resource "steampipecloud_connection" "test" {
-	handle     = "aws_connection_test"
+	handle     = "%s"
 	plugin     = "aws"
-	regions    = ["us-east-1"]
+	regions    = [ "us-east-1" ]
 	access_key = "redacted"
 	secret_key = "redacted"
 }
@@ -78,17 +83,16 @@ resource "steampipecloud_connection" "test" {
 resource "steampipecloud_workspace_connection" "test" {
   workspace_handle  = steampipecloud_workspace.test.handle
   connection_handle = steampipecloud_connection.test.handle
-}
-`
+}`, workspace, conn)
 }
 
 // Organization Workspace Connection association config
-func testAccOrgWorkspaceConnectionConfig() string {
-	return `
+func testAccOrgWorkspaceConnectionConfig(org string, workspace string, conn string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
 resource "steampipecloud_organization" "test_org" {
-	handle       = "terraformtestorganization"
+	handle       = "%s"
 	display_name = "Terraform Test Org"
 }
 
@@ -99,14 +103,14 @@ provider "steampipecloud" {
 
 resource "steampipecloud_workspace" "test_org" {
 	provider = steampipecloud.turbie
-  handle   = "testworkspaceconnection"
+  handle   = "%s"
 }
 
 resource "steampipecloud_connection" "test_org" {
 	provider   = steampipecloud.turbie
-	handle     = "aws_connection_test"
+	handle     = "%s"
 	plugin     = "aws"
-	regions    = ["us-east-1"]
+	regions    = [ "us-east-1" ]
 	access_key = "redacted"
 	secret_key = "redacted"
 }
@@ -115,8 +119,7 @@ resource "steampipecloud_workspace_connection" "test_org" {
 	provider          = steampipecloud.turbie
   workspace_handle  = steampipecloud_workspace.test_org.handle
   connection_handle = steampipecloud_connection.test_org.handle
-}
-`
+}`, org, workspace, conn)
 }
 
 // testAccCheckWorkspaceConnectionDestroy verifies the workspace connection association has been destroyed
