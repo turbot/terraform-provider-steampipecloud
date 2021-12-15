@@ -5,7 +5,7 @@ description: |-
   The user data source allows you to retrieve information about the user whose token is used for authentication.
 ---
 
-# Data Source `steampipecloud_user`
+# Data Source: steampipecloud_user
 
 The user data source allows you to retrieve information about the user whose token is used for authentication.
 
