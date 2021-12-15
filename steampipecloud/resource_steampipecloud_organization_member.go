@@ -83,7 +83,8 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	client := meta.(*SteampipeClient)
 
 	// Return if `organization` is not given in config
-	if client.Config != nil && client.Config.Organization == "" {
+	_, orgHandle := isUserConnection(client)
+	if orgHandle == "" {
 		return diag.Errorf("failed to get organization. Please set 'organization' in provider config")
 	}
 
@@ -105,11 +106,11 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Invite requested member
-	resp, r, err := client.APIClient.OrgMembers.Invite(ctx, client.Config.Organization).Request(req).Execute()
+	_, r, err := client.APIClient.OrgMembers.Invite(ctx, orgHandle).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error inviting member: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Member invited: %v", resp)
+	log.Printf("\n[DEBUG] Member invited: %v", decodeResponse(r))
 
 	/*
 		 * If a member is invited using user handle, use `OrgMembers.Get` to fetch the user details
@@ -120,7 +121,7 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	*/
 	var orgMemberDetails steampipe.OrgUser
 	if req.Handle != nil {
-		resp, r, err := client.APIClient.OrgMembers.Get(ctx, client.Config.Organization, *req.Handle).Execute()
+		resp, r, err := client.APIClient.OrgMembers.Get(ctx, orgHandle, *req.Handle).Execute()
 		if err != nil {
 			if r.StatusCode == 404 {
 				return diag.Errorf("requested member %s not found", *req.Handle)
@@ -141,7 +142,7 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Set property values
-	d.SetId(fmt.Sprintf("%s:%s", client.Config.Organization, orgMemberDetails.UserHandle))
+	d.SetId(fmt.Sprintf("%s:%s", orgHandle, orgMemberDetails.UserHandle))
 	d.Set("user_handle", orgMemberDetails.UserHandle)
 	d.Set("created_at", orgMemberDetails.CreatedAt)
 	d.Set("email", orgMemberDetails.Email)
@@ -166,8 +167,9 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	// Return if `org` is not given in config
-	if client.Config != nil && client.Config.Organization == "" {
+	// Return if `organization` is not given in config
+	_, orgHandle := isUserConnection(client)
+	if orgHandle == "" {
 		return diag.Errorf("failed to get organization. Please set 'organization' in provider config")
 	}
 
@@ -177,8 +179,8 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
 	}
 
-	if idParts[0] != client.Config.Organization {
-		return diag.Errorf("given organization_handle does not match with the organization in the provider config")
+	if idParts[0] != orgHandle {
+		return diag.Errorf("given organization_handle %s does not match with the organization in the provider config %s", idParts[0], orgHandle)
 	}
 
 	if strings.Contains(idParts[1], "@") {
@@ -186,14 +188,14 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	}
 	userHandle := idParts[1]
 
-	resp, r, err := client.APIClient.OrgMembers.Get(context.Background(), client.Config.Organization, userHandle).Execute()
+	resp, r, err := client.APIClient.OrgMembers.Get(context.Background(), orgHandle, userHandle).Execute()
 	if err != nil {
 		if r.StatusCode == 404 {
 			log.Printf("\n[WARN] Member (%s) not found", userHandle)
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("error reading %s:%s.\nerr: %s", client.Config.Organization, userHandle, decodeResponse(r))
+		return diag.Errorf("error reading %s:%s.\nerr: %s", orgHandle, userHandle, decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Organization Member received: %s", id)
 
@@ -222,9 +224,10 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	// Return if `org` is not given in config
-	if client.Config != nil && client.Config.Organization == "" {
-		return diag.Errorf("failed to get organization. Please set 'org' in provider config")
+	// Return if `organization` is not given in config
+	_, orgHandle := isUserConnection(client)
+	if orgHandle == "" {
+		return diag.Errorf("failed to get organization. Please set 'organization' in provider config")
 	}
 
 	userHandle := d.Get("user_handle").(string)
@@ -235,16 +238,16 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 		Role: role,
 	}
 
-	log.Printf("\n[DEBUG] Updating membership: '%s:%s'", client.Config.Organization, userHandle)
+	log.Printf("\n[DEBUG] Updating membership: '%s:%s'", orgHandle, userHandle)
 
-	resp, r, err := client.APIClient.OrgMembers.Update(context.Background(), client.Config.Organization, userHandle).Request(req).Execute()
+	resp, r, err := client.APIClient.OrgMembers.Update(context.Background(), orgHandle, userHandle).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error updating membership: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Membership updated: %s:%s", client.Config.Organization, resp.UserHandle)
+	log.Printf("\n[DEBUG] Membership updated: %s:%s", orgHandle, resp.UserHandle)
 
 	// Update state file
-	id := fmt.Sprintf("%s:%s", client.Config.Organization, resp.UserHandle)
+	id := fmt.Sprintf("%s:%s", orgHandle, resp.UserHandle)
 	d.SetId(id)
 	d.Set("user_handle", resp.UserHandle)
 	d.Set("created_at", resp.CreatedAt)
@@ -270,8 +273,9 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	// Return if `org` is not given in config
-	if client.Config != nil && client.Config.Organization == "" {
+	// Return if `organization` is not given in config
+	_, orgHandle := isUserConnection(client)
+	if orgHandle == "" {
 		return diag.Errorf("failed to get organization. Please set 'organization' in provider config")
 	}
 
@@ -282,7 +286,7 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 	}
 	log.Printf("\n[DEBUG] Removing membership: %s", id)
 
-	_, r, err := client.APIClient.OrgMembers.Delete(context.Background(), client.Config.Organization, idParts[1]).Execute()
+	_, r, err := client.APIClient.OrgMembers.Delete(context.Background(), orgHandle, idParts[1]).Execute()
 	if err != nil {
 		return diag.Errorf("error removing membership %s: %s", id, decodeResponse(r))
 	}
@@ -295,8 +299,9 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 func listOrganizationMembersInvited(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgUser, error) {
 	client := meta.(*SteampipeClient)
 
-	// Return if `org` is not given in config
-	if client.Config != nil && client.Config.Organization == "" {
+	// Return if `organization` is not given in config
+	_, orgHandle := isUserConnection(client)
+	if orgHandle == "" {
 		return steampipe.OrgUser{}, fmt.Errorf("failed to get organization. Please set 'organization' in provider config")
 	}
 
@@ -306,9 +311,9 @@ func listOrganizationMembersInvited(d *schema.ResourceData, meta interface{}, ha
 
 	for pagesLeft {
 		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgMembers.ListInvited(context.Background(), client.Config.Organization).NextToken(*resp.NextToken).Execute()
+			resp, _, err = client.APIClient.OrgMembers.ListInvited(context.Background(), orgHandle).NextToken(*resp.NextToken).Execute()
 		} else {
-			resp, _, err = client.APIClient.OrgMembers.ListInvited(context.Background(), client.Config.Organization).Execute()
+			resp, _, err = client.APIClient.OrgMembers.ListInvited(context.Background(), orgHandle).Execute()
 		}
 
 		if err != nil {
@@ -329,8 +334,9 @@ func listOrganizationMembersInvited(d *schema.ResourceData, meta interface{}, ha
 func listOrganizationMembersAccepted(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgUser, error) {
 	client := meta.(*SteampipeClient)
 
-	// Return if `org` is not given in config
-	if client.Config != nil && client.Config.Organization == "" {
+	// Return if `organization` is not given in config
+	_, orgHandle := isUserConnection(client)
+	if orgHandle == "" {
 		return steampipe.OrgUser{}, fmt.Errorf("failed to get organization. Please set 'organization' in provider config")
 	}
 
@@ -340,9 +346,9 @@ func listOrganizationMembersAccepted(d *schema.ResourceData, meta interface{}, h
 
 	for pagesLeft {
 		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgMembers.ListAccepted(context.Background(), client.Config.Organization).NextToken(*resp.NextToken).Execute()
+			resp, _, err = client.APIClient.OrgMembers.ListAccepted(context.Background(), orgHandle).NextToken(*resp.NextToken).Execute()
 		} else {
-			resp, _, err = client.APIClient.OrgMembers.ListAccepted(context.Background(), client.Config.Organization).Execute()
+			resp, _, err = client.APIClient.OrgMembers.ListAccepted(context.Background(), orgHandle).Execute()
 		}
 
 		if err != nil {
