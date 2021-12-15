@@ -55,7 +55,7 @@ resource "steampipecloud_organization_member" "test" {
 	provider = steampipecloud.turbie
 	email    = "mesubha97@gmail.com"
 	role     = "member"
-	}`, orgHandle)
+}`, orgHandle)
 }
 
 func testAccOrganizationMemberUpdateConfig(orgHandle string) string {
@@ -67,8 +67,8 @@ resource "steampipecloud_organization" "test" {
 }
 
 provider "steampipecloud" {
-	alias        = "turbie"
-	organization = steampipecloud_organization.test.handle
+  alias        = "turbie"
+  organization = steampipecloud_organization.test.handle
 }
 
 resource "steampipecloud_organization_member" "test" {

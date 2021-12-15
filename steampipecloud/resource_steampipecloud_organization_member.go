@@ -113,11 +113,11 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	log.Printf("\n[DEBUG] Member invited: %v", decodeResponse(r))
 
 	/*
-		 * If a member is invited using user handle, use `OrgMembers.Get` to fetch the user details
-		 * If a member is invited using an email;
-		   * List the invited users, and find the requested user; if found return the requested user
-			 * else, list the accepted users, and find the requested user; if found return the requested user
-		 * TODO:: As of Dec 15, 2021, SDK doesn't support `email` in `OrgMembers.Get` API. If the API supports `email`, list operations can be ignored.
+	 * If a member is invited using user handle, use `OrgMembers.Get` to fetch the user details
+	 * If a member is invited using an email;
+	   * List the invited users, and find the requested user; if found return the requested user
+	   * else, list the accepted users, and find the requested user; if found return the requested user
+	 * TODO:: As of Dec 15, 2021, SDK doesn't support `email` in `OrgMembers.Get` API. If the API supports `email`, list operations can be ignored.
 	*/
 	var orgMemberDetails steampipe.OrgUser
 	if req.Handle != nil {
