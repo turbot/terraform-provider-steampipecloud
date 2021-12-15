@@ -1,3 +1,5 @@
+// NOTE: Please provide a valid email in the config before performing the test
+
 package steampipecloud
 
 import (
@@ -51,9 +53,10 @@ provider "steampipecloud" {
 	organization = steampipecloud_organization.test.handle
 }
 
+# Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
 	provider = steampipecloud.turbie
-	email    = "mesubha97@gmail.com"
+	email    = "user@domain.com"
 	role     = "member"
 }`, orgHandle)
 }
@@ -71,9 +74,10 @@ provider "steampipecloud" {
   organization = steampipecloud_organization.test.handle
 }
 
+# Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
   provider = steampipecloud.turbie
-  email    = "mesubha97@gmail.com"
+  email    = "user@domain.com"
   role     = "owner"
 }`, orgHandle)
 }
