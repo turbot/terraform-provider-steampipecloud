@@ -15,16 +15,18 @@ import (
 
 func TestAccConnection_Basic(t *testing.T) {
 	resourceName := "steampipecloud_connection.test"
+	connHandle := "aws_" + randomString(5)
+	newHandle := "aws_" + randomString(6)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckConnectionDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccConnectionConfig(),
+				Config: testAccConnectionConfig(connHandle),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckConnectionExists(resourceName),
-					resource.TestCheckResourceAttr(resourceName, "handle", "aws_conn_test"),
+					resource.TestCheckResourceAttr(resourceName, "handle", connHandle),
 					resource.TestCheckResourceAttr(resourceName, "plugin", "aws"),
 					resource.TestCheckResourceAttr(resourceName, "access_key", "redacted"),
 					resource.TestCheckResourceAttr(resourceName, "secret_key", "redacted"),
@@ -37,9 +39,9 @@ func TestAccConnection_Basic(t *testing.T) {
 				// ImportStateVerify: true,
 			},
 			{
-				Config: testAccConnectionHandleUpdateConfig(),
+				Config: testAccConnectionHandleUpdateConfig(newHandle),
 				Check: resource.ComposeTestCheckFunc(
-					resource.TestCheckResourceAttr("steampipecloud_connection.test", "handle", "aws_conn_update"),
+					resource.TestCheckResourceAttr("steampipecloud_connection.test", "handle", newHandle),
 					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-2"),
 					resource.TestCheckResourceAttr(resourceName, "regions.1", "us-east-1"),
 				),
@@ -50,13 +52,16 @@ func TestAccConnection_Basic(t *testing.T) {
 
 func TestAccOrgConnection_Basic(t *testing.T) {
 	resourceName := "steampipecloud_connection.test_org"
+	orgHandle := "terraform" + randomString(9)
+	connHandle := "aws_" + randomString(7)
+	newHandle := "aws_" + randomString(8)
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
 		CheckDestroy: testAccCheckOrganizationDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccOrgConnectionConfig(),
+				Config: testAccOrgConnectionConfig(connHandle, orgHandle),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckConnectionOrganizationExists("terraformtestorg"),
 					testAccCheckConnectionExists(resourceName),
@@ -68,7 +73,7 @@ func TestAccOrgConnection_Basic(t *testing.T) {
 				),
 			},
 			{
-				Config: testAccOrgConnectionUpdateConfig(),
+				Config: testAccOrgConnectionUpdateConfig(newHandle, orgHandle),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("steampipecloud_connection.test_org", "handle", "aws_conn_update"),
 					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-2"),
@@ -80,38 +85,38 @@ func TestAccOrgConnection_Basic(t *testing.T) {
 }
 
 // configs
-func testAccConnectionConfig() string {
-	return `
+func testAccConnectionConfig(connHandle string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
 resource "steampipecloud_connection" "test" {
-	handle     = "aws_conn_test"
+	handle     = "%s"
 	plugin     = "aws"
 	regions    = ["us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
-}`
+}`, connHandle)
 }
 
-func testAccConnectionHandleUpdateConfig() string {
-	return `
+func testAccConnectionHandleUpdateConfig(newHandle string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
 resource "steampipecloud_connection" "test" {
-	handle     = "aws_conn_update"
+	handle     = "%s"
 	plugin     = "aws"
 	regions    = ["us-east-2", "us-east-1"]
 	access_key = "redacted"
   secret_key = "redacted"
-}`
+}`, newHandle)
 }
 
-func testAccOrgConnectionConfig() string {
-	return `
+func testAccOrgConnectionConfig(connHandle string, orgHandle string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
 resource "steampipecloud_organization" "test" {
-	handle       = "terraformtestorg"
+	handle       = "%s"
 	display_name = "Terraform Test Org"
 }
 
@@ -122,19 +127,20 @@ provider "steampipecloud" {
 
 resource "steampipecloud_connection" "test_org" {
 	provider   = steampipecloud.turbie
-	handle     = "aws_conn_test"
+	handle     = "%s"
 	plugin     = "aws"
 	regions    = ["us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
-}`
+}`, connHandle, orgHandle)
 }
-func testAccOrgConnectionUpdateConfig() string {
-	return `
+
+func testAccOrgConnectionUpdateConfig(newHandle string, orgHandle string) string {
+	return fmt.Sprintf(`
 provider "steampipecloud" {}
 
 resource "steampipecloud_organization" "test" {
-	handle       = "terraformtestorg"
+	handle       = "%s"
 	display_name = "Terraform Test Org"
 }
 
@@ -145,12 +151,12 @@ provider "steampipecloud" {
 
 resource "steampipecloud_connection" "test_org" {
 	provider   = steampipecloud.turbie
-	handle     = "aws_conn_update"
+	handle     = "%s"
 	plugin     = "aws"
 	regions    = ["us-east-2", "us-east-1"]
 	access_key = "redacted"
 	secret_key = "redacted"
-}`
+}`, newHandle, orgHandle)
 }
 
 // testAccCheckConnectionDestroy verifies the connection has been destroyed
