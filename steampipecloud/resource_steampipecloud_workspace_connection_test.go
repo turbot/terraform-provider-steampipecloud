@@ -25,7 +25,7 @@ func TestAccWorkspaceConnection_Basic(t *testing.T) {
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckTestWorkspaceExists(workspaceHandle),
 					testAccCheckTestConnectionExists(connHandle),
-					// testAccCheckWorkspaceConnectionExists(resourceName),
+					testAccCheckWorkspaceConnectionExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "connection_handle", connHandle),
 				),
@@ -54,7 +54,7 @@ func TestAccOrgWorkspaceConnection_Basic(t *testing.T) {
 					testAccCheckConnectionOrganizationExists(orgName),
 					testAccCheckTestWorkspaceExists(workspaceHandle),
 					testAccCheckTestConnectionExists(connHandle),
-					// testAccCheckWorkspaceConnectionExists(resourceName),
+					testAccCheckWorkspaceConnectionExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "connection_handle", connHandle),
 				),
