@@ -137,12 +137,12 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
-	var resp steampipe.TypesWorkspaceConn
+	var resp steampipe.WorkspaceConn
 	var err error
 	var r *http.Response
 
 	// Create request
-	req := steampipe.TypesCreateWorkspaceConnRequest{ConnectionHandle: connHandle}
+	req := steampipe.CreateWorkspaceConnRequest{ConnectionHandle: connHandle}
 
 	client := meta.(*SteampipeClient)
 	isUser, orgHandle := isUserConnection(client)
@@ -206,7 +206,7 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	workspaceHandle := idParts[0]
 	connHandle := idParts[1]
 
-	var resp steampipe.TypesWorkspaceConn
+	var resp steampipe.WorkspaceConn
 	var err error
 	var r *http.Response
 

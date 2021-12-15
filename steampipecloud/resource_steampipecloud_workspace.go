@@ -86,11 +86,11 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	var diags diag.Diagnostics
 	var err error
 	var r *_nethttp.Response
-	var resp steampipe.TypesWorkspace
+	var resp steampipe.Workspace
 	handle := d.Get("handle")
 
 	// Create request
-	req := steampipe.TypesCreateWorkspaceRequest{Handle: handle.(string)}
+	req := steampipe.CreateWorkspaceRequest{Handle: handle.(string)}
 
 	isUser, orgHandle := isUserConnection(client)
 	if isUser {
@@ -133,7 +133,7 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	var diags diag.Diagnostics
 
 	workspaceHandle := d.Id()
-	var resp steampipe.TypesWorkspace
+	var resp steampipe.Workspace
 	var err error
 	var r *_nethttp.Response
 
@@ -185,12 +185,12 @@ func resourceWorkspaceUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	oldHandle, newHandle := d.GetChange("handle")
 
 	// Create request
-	req := steampipe.TypesUpdateWorkspaceRequest{
+	req := steampipe.UpdateWorkspaceRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 	log.Printf("\n[DEBUG] Updating Workspace: %s", *req.Handle)
 
-	var resp steampipe.TypesWorkspace
+	var resp steampipe.Workspace
 	var userHandler string
 	var err error
 	var r *http.Response

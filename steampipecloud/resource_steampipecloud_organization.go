@@ -70,7 +70,7 @@ func resourceOrganizationCreate(ctx context.Context, d *schema.ResourceData, met
 	handle := d.Get("handle")
 
 	// Create request
-	req := steampipe.TypesCreateOrgRequest{
+	req := steampipe.CreateOrgRequest{
 		Handle: handle.(string),
 	}
 
@@ -145,7 +145,7 @@ func resourceOrganizationUpdate(ctx context.Context, d *schema.ResourceData, met
 	oldHandle, newHandle := d.GetChange("handle")
 
 	// Create request
-	req := steampipe.TypesUpdateOrgRequest{
+	req := steampipe.UpdateOrgRequest{
 		Handle: types.String(newHandle.(string)),
 	}
 

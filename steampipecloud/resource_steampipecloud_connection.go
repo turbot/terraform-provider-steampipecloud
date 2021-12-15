@@ -241,7 +241,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("resourceConnectionCreate. Unmarshalling connection config error  %v", err)
 	}
 
-	req := steampipe.TypesCreateConnectionRequest{
+	req := steampipe.CreateConnectionRequest{
 		Handle: connHandle,
 		Plugin: plugin,
 	}
@@ -251,7 +251,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	client := meta.(*SteampipeClient)
-	var resp steampipe.TypesConnection
+	var resp steampipe.Connection
 	var r *http.Response
 
 	isUser, orgHandle := isUserConnection(client)
@@ -300,7 +300,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	var diags diag.Diagnostics
 	var err error
 	var r *http.Response
-	var resp steampipe.TypesConnection
+	var resp steampipe.Connection
 
 	connectionHandle := d.Id()
 	if connectionHandle == "" {
@@ -365,7 +365,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	var r *http.Response
-	var resp steampipe.TypesConnection
+	var resp steampipe.Connection
 	var err error
 	var config map[string]interface{}
 
@@ -383,7 +383,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		return diag.Errorf("resourceConnectionUpdate. Unmarshalling connection config error  %v", err)
 	}
 
-	req := steampipe.TypesUpdateConnectionRequest{Handle: types.String(newConnectionHandle.(string))}
+	req := steampipe.UpdateConnectionRequest{Handle: types.String(newConnectionHandle.(string))}
 	if config != nil {
 		req.SetConfig(config)
 	}
