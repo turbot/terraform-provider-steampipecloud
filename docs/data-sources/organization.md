@@ -6,7 +6,7 @@ description: |-
   The organization data source allows to retrieve information about existing organization.
 ---
 
-# Data Source `steampipecloud_organization`
+# Data Source: steampipecloud_organization
 
 The organization data source allows to retrieve information about existing organization.
 
