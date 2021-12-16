@@ -3,12 +3,12 @@
 page_title: "steampipecloud_user Data Source - terraform-provider-steampipecloud"
 subcategory: ""
 description: |-
-  The user data source allows you to retrieve information about the user whose token is used for authentication.
+  The user data source allows to retrieve information about the user whose token is used for authentication.
 ---
 
 # Data Source `steampipecloud_user`
 
-The user data source allows you to retrieve information about the user whose token is used for authentication.
+The user data source allows to retrieve information about the user whose token is used for authentication.
 
 ## Example Usage
 

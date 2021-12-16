@@ -35,7 +35,7 @@ func Provider() *schema.Provider {
 			"host": {
 				Type:        schema.TypeString,
 				Optional:    true,
-				Description: "Sets the Steampipe Cloud host. This is used when connecting to Steampipe Cloud workspaces. The default is cloud.steampipe.io, you only need to set this if you are connecting to a remote Steampipe Cloud database that is NOT hosted in cloud.steampipe.io, such as a dev/test instance.",
+				Description: "Sets the Steampipe Cloud host. This is used when connecting to Steampipe Cloud workspaces. The default is https://cloud.steampipe.io, you only need to set this if you are connecting to a remote Steampipe Cloud database that is NOT hosted in https://cloud.steampipe.io, such as a dev/test instance.",
 				DefaultFunc: schema.EnvDefaultFunc("STEAMPIPE_CLOUD_HOST", nil),
 			},
 		},
@@ -47,7 +47,8 @@ func Provider() *schema.Provider {
 			"steampipecloud_workspace_connection": resourceWorkspaceConnection(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
-			"steampipecloud_user": dataSourceUser(),
+			"steampipecloud_organization": dataSourceOrganization(),
+			"steampipecloud_user":         dataSourceUser(),
 		},
 
 		ConfigureContextFunc: providerConfigure,
