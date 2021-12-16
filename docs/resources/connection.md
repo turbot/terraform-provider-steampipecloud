@@ -14,10 +14,10 @@ Manages a connection, which is defined at the user account or organization level
 
 ## Example Usage
 
-**Create a user connection**
+**Create an AWS connection (for a user)**
 
 ```hcl
-resource "steampipecloud_connection" "test" {
+resource "steampipecloud_connection" "aws_aaa" {
   plugin     = "aws"
   handle     = "aws_aaa"
   access_key = "redacted"
@@ -26,18 +26,9 @@ resource "steampipecloud_connection" "test" {
 }
 ```
 
-**Create an organization connection**
+**Create an AWS connection (for an organization)**
 
 ```hcl
-resource "steampipecloud_connection" "aws_aaa" {
-  organization = "myorg"
-  plugin       = "aws"
-  handle       = "aws_aaa"
-  access_key   = "redacted"
-  secret_key   = "redacted"
-  regions      = ["us-east-1"]
-}
-
 resource "steampipecloud_connection" "aws_aab" {
   organization = "myorg"
   plugin       = "aws"
@@ -48,40 +39,7 @@ resource "steampipecloud_connection" "aws_aab" {
 }
 ```
 
-## Argument Reference
-
-The following arguments are supported:
-
-- `handle` - (Required) A friendly identifier for your connection, and must be unique across your connections.
-- `plugin` - (Required) The name of the plugin.
-- `organization` - (Optional) An organization ID or handle to create the connection in.
-
-### Airtable Connection Arguments
-
-- `database_id` - Airtable database ID.
-- `token` - Airtable API key. You can generate an API key by visiting [Creating a read-only API key](https://support.airtable.com/hc/en-us/articles/360056249614-Creating-a-read-only-API-key).
-- `tables` - Names of the tables in the database, e.g., `["animals", "dogs", "cats"]`.
-
-### Alicloud Connection Arguments
-
-- `access_key` - Alicloud access key.
-- `secret_key` - Alicloud secret key.
-- `regions` - List of Alicloud regions to query, e.g., `["ap-south-1", "us-east-1"]`.
-
-### AWS Access Key Mode Connection Arguments
-
-- `access_key` - AWS access key.
-- `secret_key` - AWS secret key.
-- `session_token` - AWS temporary session token.
-- `regions` - List of AWS regions to query, e.g., `["us-east-1", "us-east-2"]`.
-
-### AWS Role Mode Connection Arguments
-
-- `role_arn` - ARN of the IAM role to assume.
-- `external_id` - External ID that the role trusts.
-- `regions` - List of AWS regions to query, e.g., `["us-east-1", "us-east-2"]`.
-
-#### Usage
+**Create an AWS connection using IAM role mode**
 
 This example requires the AWS provider, but if you have an existing role, you
 can just create the `steampipecloud_connection` resource.
@@ -100,12 +58,11 @@ locals {
   external_id = "${data.steampipecloud_user.caller.user_id}:${random_string.random.id}"
 }
 
-
 provider "aws" {
   region = "us-east-1"
 }
 
-# Create AWS IAM role with assume role policy
+# Create AWS IAM role
 resource "aws_iam_role" "steampipe_cloud_role" {
   name = "steampipe_cloud"
   assume_role_policy = jsonencode({
@@ -140,7 +97,7 @@ resource "aws_iam_role_policy_attachment" "steampipe_cloud_role_attach" {
 
 # Create connection with IAM role
 resource "steampipecloud_connection" "aws_role_connection" {
-  handle      = "aws_role_aaa"
+  handle      = "aws_role_connection"
   plugin      = "aws"
   regions     = ["us-east-1", "us-east-2"]
   role_arn    = aws_iam_role.steampipe_cloud_role.arn
@@ -148,41 +105,7 @@ resource "steampipecloud_connection" "aws_role_connection" {
 }
 ```
 
-### Azure Connection Arguments
-
-- `environment` - The Azure cloud environment to use, defaults to `AZUREPUBLICCLOUD`. Valid values are `AZUREPUBLICCLOUD`, `AZURECHINACLOUD`, `AZUREGERMANCLOUD`, `AZUREUSGOVERNMENTCLOUD`.
-- `tenant_id` - Azure Active Directory tenant ID.
-- `subscription_id` - Azure subscription ID.
-- `client_id` - Azure client ID, also known as application ID.
-- `client_secret` - Azure client secret, also known as client secret.
-
-### Azure AD Connection Arguments
-
-- `environment` - The Azure cloud environment to use, defaults to `AZUREPUBLICCLOUD`. Valid values are `AZUREPUBLICCLOUD`, `AZURECHINACLOUD`, `AZUREGERMANCLOUD`, `AZUREUSGOVERNMENTCLOUD`.
-- `tenant_id` - Azure Active Directory tenant ID.
-- `client_id` - Azure client ID, also known as application ID.
-- `client_secret` - Azure client secret, also known as client secret.
-
-### Bitbucket Connection Arguments
-
-- `username` - Bitbucket username.
-- `password` - Bitbucket app password.
-- `base_url` - Base URL of Bitbucket instance.
-
-### Cloudflare Connection Arguments
-
-- `token` - Cloudflare API token.
-
-### DigitalOcean Connection Arguments
-
-- `token` - Personal access token for your DigitalOcean account.
-
-### GCP Connection Arguments
-
-- `project` - GCP project to query.
-- `credentials` - The path to a JSON credential file or the contents of a service account key file in JSON format.
-
-#### Usage
+**Create a GCP connection**
 
 ```hcl
 resource "steampipecloud_connection" "gcp_aaa" {
@@ -193,68 +116,41 @@ resource "steampipecloud_connection" "gcp_aaa" {
 }
 ```
 
-### GitHub Connection Arguments
-
-- `token` - GitHub personal access token used to authenticate.
-
-### Hacker News Connection Arguments
-
-- `max_items` (Number) The maximum number of items to be returned.
-
-### IBM Connection Arguments
-
-- `api_key` - IBM Cloud API key.
-- `regions` - IBM Cloud regions to query, e.g., `["us-south", "eu-de"]`.
-
-### Jira Connection Arguments
-
-- `username` - Username used to access the API.
-- `token` - Jira access token.
-- `base_url` - Base URL of Jira instance.
-
-### Linode Connection Arguments
-
-- `token` - Linode API token. Please see [here](https://www.linode.com/docs/guides/getting-started-with-the-linode-api/) for more information.
-
-### OCI Connection Arguments
-
-- `user_ocid` - OCID of the user.
-- `fingerprint` - Fingerprint of the key.
-- `tenancy_ocid` - Tenancy's OCID.
-- `private_key` - Path to the downloaded private key.
-- `regions` - OCI regions to query, e.g., `["ap-mumbai-1", "us-ashburn-1"]`.
-
-#### Usage
+**Create an OCI connection**
 
 ```hcl
 resource "steampipecloud_connection" "oci_aaa" {
   handle       = "oci"
   plugin       = "oci"
-  user_ocid    = "ocid1.user.oc1..aaaaaaaaw...."
-  fingerprint  = "f1:fc:44:3a:.............."
-  tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaah......"
+  user_ocid    = "ocid1.user.oc1..aaaaaaaaw..."
+  fingerprint  = "f1:fc:44:3a:..."
+  tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaah..."
   regions      = ["ap-mumbai-1", "us-ashburn-1"]
   private_key  = file("/Users/myuser/Downloads/mykey.cer")
 }
 ```
 
-### Slack Connection Arguments
+## Argument Reference
 
-- `token` - Slack application token.
+The following arguments are supported:
 
-### Stripe Connection Arguments
+- `handle` - (Required) A friendly identifier for your connection, and must be unique across your connections.
+- `plugin` - (Required) The name of the plugin.
+- `organization` - (Optional) An organization ID or handle to create the connection in.
 
-- `api_key` - Stripe API key. You can generate your API key by visiting [here](https://stripe.com/docs/keys).
+For each connection resource, additional arguments are supported based on the plugin it uses. For instance, if creating a connection that uses the Zendesk plugin, the [Zendesk configuration arguments](https://hub.steampipe.io/plugins/turbot/zendesk#configuration) should be used in the connection:
 
-### Twitter Connection Arguments
+```hcl
+resource "steampipecloud_connection" "zendesk" {
+  plugin    = "zendesk"
+  handle    = "zendesk_example"
+  subdomain = "dmi"
+  email     = "pam@dmi.com"
+  token     = "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwexample"
+}
+```
 
-- `bearer_token` - OAuth 2.0 bearer token used to access publicly available information.
-
-### Zendesk Connection Arguments
-
-- `subdomain` - Organization subdomain name of your Zendesk instance.
-- `email` - Email address of the agent.
-- `api_key` - Zendesk API token.
+We do not recommend storing sensitive or secret information in such a way that it's accidentally exposed or can be accessed by unwanted actors. For more information on how to protect sensitive information, please see [Protect Sensitive Input Variables](https://learn.hashicorp.com/tutorials/terraform/sensitive-variables).
 
 ## Attributes Reference
 

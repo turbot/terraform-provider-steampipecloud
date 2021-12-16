@@ -22,8 +22,13 @@ user will be removed.
 **Invite a user using user handle**
 
 ```hcl
+resource "steampipecloud_organization" "myorg" {
+  handle       = "myorg"
+  display_name = "Test Org"
+}
+
 resource "steampipecloud_organization_member" "example" {
-  organization = "myorg"
+  organization = steampipecloud_organization.myorg.handle
   user_handle  = "someuser"
   role         = "member"
 }
@@ -32,8 +37,13 @@ resource "steampipecloud_organization_member" "example" {
 **Invite a user using an email address**
 
 ```hcl
+resource "steampipecloud_organization" "myorg" {
+  handle       = "myorg"
+  display_name = "Test Org"
+}
+
 resource "steampipecloud_organization_member" "example" {
-  organization = "myorg"
+  organization = steampipecloud_organization.myorg.handle
   email        = "user@domain.com"
   role         = "member"
 }

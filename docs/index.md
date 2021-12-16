@@ -19,7 +19,7 @@ Use the navigation to the left to read about the available resources.
 ```hcl
 # Configure the Steampipe Cloud provider
 provider "steampipecloud" {
-  token = "spt_example"
+  token = "spt_q9boaa6gutha5g3rgexample"
 }
 
 # Create a user workspace
