@@ -13,12 +13,8 @@ import (
 func isUserConnection(d *schema.ResourceData) (isUser bool, orgHandle string) {
 	isUser = true
 
-	var org string
 	if val, ok := d.GetOk("organization"); ok {
-		org = val.(string)
-	}
-	if org != "" {
-		orgHandle = org
+		orgHandle = val.(string)
 		isUser = false
 	}
 	return
