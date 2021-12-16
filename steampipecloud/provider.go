@@ -126,8 +126,8 @@ func CreateClient(config *Config, diags diag.Diagnostics) (*steampipe.APIClient,
 
 	diags = append(diags, diag.Diagnostic{
 		Severity: diag.Error,
-		Summary:  "Unable to create HashiCups client",
-		Detail:   "Failed to get token to authenticate Steampipecloud client. Please set 'token' in provider config",
+		Summary:  "Unable to create Steampipe Cloud client",
+		Detail:   "Failed to get token to authenticate Steampipe Cloud client. Please set 'token' in provider config",
 	})
 	return nil, diags
 }
