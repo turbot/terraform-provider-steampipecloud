@@ -71,7 +71,7 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(fmt.Errorf("%v", decodeResponse(r)))
 	}
 
-	d.SetId(resp.Handle)
+	d.SetId(resp.Id)
 	if err := d.Set("avatar_url", resp.AvatarUrl); err != nil {
 		return diag.FromErr(err)
 	}
