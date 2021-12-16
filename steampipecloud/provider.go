@@ -98,7 +98,7 @@ func CreateClient(config *Config, diags diag.Diagnostics) (*steampipe.APIClient,
 		}
 		configuration.Servers = []steampipe.ServerConfiguration{
 			{
-				URL: fmt.Sprintf("https://%s/api/v1", parsedAPIURL.Host),
+				URL: fmt.Sprintf("https://%s/api/v0", parsedAPIURL.Host),
 			},
 		}
 	}
