@@ -85,8 +85,8 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Workspace connections can be imported using an ID made up of `workspace_handle/connection_handle`, e.g.,
+Workspace connections can be imported using an ID made up of `workspace_handle:connection_handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_workspace_connection_association.example dev/devconn
+terraform import steampipecloud_workspace_connection_association.example dev:devconn
 ```

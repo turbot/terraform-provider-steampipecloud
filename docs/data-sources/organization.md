@@ -3,12 +3,12 @@
 page_title: "steampipecloud_user Data Source - terraform-provider-steampipecloud"
 subcategory: ""
 description: |-
-  The organization data source allows to retrieve information about existing organization.
+  Use this data source to retrieve information about an existing organization.
 ---
 
 # Data Source: steampipecloud_organization
 
-The organization data source allows to retrieve information about existing organization.
+Use this data source to retrieve information about an existing organization.
 
 ## Example Usage
 

@@ -56,96 +56,173 @@ The following arguments are supported:
 - `plugin` - (Required) The name of the plugin.
 - `organization` - (Optional) An organization ID or handle to create the connection in.
 
-### Airtable connection arguments
+### Airtable Connection Arguments
 
-- `database_id` (String) Airtable Base ID.
-- `token` (String) Airtable API Key. You can generate an API key by visiting [here](https://support.airtable.com/hc/en-us/articles/360056249614-Creating-a-read-only-API-key).
-- `tables` (List of String) Names of the tables in database.
+- `database_id` - Airtable database ID.
+- `token` - Airtable API key. You can generate an API key by visiting [Creating a read-only API key](https://support.airtable.com/hc/en-us/articles/360056249614-Creating-a-read-only-API-key).
+- `tables` - Names of the tables in the database, e.g., `["animals", "dogs", "cats"]`.
 
-### Alicloud connection arguments
+### Alicloud Connection Arguments
 
-- `access_key` (String)
-- `secret_key` (String)
-- `regions` (List of String)
+- `access_key` - Alicloud access key.
+- `secret_key` - Alicloud secret key.
+- `regions` - List of Alicloud regions to query, e.g., `["ap-south-1", "us-east-1"]`.
 
-### AWS access key mode connection arguments
+### AWS Access Key Mode Connection Arguments
 
-- `role_arn` (String) ARN of the role to assume.
-- `external_id` (String) External id required to trust role.
-- `regions` (List of String) List of AWS regions to query. Example `["us-east-1", "us-east-2"]`.
+- `access_key` - AWS access key.
+- `secret_key` - AWS secret key.
+- `session_token` - AWS temporary session token.
+- `regions` - List of AWS regions to query, e.g., `["us-east-1", "us-east-2"]`.
 
-### AWS role key mode arguments
+### AWS Role Mode Connection Arguments
 
-- `access_key` (String) AWS access key.
-- `secret_key` (String) AWS secret key.
-- `session_token` (String) AWS temporary session token.
-- `regions` (List of String) List of AWS regions to query. Example `["us-east-1", "us-east-2"]`.
+- `role_arn` - ARN of the IAM role to assume.
+- `external_id` - External ID that the role trusts.
+- `regions` - List of AWS regions to query, e.g., `["us-east-1", "us-east-2"]`.
 
-### Azure connection arguments
+#### Usage
 
-- `environment` (String) The Azure cloud environment to use, defaults to `AZUREPUBLICCLOUD`. Valid values are `AZUREPUBLICCLOUD`, `AZURECHINACLOUD`, `AZUREGERMANCLOUD`, `AZUREUSGOVERNMENTCLOUD`
-- `tenant_id` (String)
-- `subscription_id` (String)
-- `client_id` (String)
-- `client_secret` (String)
+This example requires the AWS provider, but if you have an existing role, you
+can just create the `steampipecloud_connection` resource.
 
-### AzureAD connection arguments
+```hcl
+data "steampipecloud_user" "caller" {}
 
-- `environment` (String)
-- `tenant_id` (String)
-- `client_id` (String)
-- `client_secret` (String)
+resource "random_string" "random" {
+  length  = 8
+  special = false
+  upper   = false
+}
 
-### BitBucket connection arguments
+locals {
+  # The format of external id is ^(u|o)_[a-z0-9_]{20}:[a-z0-9]{8}$`
+  external_id = "${data.steampipecloud_user.caller.user_id}:${random_string.random.id}"
+}
 
-- `username` (String)
-- `password` (String)
-- `base_url` (String)
 
-### Cloudflare connection arguments
+provider "aws" {
+  region = "us-east-1"
+}
 
-- `api_key` (String)
-- `email` (String)
+# Create AWS IAM role with assume role policy
+resource "aws_iam_role" "steampipe_cloud_role" {
+  name = "steampipe_cloud"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Action = "sts:AssumeRole"
+        Effect = "Allow"
+        Sid    = ""
+        Principal = {
+          AWS = "arn:aws:iam::123456789012:root"
+        },
+        Condition = {
+          StringEquals = {
+            "sts:ExternalId" = local.external_id
+          }
+        }
+      },
+    ]
+  })
+}
 
-### GCP connection arguments
+data "aws_iam_policy" "ReadOnlyAccess" {
+  arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
 
-- `project` (String) GCP project to query
-- `credentials` (String)
+# Attach ReadOnlyAccess policy to role
+resource "aws_iam_role_policy_attachment" "steampipe_cloud_role_attach" {
+  role       = aws_iam_role.steampipe_cloud_role.name
+  policy_arn = data.aws_iam_policy.ReadOnlyAccess.arn
+}
+
+# Create connection with IAM role
+resource "steampipecloud_connection" "aws_role_connection" {
+  handle      = "aws_role_aaa"
+  plugin      = "aws"
+  regions     = ["us-east-1", "us-east-2"]
+  role_arn    = aws_iam_role.steampipe_cloud_role.arn
+  external_id = local.external_id
+}
+```
+
+### Azure Connection Arguments
+
+- `environment` - The Azure cloud environment to use, defaults to `AZUREPUBLICCLOUD`. Valid values are `AZUREPUBLICCLOUD`, `AZURECHINACLOUD`, `AZUREGERMANCLOUD`, `AZUREUSGOVERNMENTCLOUD`.
+- `tenant_id` - Azure Active Directory tenant ID.
+- `subscription_id` - Azure subscription ID.
+- `client_id` - Azure client ID, also known as application ID.
+- `client_secret` - Azure client secret, also known as client secret.
+
+### Azure AD Connection Arguments
+
+- `environment` - The Azure cloud environment to use, defaults to `AZUREPUBLICCLOUD`. Valid values are `AZUREPUBLICCLOUD`, `AZURECHINACLOUD`, `AZUREGERMANCLOUD`, `AZUREUSGOVERNMENTCLOUD`.
+- `tenant_id` - Azure Active Directory tenant ID.
+- `client_id` - Azure client ID, also known as application ID.
+- `client_secret` - Azure client secret, also known as client secret.
+
+### Bitbucket Connection Arguments
+
+- `username` - Bitbucket username.
+- `password` - Bitbucket app password.
+- `base_url` - Base URL of Bitbucket instance.
+
+### Cloudflare Connection Arguments
+
+- `token` - Cloudflare API token.
+
+### DigitalOcean Connection Arguments
+
+- `token` - Personal access token for your DigitalOcean account.
+
+### GCP Connection Arguments
+
+- `project` - GCP project to query.
+- `credentials` - The path to a JSON credential file or the contents of a service account key file in JSON format.
 
 #### Usage
 
 ```hcl
 resource "steampipecloud_connection" "gcp_aaa" {
-  handle      = "gcp_aab"
+  handle      = "gcp_aaa"
   plugin      = "gcp"
   project     = "project-aaa"
-  credentials = file("/Users/lalitbhardwaj/Downloads/project-aaa.json")
-  # credentials = file("PATH_TO_CREDENTIALS_FILE")
+  credentials = file("/Users/myuser/Downloads/project-aaa.json")
 }
 ```
 
-### Hacker News connection arguments
+### GitHub Connection Arguments
+
+- `token` - GitHub personal access token used to authenticate.
+
+### Hacker News Connection Arguments
 
 - `max_items` (Number) The maximum number of items to be returned.
 
-### IBM connection arguments
+### IBM Connection Arguments
 
-- `api_key` (String)
-- `regions` (List of String)
+- `api_key` - IBM Cloud API key.
+- `regions` - IBM Cloud regions to query, e.g., `["us-south", "eu-de"]`.
 
-### Jira connection arguments
+### Jira Connection Arguments
 
-- `username` (String)
-- `token` (String)
-- `base_url` (String)
+- `username` - Username used to access the API.
+- `token` - Jira access token.
+- `base_url` - Base URL of Jira instance.
 
-### OCI connection arguments
+### Linode Connection Arguments
 
-- `user_ocid` (String)
-- `fingerprint` (String)
-- `tenancy_ocid` (String)
-- `private_key` (String)
-- `regions` (List of String)
+- `token` - Linode API token. Please see [here](https://www.linode.com/docs/guides/getting-started-with-the-linode-api/) for more information.
+
+### OCI Connection Arguments
+
+- `user_ocid` - OCID of the user.
+- `fingerprint` - Fingerprint of the key.
+- `tenancy_ocid` - Tenancy's OCID.
+- `private_key` - Path to the downloaded private key.
+- `regions` - OCI regions to query, e.g., `["ap-mumbai-1", "us-ashburn-1"]`.
 
 #### Usage
 
@@ -157,27 +234,27 @@ resource "steampipecloud_connection" "oci_aaa" {
   fingerprint  = "f1:fc:44:3a:.............."
   tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaah......"
   regions      = ["ap-mumbai-1", "us-ashburn-1"]
-  private_key  = file("/Users/turbot/Downloads/12-08-13-32.cer")
+  private_key  = file("/Users/myuser/Downloads/mykey.cer")
 }
 ```
 
-### Stripe connection arguments
+### Slack Connection Arguments
 
-- `api_key` (String) You can generate your API key by visiting [here](https://stripe.com/docs/keys).
+- `token` - Slack application token.
 
-### Twitter connection arguments
+### Stripe Connection Arguments
 
-- `bearer_token` (String)
+- `api_key` - Stripe API key. You can generate your API key by visiting [here](https://stripe.com/docs/keys).
 
-### Zendesk connection arguments
+### Twitter Connection Arguments
 
-- `subdomain` (String)
-- `email` (string)
-- `api_key` (String)
+- `bearer_token` - OAuth 2.0 bearer token used to access publicly available information.
 
-### DigitalOcean, GitHub, Linode, Slack connection arguments
+### Zendesk Connection Arguments
 
-- `token` (String)
+- `subdomain` - Organization subdomain name of your Zendesk instance.
+- `email` - Email address of the agent.
+- `api_key` - Zendesk API token.
 
 ## Attributes Reference
 
@@ -189,7 +266,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Connections can be imported using an organization ID or handle, or a user ID or handle, e.g.,
+Connections can be imported using the `handle`, e.g.,
 
 ```sh
 terraform import steampipecloud_connection.example aws_aaa

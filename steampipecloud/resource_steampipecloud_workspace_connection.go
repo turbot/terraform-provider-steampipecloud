@@ -203,9 +203,9 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	idParts := strings.Split(d.Id(), "/")
+	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) < 2 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<connection-handle>", d.Id())
 	}
 
 	workspaceHandle := idParts[0]
