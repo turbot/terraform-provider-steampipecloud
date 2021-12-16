@@ -55,10 +55,10 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-- `association_id` - An unique identifier of the organization membership.
 - `created_at` - The time when the invitation has been sent.
 - `display_name` - The display name of the user to add to the organization.
 - `organization_id` - An unique identifier of the organization.
+- `organization_member_id` - An unique identifier of the organization membership.
 - `status` - The current membership status. Can be either `invited`, or `accepted`.
 - `updated_at` - The time when the membership was last updated.
 - `user_id` - An unique identifier of the user to add to the organization.
