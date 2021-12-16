@@ -45,6 +45,7 @@ resource "steampipecloud_connection" "org_dev_conn" {
 }
 
 resource "steampipecloud_workspace_connection" "org_test" {
+  organization      = "testorg"
   workspace_handle  = steampipecloud_workspace.org_dev_workspace.handle
   connection_handle = steampipecloud_connection.org_dev_conn.handle
 }
@@ -56,6 +57,7 @@ The following arguments are supported:
 
 - `workspace_handle` - (Required) The handle of the workspace to add the connection to.
 - `connection_handle` - (Required) The handle of the connection to add to workspace.
+- `organization` - (Optional) The organization ID or handle to create the connection association in.
 
 ## Attributes Reference
 
