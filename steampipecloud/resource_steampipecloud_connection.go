@@ -34,6 +34,11 @@ func resourceConnection() *schema.Resource {
 				ForceNew: true,
 				Computed: true,
 			},
+			"organization": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"handle": {
 				Type:         schema.TypeString,
 				Required:     true,
@@ -265,7 +270,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	var resp steampipe.Connection
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
@@ -283,6 +288,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	d.Set("connection_id", resp.Id)
 	d.Set("identity_id", resp.IdentityId)
+	d.Set("organization", orgHandle)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
 	d.Set("created_at", resp.CreatedAt)
@@ -318,7 +324,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 		return diag.Errorf("resourceConnectionRead. Connection handle not present.")
 	}
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
@@ -344,6 +350,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	// assign results back into ResourceData
 	d.Set("connection_id", resp.Id)
 	d.Set("identity_id", resp.IdentityId)
+	d.Set("organization", orgHandle)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
 	d.Set("handle", resp.Handle)
@@ -399,7 +406,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 		req.SetConfig(config)
 	}
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
@@ -415,6 +422,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	d.Set("handle", resp.Handle)
+	d.Set("organization", orgHandle)
 	d.Set("connection_id", resp.Id)
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("type", resp.Type)
@@ -448,7 +456,7 @@ func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 	var err error
 	var r *http.Response
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)

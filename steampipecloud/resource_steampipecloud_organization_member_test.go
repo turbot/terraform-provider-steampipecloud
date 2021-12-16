@@ -48,16 +48,11 @@ resource "steampipecloud_organization" "test" {
 	handle = "%s"
 }
 
-provider "steampipecloud" {
-	alias        = "turbie"
-	organization = steampipecloud_organization.test.handle
-}
-
 # Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
-	provider = steampipecloud.turbie
-	email    = "user@domain.com"
-	role     = "member"
+	organization = steampipecloud_organization.test.handle
+	email        = "user@domain.com"
+	role         = "member"
 }`, orgHandle)
 }
 
@@ -69,16 +64,11 @@ resource "steampipecloud_organization" "test" {
 	handle = "%s"
 }
 
-provider "steampipecloud" {
-  alias        = "turbie"
-  organization = steampipecloud_organization.test.handle
-}
-
 # Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
-  provider = steampipecloud.turbie
-  email    = "user@domain.com"
-  role     = "owner"
+  organization = steampipecloud_organization.test.handle
+  email        = "user@domain.com"
+  role         = "owner"
 }`, orgHandle)
 }
 

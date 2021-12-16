@@ -96,27 +96,22 @@ resource "steampipecloud_organization" "test_org" {
 	display_name = "Terraform Test Org"
 }
 
-provider "steampipecloud" {
-	alias = "turbie"
-	organization 	= steampipecloud_organization.test_org.handle
-}
-
 resource "steampipecloud_workspace" "test_org" {
-	provider = steampipecloud.turbie
-  handle   = "%s"
+	organization = steampipecloud_organization.test_org.handle
+  handle       = "%s"
 }
 
 resource "steampipecloud_connection" "test_org" {
-	provider   = steampipecloud.turbie
-	handle     = "%s"
-	plugin     = "aws"
-	regions    = ["us-east-1"]
-	access_key = "redacted"
-	secret_key = "redacted"
+	organization = steampipecloud_organization.test_org.handle
+	handle       = "%s"
+	plugin       = "aws"
+	regions      = ["us-east-1"]
+	access_key   = "redacted"
+	secret_key   = "redacted"
 }
 
 resource "steampipecloud_workspace_connection" "test_org" {
-	provider          = steampipecloud.turbie
+	organization 	    = steampipecloud_organization.test_org.handle
   workspace_handle  = steampipecloud_workspace.test_org.handle
   connection_handle = steampipecloud_connection.test_org.handle
 }`, org, workspace, conn)
@@ -130,7 +125,6 @@ func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
 
 	// retrieve the connection established in Provider configuration
 	client := testAccProvider.Meta().(*SteampipeClient)
-	isUser, orgHandle := isUserConnection(client)
 
 	// loop through the resources in state, verifying each managed resource is destroyed
 	for _, rs := range s.RootModule().Resources {
@@ -142,6 +136,10 @@ func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
 		connectionHandle := rs.Primary.Attributes["connection_handle"]
 		workspaceHandle := rs.Primary.Attributes["workspace_handle"]
 
+		// Retrieve organization
+		org := rs.Primary.Attributes["organization"]
+		isUser := org == ""
+
 		if isUser {
 			var actorHandle string
 			actorHandle, _, err = getUserHandler(ctx, client)
@@ -150,7 +148,7 @@ func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
 			}
 			_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(ctx, actorHandle, workspaceHandle, connectionHandle).Execute()
 		} else {
-			_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, orgHandle, workspaceHandle, connectionHandle).Execute()
+			_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, org, workspaceHandle, connectionHandle).Execute()
 		}
 		if err == nil {
 			return fmt.Errorf("Workspace Connection association %s/%s still exists", workspaceHandle, connectionHandle)
@@ -185,7 +183,10 @@ func testAccCheckWorkspaceConnectionExists(n string) resource.TestCheckFunc {
 		workspaceHandle := rs.Primary.Attributes["workspace_handle"]
 
 		client := testAccProvider.Meta().(*SteampipeClient)
-		isUser, orgHandle := isUserConnection(client)
+
+		// Retrieve organization
+		org := rs.Primary.Attributes["organization"]
+		isUser := org == ""
 
 		if isUser {
 			var actorHandle string
@@ -198,7 +199,7 @@ func testAccCheckWorkspaceConnectionExists(n string) resource.TestCheckFunc {
 				return fmt.Errorf("error reading user workspace connection: %s/%s.\nerr: %s", workspaceHandle, connectionHandle, err)
 			}
 		} else {
-			_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, orgHandle, workspaceHandle, connectionHandle).Execute()
+			_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, org, workspaceHandle, connectionHandle).Execute()
 			if err != nil {
 				return fmt.Errorf("error reading organization workspace connection: %s/%s.\nerr: %s", workspaceHandle, connectionHandle, err)
 			}
@@ -212,23 +213,32 @@ func testAccCheckTestWorkspaceExists(workspaceHandle string) resource.TestCheckF
 	ctx := context.Background()
 	return func(s *terraform.State) error {
 		client := testAccProvider.Meta().(*SteampipeClient)
-		isUser, orgHandle := isUserConnection(client)
 
-		var err error
-		if isUser {
-			var actorHandle string
-			actorHandle, _, err = getUserHandler(ctx, client)
-			if err != nil {
-				return fmt.Errorf("error fetching user handle. %s", err)
+		for _, rs := range s.RootModule().Resources {
+			if rs.Type != "steampipecloud_workspace" {
+				continue
 			}
-			_, _, err = client.APIClient.UserWorkspaces.Get(ctx, actorHandle, workspaceHandle).Execute()
-			if err != nil {
-				return fmt.Errorf("error fetching user workspace with handle %s. %s", workspaceHandle, err)
-			}
-		} else {
-			_, _, err = client.APIClient.OrgWorkspaces.Get(ctx, orgHandle, workspaceHandle).Execute()
-			if err != nil {
-				return fmt.Errorf("error fetching org workspace with handle %s. %s", workspaceHandle, err)
+
+			// Retrieve organization
+			org := rs.Primary.Attributes["organization"]
+			isUser := org == ""
+
+			var err error
+			if isUser {
+				var actorHandle string
+				actorHandle, _, err = getUserHandler(ctx, client)
+				if err != nil {
+					return fmt.Errorf("error fetching user handle. %s", err)
+				}
+				_, _, err = client.APIClient.UserWorkspaces.Get(ctx, actorHandle, workspaceHandle).Execute()
+				if err != nil {
+					return fmt.Errorf("error fetching user workspace with handle %s. %s", workspaceHandle, err)
+				}
+			} else {
+				_, _, err = client.APIClient.OrgWorkspaces.Get(ctx, org, workspaceHandle).Execute()
+				if err != nil {
+					return fmt.Errorf("error fetching org workspace with handle %s. %s", workspaceHandle, err)
+				}
 			}
 		}
 		return nil
@@ -240,25 +250,34 @@ func testAccCheckTestConnectionExists(connHandle string) resource.TestCheckFunc 
 	return func(state *terraform.State) error {
 		client := testAccProvider.Meta().(*SteampipeClient)
 
-		isUser, orgHandle := isUserConnection(client)
-		var err error
+		for _, rs := range state.RootModule().Resources {
+			if rs.Type != "steampipecloud_connection" {
+				continue
+			}
 
-		if isUser {
-			var actorHandle string
-			actorHandle, _, err = getUserHandler(ctx, client)
-			if err != nil {
-				return fmt.Errorf("error fetching user handle. %s", err)
-			}
-			_, _, err = client.APIClient.UserConnections.Get(ctx, actorHandle, connHandle).Execute()
-			if err != nil {
-				return fmt.Errorf("error fetching user connection with handle %s. %s", connHandle, err)
-			}
-		} else {
-			_, _, err = client.APIClient.OrgConnections.Get(ctx, orgHandle, connHandle).Execute()
-			if err != nil {
-				return fmt.Errorf("error fetching org connection with handle %s. %s", connHandle, err)
+			// Retrieve organization
+			org := rs.Primary.Attributes["organization"]
+			isUser := org == ""
+
+			var err error
+			if isUser {
+				var actorHandle string
+				actorHandle, _, err = getUserHandler(ctx, client)
+				if err != nil {
+					return fmt.Errorf("error fetching user handle. %s", err)
+				}
+				_, _, err = client.APIClient.UserConnections.Get(ctx, actorHandle, connHandle).Execute()
+				if err != nil {
+					return fmt.Errorf("error fetching user connection with handle %s. %s", connHandle, err)
+				}
+			} else {
+				_, _, err = client.APIClient.OrgConnections.Get(ctx, org, connHandle).Execute()
+				if err != nil {
+					return fmt.Errorf("error fetching org connection with handle %s. %s", connHandle, err)
+				}
 			}
 		}
+
 		return nil
 	}
 }

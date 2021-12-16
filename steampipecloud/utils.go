@@ -5,16 +5,21 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
+
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
 )
 
 // isUserConnection:: Check if the connection is scoped on an user or a specific organization
-func isUserConnection(client *SteampipeClient) (ok bool, orgHandle string) {
-	ok = true
-	if client.Config != nil {
-		if client.Config.Organization != "" {
-			orgHandle = client.Config.Organization
-			ok = false
-		}
+func isUserConnection(d *schema.ResourceData) (isUser bool, orgHandle string) {
+	isUser = true
+
+	var org string
+	if val, ok := d.GetOk("organization"); ok {
+		org = val.(string)
+	}
+	if org != "" {
+		orgHandle = org
+		isUser = false
 	}
 	return
 }
