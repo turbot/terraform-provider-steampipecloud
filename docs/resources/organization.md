@@ -3,17 +3,17 @@
 page_title: "steampipecloud_organization Resource - terraform-provider-steampipecloud"
 subcategory: ""
 description: |-
-  The `Steampipe Cloud Organization` include multiple users and are intended for organizations to collaborate and share workspaces and connections.
+  The `Steampipe Cloud Organization` includes multiple users and is intended for organizations to collaborate and share workspaces and connections.
 ---
 
-# Resource `steampipecloud_organization`
+# Resource: steampipecloud_organization
+
+Manages an organization.
 
 ## Example Usage
 
-**Creating Your First Organization**
-
 ```hcl
-resource "steampipecloud_organization" "test_org" {
+resource "steampipecloud_organization" "example" {
   handle       = "testorg"
   display_name = "Test Org"
 }
@@ -39,8 +39,8 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Workspaces can be imported using the `handle`. For example,
+Workspaces can be imported using the `handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_organization.test_org testorg
+terraform import steampipecloud_organization.example testorg
 ```

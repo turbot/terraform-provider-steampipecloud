@@ -8,27 +8,26 @@ description: |-
   A workspace comprises a single Steampipe database instance as well as a directory of mod resources such as queries, benchmarks, and controls. Workspaces allow you to separate your Steampipe instances for security, operational, or organizational purposes.
 ---
 
-# Resource `steampipecloud_workspace`
+# Resource: steampipecloud_workspace
+
+Manages a workspace, which is defined at the user account or organization level.
 
 ## Example Usage
 
-**Creating Your First Workspace**
+**Create a user workspace**
 
 ```hcl
-resource "steampipecloud_workspace" "test" {
+resource "steampipecloud_workspace" "test_user_workspace" {
   handle = "myworkspace"
 }
 ```
 
-**Creating a Organization Workspace**
+**Create an organization workspace**
 
 ```hcl
-provider "steampipecloud" {
-  org = "testorg"
-}
-
 resource "steampipecloud_workspace" "test_org_workspace" {
-  handle = "myorgworkspace"
+  organization = "myorg"
+  handle       = "myorgworkspace"
 }
 ```
 
@@ -37,6 +36,7 @@ resource "steampipecloud_workspace" "test_org_workspace" {
 The following arguments are supported:
 
 - `handle` - (Required) A friendly identifier for your workspace, and must be unique across your workspaces.
+- `organization` - (Optional) An organization ID or handle to create the workspace in.
 
 ## Attributes Reference
 
@@ -48,13 +48,13 @@ In addition to all arguments above, the following attributes are exported:
 - `updated_at` - The time when the workspace was last updated.
 - `database_name` - The name of the Steampipe workspace database.
 - `host` - The hostname.
-- `identity_id` - An unique identifier of the entity, where the workspace is created.
+- `identity_id` - An unique identifier of the entity where the workspace is created.
 - `version_id` - The workspace version.
 
 ## Import
 
-Workspaces can be imported using the `handle`. For example,
+Workspaces can be imported using the `handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_workspace.test test
+terraform import steampipecloud_workspace.example myworkspace
 ```

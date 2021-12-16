@@ -6,11 +6,13 @@ description: |-
   The `Steampipe Cloud Workspace Connection` represents a set of connections that are currently attached to the workspace. This resource can be used multiple times with the same connection for non-overlapping workspaces.
 ---
 
-# Resource `steampipecloud_workspace_connection`
+# Resource: steampipecloud_workspace_connection
+
+Manages a workspace connection association.
 
 ## Example Usage
 
-**Creating Your First Workspace Connection Association**
+**Create a user workspace connection association**
 
 ```hcl
 resource "steampipecloud_workspace" "dev_workspace" {
@@ -28,20 +30,18 @@ resource "steampipecloud_workspace_connection" "test" {
 }
 ```
 
-**Creating a Organization Workspace Connection Association**
+**Create an organization workspace connection association**
 
 ```hcl
-provider "steampipecloud" {
-  organization = "testorg"
-}
-
 resource "steampipecloud_workspace" "org_dev_workspace" {
-  handle = "dev"
+  organization = "testorg"
+  handle       = "dev"
 }
 
 resource "steampipecloud_connection" "org_dev_conn" {
-  handle = "devconn"
-  plugin = "bitbucket"
+  organization = "testorg"
+  handle       = "devconn"
+  plugin       = "bitbucket"
 }
 
 resource "steampipecloud_workspace_connection" "org_test" {
@@ -83,8 +83,8 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Connections can be imported using the `id`. For example,
+Workspace connections can be imported using an ID made up of `workspace_handle/connection_handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_workspace_connection_association.test_import dev/devconn
+terraform import steampipecloud_workspace_connection_association.example dev/devconn
 ```

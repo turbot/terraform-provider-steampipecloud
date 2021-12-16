@@ -43,6 +43,7 @@ func Provider() *schema.Provider {
 		ResourcesMap: map[string]*schema.Resource{
 			"steampipecloud_connection":           resourceConnection(),
 			"steampipecloud_organization":         resourceOrganization(),
+			"steampipecloud_organization_member":  resourceOrganizationMember(),
 			"steampipecloud_workspace":            resourceWorkspace(),
 			"steampipecloud_workspace_connection": resourceWorkspaceConnection(),
 		},
