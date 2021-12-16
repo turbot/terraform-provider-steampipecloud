@@ -98,7 +98,7 @@ resource "steampipecloud_organization" "test_org" {
 
 resource "steampipecloud_workspace" "test_org" {
 	organization = steampipecloud_organization.test_org.handle
-  handle       = "%s"
+	handle       = "%s"
 }
 
 resource "steampipecloud_connection" "test_org" {
@@ -112,8 +112,8 @@ resource "steampipecloud_connection" "test_org" {
 
 resource "steampipecloud_workspace_connection" "test_org" {
 	organization 	    = steampipecloud_organization.test_org.handle
-  workspace_handle  = steampipecloud_workspace.test_org.handle
-  connection_handle = steampipecloud_connection.test_org.handle
+	workspace_handle  = steampipecloud_workspace.test_org.handle
+	connection_handle = steampipecloud_connection.test_org.handle
 }`, org, workspace, conn)
 }
 
