@@ -66,13 +66,12 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interf
 	var diags diag.Diagnostics
 
 	steampipeClient := meta.(*SteampipeClient)
-	resp, r, err := steampipeClient.APIClient.Actors.Get(context.Background()).Execute()
+	resp, r, err := steampipeClient.APIClient.Actors.Get(ctx).Execute()
 	if err != nil {
 		return diag.FromErr(fmt.Errorf("%v", decodeResponse(r)))
 	}
-	defer r.Body.Close()
 
-	d.SetId(resp.Handle)
+	d.SetId(resp.Id)
 	if err := d.Set("avatar_url", resp.AvatarUrl); err != nil {
 		return diag.FromErr(err)
 	}
