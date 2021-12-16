@@ -54,7 +54,7 @@ The following arguments are supported:
 
 - `handle` - (Required) A friendly identifier for your connection, and must be unique across your connections.
 - `plugin` - (Required) The name of the plugin.
-- `organization` - (Optional) An organization ID or handle to create the workspace in.
+- `organization` - (Optional) An organization ID or handle to create the connection in.
 
 ### Airtable connection arguments
 
