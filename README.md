@@ -1,8 +1,9 @@
 # Terraform Steampipe Cloud provider
 
-- Website: https://www.terraform.io
-- [![Gitter chat](https://badges.gitter.im/hashicorp-terraform/Lobby.png)](https://gitter.im/hashicorp-terraform/Lobby)
-<!-- - Mailing list: [Google Groups](http://groups.google.com/group/terraform-tool) -->
+- Terraform: https://www.terraform.io
+- Steampipe: https://steampipe.io
+- Steampipe Cloud: https://cloud.steampipe.io
+- Community: [Steampipe Slack](https://steampipe.io/community/join)
 
 ## Requirements
 
