@@ -29,6 +29,11 @@ func resourceWorkspace() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
 			},
+			"organization": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"workspace_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -91,7 +96,7 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	// Create request
 	req := steampipe.CreateWorkspaceRequest{Handle: handle.(string)}
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var userHandler string
 		userHandler, r, err = getUserHandler(ctx, client)
@@ -112,6 +117,7 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	// Set property values
 	d.SetId(resp.Handle)
 	d.Set("handle", resp.Handle)
+	d.Set("organization", orgHandle)
 	d.Set("workspace_id", resp.Id)
 	d.Set("workspace_state", resp.WorkspaceState)
 	d.Set("created_at", resp.CreatedAt)
@@ -136,7 +142,7 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
@@ -162,6 +168,7 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	}
 
 	d.Set("handle", workspaceHandle)
+	d.Set("organization", orgHandle)
 	d.Set("workspace_id", resp.Id)
 	d.Set("workspace_state", resp.WorkspaceState)
 	d.Set("created_at", resp.CreatedAt)
@@ -194,7 +201,7 @@ func resourceWorkspaceUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		userHandler, r, err = getUserHandler(ctx, client)
 		if err != nil {
@@ -214,6 +221,7 @@ func resourceWorkspaceUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	// Update state file
 	d.SetId(resp.Handle)
 	d.Set("handle", resp.Handle)
+	d.Set("organization", orgHandle)
 	d.Set("workspace_id", resp.Id)
 	d.Set("workspace_state", resp.WorkspaceState)
 	d.Set("created_at", resp.CreatedAt)
@@ -237,7 +245,7 @@ func resourceWorkspaceDelete(ctx context.Context, d *schema.ResourceData, meta i
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)

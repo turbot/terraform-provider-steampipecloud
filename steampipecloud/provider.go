@@ -22,11 +22,6 @@ func Provider() *schema.Provider {
 				Description: "Sets the Steampipe Cloud authentication token. This is used when connecting to Steampipe Cloud workspaces. You can manage your API tokens from the Settings page for your user account in Steampipe Cloud.",
 				DefaultFunc: schema.EnvDefaultFunc("STEAMPIPE_CLOUD_TOKEN", nil),
 			},
-			"organization": {
-				Type:        schema.TypeString,
-				Optional:    true,
-				Description: "Steampipe Organizations, include multiple users and are intended for organizations to collaborate and share workspaces and connections.",
-			},
 			// "insecure_skip_verify": {
 			// 	Type:     schema.TypeBool,
 			// 	Optional: true,
@@ -63,9 +58,6 @@ func providerConfigure(ctx context.Context, d *schema.ResourceData) (interface{}
 	if val, ok := d.GetOk("token"); ok {
 		config.Token = val.(string)
 	}
-	if val, ok := d.GetOk("organization"); ok {
-		config.Organization = val.(string)
-	}
 	// if val, ok := d.GetOk("insecure_skip_verify"); ok {
 	// 	config.InsecureSkipVerify = val.(bool)
 	// }
@@ -91,9 +83,8 @@ type SteampipeClient struct {
 }
 
 type Config struct {
-	Organization string
-	Token        string
-	Host         string
+	Token string
+	Host  string
 	// InsecureSkipVerify bool
 }
 

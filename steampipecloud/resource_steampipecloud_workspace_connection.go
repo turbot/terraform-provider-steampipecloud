@@ -34,6 +34,11 @@ func resourceWorkspaceConnection() *schema.Resource {
 				Required:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
 			},
+			"organization": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"association_id": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -141,7 +146,7 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	req := steampipe.CreateWorkspaceConnRequest{ConnectionHandle: connHandle}
 
 	client := meta.(*SteampipeClient)
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
@@ -164,6 +169,11 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("association_id", resp.Id)
 	d.Set("connection_id", resp.ConnectionId)
 	d.Set("workspace_id", resp.WorkspaceId)
+	d.Set("organization", orgHandle)
+	d.Set("created_at", resp.CreatedAt)
+	d.Set("updated_at", resp.UpdatedAt)
+	d.Set("identity_id", resp.IdentityId)
+	d.Set("version_id", resp.VersionId)
 	d.Set("workspace_handle", workspaceHandle)
 	d.Set("connection_handle", resp.Connection.Handle)
 	d.Set("connection_created_at", resp.Connection.CreatedAt)
@@ -205,7 +215,7 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
@@ -233,6 +243,11 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	d.Set("association_id", resp.Id)
 	d.Set("workspace_id", resp.WorkspaceId)
 	d.Set("connection_id", resp.ConnectionId)
+	d.Set("organization", orgHandle)
+	d.Set("created_at", resp.CreatedAt)
+	d.Set("updated_at", resp.UpdatedAt)
+	d.Set("identity_id", resp.IdentityId)
+	d.Set("version_id", resp.VersionId)
 	d.Set("connection_handle", resp.Connection.Handle)
 	d.Set("workspace_handle", workspaceHandle)
 	d.Set("connection_created_at", resp.Connection.CreatedAt)
@@ -301,7 +316,7 @@ func resourceWorkspaceConnectionDelete(ctx context.Context, d *schema.ResourceDa
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(client)
+	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
