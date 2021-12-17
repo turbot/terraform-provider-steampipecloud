@@ -151,7 +151,7 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
-			return diag.Errorf("resourceWorkspaceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
+			return diag.Errorf("resourceWorkspaceConnectionCreate. getUserHandler error %v", decodeResponse(r))
 		}
 		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Create(ctx, actorHandle, workspaceHandle).Request(req).Execute()
 	} else {
@@ -164,7 +164,7 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Set property values
-	id := fmt.Sprintf("%s/%s", workspaceHandle, resp.Connection.Handle)
+	id := fmt.Sprintf("%s:%s", workspaceHandle, resp.Connection.Handle)
 	d.SetId(id)
 	d.Set("association_id", resp.Id)
 	d.Set("connection_id", resp.ConnectionId)
@@ -289,7 +289,7 @@ func resourceWorkspaceConnectionUpdate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	if workspaceHandle != "" && connHandle != "" {
-		id := fmt.Sprintf("%s/%s", workspaceHandle, connHandle)
+		id := fmt.Sprintf("%s:%s", workspaceHandle, connHandle)
 		d.SetId(id)
 		d.Set("workspace_handle", workspaceHandle)
 		d.Set("connection_handle", connHandle)
@@ -304,14 +304,14 @@ func resourceWorkspaceConnectionDelete(ctx context.Context, d *schema.ResourceDa
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
 
-	idParts := strings.Split(d.Id(), "/")
+	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) < 2 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<connection-handle>", d.Id())
 	}
 
 	workspaceHandle := idParts[0]
 	connHandle := idParts[1]
-	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s/%s", workspaceHandle, connHandle))
+	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s:%s", workspaceHandle, connHandle))
 
 	var err error
 	var r *http.Response
