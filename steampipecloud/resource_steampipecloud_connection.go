@@ -209,7 +209,7 @@ func resourceConnection() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
-			// Zendesk, Cloudflare
+			// Turbot
 			"workspace": {
 				Type:     schema.TypeString,
 				Optional: true,
