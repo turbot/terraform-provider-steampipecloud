@@ -209,6 +209,11 @@ func resourceConnection() *schema.Resource {
 				Type:     schema.TypeInt,
 				Optional: true,
 			},
+			// Turbot
+			"workspace": {
+				Type:     schema.TypeString,
+				Optional: true,
+			},
 			// AWS, OCI, Alicloud, IBM
 			"regions": {
 				Type:     schema.TypeList,
@@ -576,6 +581,9 @@ func CreateConnectionConfiguration(d *schema.ResourceData) (ConnectionConfig, er
 	if value, ok := d.GetOk("external_id"); ok {
 		connConfig.ExternalID = value.(string)
 	}
+	if value, ok := d.GetOk("workspace"); ok {
+		connConfig.Workspace = value.(string)
+	}
 
 	return connConfig, nil
 }
@@ -608,4 +616,5 @@ type ConnectionConfig struct {
 	TenantID       string   `json:"tenant_id,omitempty"`
 	Token          string   `json:"token,omitempty"`
 	UserOCID       string   `json:"user_ocid,omitempty"`
+	Workspace      string   `json:"workspace,omitempty"`
 }
