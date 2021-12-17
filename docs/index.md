@@ -17,6 +17,14 @@ Use the navigation to the left to read about the available resources.
 ## Example Usage
 
 ```hcl
+terraform {
+  required_providers {
+    steampipecloud = {
+      source = "turbot/steampipecloud"
+    }
+  }
+}
+
 # Configure the Steampipe Cloud provider
 provider "steampipecloud" {
   token = "spt_q9boaa6gutha5g3rgexample"
