@@ -151,7 +151,7 @@ func testAccCheckWorkspaceConnectionDestroy(s *terraform.State) error {
 			_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, org, workspaceHandle, connectionHandle).Execute()
 		}
 		if err == nil {
-			return fmt.Errorf("Workspace Connection association %s/%s still exists", workspaceHandle, connectionHandle)
+			return fmt.Errorf("Workspace Connection association %s:%s still exists", workspaceHandle, connectionHandle)
 		}
 
 		// If the error is equivalent to 404 not found, the workspace connection is destroyed.
@@ -196,12 +196,12 @@ func testAccCheckWorkspaceConnectionExists(n string) resource.TestCheckFunc {
 			}
 			_, _, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(ctx, actorHandle, workspaceHandle, connectionHandle).Execute()
 			if err != nil {
-				return fmt.Errorf("error reading user workspace connection: %s/%s.\nerr: %s", workspaceHandle, connectionHandle, err)
+				return fmt.Errorf("error reading user workspace connection: %s:%s.\nerr: %s", workspaceHandle, connectionHandle, err)
 			}
 		} else {
 			_, _, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, org, workspaceHandle, connectionHandle).Execute()
 			if err != nil {
-				return fmt.Errorf("error reading organization workspace connection: %s/%s.\nerr: %s", workspaceHandle, connectionHandle, err)
+				return fmt.Errorf("error reading organization workspace connection: %s:%s.\nerr: %s", workspaceHandle, connectionHandle, err)
 			}
 		}
 
