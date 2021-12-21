@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -28,9 +29,8 @@ func TestAccConnection_Basic(t *testing.T) {
 					testAccCheckConnectionExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "handle", connHandle),
 					resource.TestCheckResourceAttr(resourceName, "plugin", "aws"),
-					resource.TestCheckResourceAttr(resourceName, "access_key", "redacted"),
-					resource.TestCheckResourceAttr(resourceName, "secret_key", "redacted"),
-					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "config", "{\n \"access_key\": \"redacted\",\n \"regions\": [\n  \"us-east-1\"\n ],\n \"secret_key\": \"redacted\"\n}"),
+					testCheckJSONString(resourceName, "config", `{"access_key":"redacted","regions":["us-east-1"],"secret_key":"redacted"}`),
 				),
 			},
 			{
@@ -42,8 +42,8 @@ func TestAccConnection_Basic(t *testing.T) {
 				Config: testAccConnectionHandleUpdateConfig(newHandle),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("steampipecloud_connection.test", "handle", newHandle),
-					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-2"),
-					resource.TestCheckResourceAttr(resourceName, "regions.1", "us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "config", "{\n \"access_key\": \"redacted\",\n \"regions\": [\n  \"us-east-2\",\n  \"us-east-1\"\n ],\n \"secret_key\": \"redacted\"\n}"),
+					testCheckJSONString(resourceName, "config", `{"access_key":"redacted","regions":[""us-east-2","us-east-1"],"secret_key":"redacted"}`),
 				),
 			},
 		},
@@ -67,17 +67,14 @@ func TestAccOrgConnection_Basic(t *testing.T) {
 					testAccCheckConnectionExists(resourceName),
 					resource.TestCheckResourceAttr(resourceName, "handle", connHandle),
 					resource.TestCheckResourceAttr(resourceName, "plugin", "aws"),
-					resource.TestCheckResourceAttr(resourceName, "access_key", "redacted"),
-					resource.TestCheckResourceAttr(resourceName, "secret_key", "redacted"),
-					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "config", "{\n \"access_key\": \"redacted\",\n \"regions\": [\n  \"us-east-1\"\n ],\n \"secret_key\": \"redacted\"\n}"),
 				),
 			},
 			{
 				Config: testAccOrgConnectionUpdateConfig(newHandle, orgHandle),
 				Check: resource.ComposeTestCheckFunc(
 					resource.TestCheckResourceAttr("steampipecloud_connection.test_org", "handle", newHandle),
-					resource.TestCheckResourceAttr(resourceName, "regions.0", "us-east-2"),
-					resource.TestCheckResourceAttr(resourceName, "regions.1", "us-east-1"),
+					resource.TestCheckResourceAttr(resourceName, "config", "{\n \"access_key\": \"redacted\",\n \"regions\": [\n  \"us-east-2\",\n  \"us-east-1\"\n ],\n \"secret_key\": \"redacted\"\n}"),
 				),
 			},
 		},
@@ -92,9 +89,11 @@ provider "steampipecloud" {}
 resource "steampipecloud_connection" "test" {
 	handle     = "%s"
 	plugin     = "aws"
-	regions    = ["us-east-1"]
-	access_key = "redacted"
-	secret_key = "redacted"
+	config = jsonencode({
+		regions    = ["us-east-1"]
+		access_key = "redacted"
+		secret_key = "redacted"
+	})
 }`, connHandle)
 }
 
@@ -105,9 +104,11 @@ provider "steampipecloud" {}
 resource "steampipecloud_connection" "test" {
 	handle     = "%s"
 	plugin     = "aws"
-	regions    = ["us-east-2", "us-east-1"]
-	access_key = "redacted"
-  secret_key = "redacted"
+	config = jsonencode({
+		regions    = ["us-east-2", "us-east-1"]
+		access_key = "redacted"
+		secret_key = "redacted"
+	})
 }`, newHandle)
 }
 
@@ -124,9 +125,11 @@ resource "steampipecloud_connection" "test_org" {
 	organization = steampipecloud_organization.test.handle
 	handle       = "%s"
 	plugin       = "aws"
-	regions      = ["us-east-1"]
-	access_key   = "redacted"
-	secret_key   = "redacted"
+	config = jsonencode({
+		regions      = ["us-east-1"]
+		access_key   = "redacted"
+		secret_key   = "redacted"
+	})
 }`, orgHandle, connHandle)
 }
 
@@ -143,9 +146,11 @@ resource "steampipecloud_connection" "test_org" {
 	organization = steampipecloud_organization.test.handle
 	handle       = "%s"
 	plugin       = "aws"
-	regions      = ["us-east-2", "us-east-1"]
-	access_key   = "redacted"
-	secret_key   = "redacted"
+	config = jsonencode({
+		regions      = ["us-east-2", "us-east-1"]
+		access_key   = "redacted"
+		secret_key   = "redacted"
+	})
 }`, orgHandle, newHandle)
 }
 
@@ -260,6 +265,43 @@ func testAccCheckConnectionOrganizationExists(orgHandle string) resource.TestChe
 		_, _, err = client.APIClient.Orgs.Get(ctx, orgHandle).Execute()
 		if err != nil {
 			return fmt.Errorf("error fetching organization with handle %s. %s", orgHandle, err)
+		}
+		return nil
+	}
+}
+
+func testCheckJSONString(name, key, value string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		rs, ok := s.RootModule().Resources[name]
+		if !ok {
+			return fmt.Errorf("Not found: %s in %s", name, s.RootModule().Path)
+		}
+
+		emptyCheck := false
+		if value == "0" && (strings.HasSuffix(key, ".#") || strings.HasSuffix(key, ".%")) {
+			emptyCheck = true
+		}
+
+		if v, ok := rs.Primary.Attributes[key]; !ok {
+			configString, _ := formatJson(v)
+			compareValue, _ := formatJson(value)
+			if configString != compareValue {
+				if emptyCheck && !ok {
+					return nil
+				}
+
+				if !ok {
+					return fmt.Errorf("%s: Attribute '%s' not found", name, key)
+				}
+
+				return fmt.Errorf(
+					"%s: Attribute '%s' expected %#v, got %#v",
+					name,
+					key,
+					value,
+					v)
+
+			}
 		}
 		return nil
 	}

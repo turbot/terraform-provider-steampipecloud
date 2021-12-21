@@ -75,9 +75,11 @@ resource "steampipecloud_workspace" "test_conn" {
 resource "steampipecloud_connection" "test_conn" {
 	handle     = "%s"
 	plugin     = "aws"
-	regions    = ["us-east-1"]
-	access_key = "redacted"
-	secret_key = "redacted"
+	config = jsonencode({
+		regions    = ["us-east-1"]
+		access_key = "redacted"
+		secret_key = "redacted"
+	})
 }
 
 resource "steampipecloud_workspace_connection" "test_conn" {
@@ -105,9 +107,11 @@ resource "steampipecloud_connection" "test_org" {
 	organization = steampipecloud_organization.test_org.handle
 	handle       = "%s"
 	plugin       = "aws"
-	regions      = ["us-east-1"]
-	access_key   = "redacted"
-	secret_key   = "redacted"
+	config = jsonencode({
+		regions    = ["us-east-1"]
+		access_key = "redacted"
+		secret_key = "redacted"
+	})
 }
 
 resource "steampipecloud_workspace_connection" "test_org" {
