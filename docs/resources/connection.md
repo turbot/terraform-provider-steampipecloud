@@ -18,11 +18,13 @@ Manages a connection, which is defined at the user account or organization level
 
 ```hcl
 resource "steampipecloud_connection" "aws_aaa" {
-  plugin     = "aws"
-  handle     = "aws_aaa"
-  access_key = "redacted"
-  secret_key = "redacted"
-  regions    = ["us-east-1"]
+  plugin = "aws"
+  handle = "aws_aaa"
+  config = jsonencode({
+    access_key = "redacted"
+    secret_key = "redacted"
+    regions    = ["us-east-1"]
+  })
 }
 ```
 
@@ -33,9 +35,11 @@ resource "steampipecloud_connection" "aws_aab" {
   organization = "myorg"
   plugin       = "aws"
   handle       = "aws_aab"
-  access_key   = "redacted"
-  secret_key   = "redacted"
-  regions      = ["us-east-1"]
+  config = jsonencode({
+    access_key = "redacted"
+    secret_key = "redacted"
+    regions    = ["us-east-1"]
+  })
 }
 ```
 
@@ -99,9 +103,11 @@ resource "aws_iam_role_policy_attachment" "steampipe_cloud_role_attach" {
 resource "steampipecloud_connection" "aws_role_connection" {
   handle      = "aws_role_connection"
   plugin      = "aws"
-  regions     = ["us-east-1", "us-east-2"]
-  role_arn    = aws_iam_role.steampipe_cloud_role.arn
-  external_id = local.external_id
+  config = jsonencode({
+    regions     = ["us-east-1", "us-east-2"]
+    role_arn    = aws_iam_role.steampipe_cloud_role.arn
+    external_id = local.external_id
+  })
 }
 ```
 
@@ -111,8 +117,10 @@ resource "steampipecloud_connection" "aws_role_connection" {
 resource "steampipecloud_connection" "gcp_aaa" {
   handle      = "gcp_aaa"
   plugin      = "gcp"
-  project     = "project-aaa"
-  credentials = file("/Users/myuser/Downloads/project-aaa.json")
+  config = jsonencode({
+    project     = "project-aaa"
+    credentials = file("/Users/myuser/Downloads/project-aaa.json")
+  })
 }
 ```
 
@@ -122,11 +130,13 @@ resource "steampipecloud_connection" "gcp_aaa" {
 resource "steampipecloud_connection" "oci_aaa" {
   handle       = "oci"
   plugin       = "oci"
-  user_ocid    = "ocid1.user.oc1..aaaaaaaaw..."
-  fingerprint  = "f1:fc:44:3a:..."
-  tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaah..."
-  regions      = ["ap-mumbai-1", "us-ashburn-1"]
-  private_key  = file("/Users/myuser/Downloads/mykey.cer")
+  config = jsonencode({
+    user_ocid    = "ocid1.user.oc1..aaaaaaaaw..."
+    fingerprint  = "f1:fc:44:3a:..."
+    tenancy_ocid = "ocid1.tenancy.oc1..aaaaaaaah..."
+    regions      = ["ap-mumbai-1", "us-ashburn-1"]
+    private_key  = file("/Users/myuser/Downloads/mykey.cer")
+  })
 }
 ```
 
@@ -137,6 +147,7 @@ The following arguments are supported:
 - `handle` - (Required) A friendly identifier for your connection, and must be unique across your connections.
 - `plugin` - (Required) The name of the plugin.
 - `organization` - (Optional) An organization ID or handle to create the connection in.
+- `config` - (Optional) Configuration for the connection.
 
 For each connection resource, additional arguments are supported based on the plugin it uses. For instance, if creating a connection that uses the Zendesk plugin, the [Zendesk configuration arguments](https://hub.steampipe.io/plugins/turbot/zendesk#configuration) should be used in the connection:
 
@@ -144,9 +155,11 @@ For each connection resource, additional arguments are supported based on the pl
 resource "steampipecloud_connection" "zendesk" {
   plugin    = "zendesk"
   handle    = "zendesk_example"
-  subdomain = "dmi"
-  email     = "pam@dmi.com"
-  token     = "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwexample"
+  config = jsonencode({
+    subdomain = "dmi"
+    email     = "pam@dmi.com"
+    token     = "17ImlCYdfZ3WJIrGk96gCpJn1fi1pLwexample"
+  })
 }
 ```
 
@@ -162,8 +175,18 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Connections can be imported using the `handle`, e.g.,
+### Import user connection
+
+User connections can be imported using the connection `handle`, e.g.,
 
 ```sh
 terraform import steampipecloud_connection.example aws_aaa
+```
+
+### Import organization connection
+
+Organization connections can be imported using an ID made up of `organization_handle:connection_handle`, e.g.,
+
+```sh
+terraform import steampipecloud_connection.example myorg:aws_aab
 ```
