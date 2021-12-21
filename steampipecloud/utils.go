@@ -1,15 +1,12 @@
 package steampipecloud
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"math/rand"
 	"net/http"
-	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
-	"github.com/turbot/go-kit/helpers"
 )
 
 // isUserConnection:: Check if the connection is scoped on an user or a specific organization
@@ -51,39 +48,6 @@ func randomString(n int) string {
 		b[i] = letterBytes[rand.Intn(len(letterBytes))]
 	}
 	return string(b)
-}
-
-// apply standard formatting to a json string by unmarshalling into a map then marshalling back to JSON
-func formatJson(body string) (string, map[string]interface{}) {
-	buffer := new(bytes.Buffer)
-	err := json.Compact(buffer, []byte(body))
-	if err != nil {
-		return body, nil
-	}
-	data := map[string]interface{}{}
-	if err := json.Unmarshal(buffer.Bytes(), &data); err != nil {
-		// ignore error and just return original body
-		return body, nil
-	}
-	for k, v := range data {
-		if helpers.StringSliceContains([]string{"credentials"}, k) {
-			bufferCredentials := new(bytes.Buffer)
-			if compactErr := json.Compact(bufferCredentials, []byte(v.(string))); compactErr != nil {
-				continue
-			}
-			data[k] = bufferCredentials.String()
-		} else if k == "private_key" {
-			privateKey := v.(string)
-			data[k] = strings.ReplaceAll(privateKey, "\r\n", "\\n")
-		}
-	}
-
-	body, err = mapToJsonString(data)
-	if err != nil {
-		// ignore error and just return original body
-		return body, data
-	}
-	return body, data
 }
 
 func mapToJsonString(data map[string]interface{}) (string, error) {

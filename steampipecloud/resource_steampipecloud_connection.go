@@ -1,8 +1,11 @@
 package steampipecloud
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
+	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -89,7 +92,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
 	if value, ok := d.GetOk("config"); ok {
-		configString, config = formatJson(value.(string))
+		configString, config = formatConnectionJsonString(plugin, value.(string))
 	}
 
 	req := steampipe.CreateConnectionRequest{
@@ -203,7 +206,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SteampipeClient)
 
-	var configString string
+	var plugin, configString string
 	var r *http.Response
 	var resp steampipe.Connection
 	var err error
@@ -216,10 +219,13 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	if newConnectionHandle.(string) == "" {
 		return diag.Errorf("handle must be configured")
 	}
+	if value, ok := d.GetOk("plugin"); ok {
+		plugin = value.(string)
+	}
 
 	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
 	if value, ok := d.GetOk("config"); ok {
-		configString, config = formatJson(value.(string))
+		configString, config = formatConnectionJsonString(plugin, value.(string))
 	}
 
 	req := steampipe.UpdateConnectionRequest{Handle: types.String(newConnectionHandle.(string))}
@@ -301,8 +307,49 @@ func suppressIfDataMatches(k, old, new string, d *schema.ResourceData) bool {
 	if old == "" || new == "" {
 		return false
 	}
-
-	oldFormatted, _ := formatJson(old)
-	newFormatted, _ := formatJson(new)
+	var plugin string
+	if value, ok := d.GetOk("plugin"); ok {
+		plugin = value.(string)
+	}
+	oldFormatted, _ := formatConnectionJsonString(plugin, old)
+	newFormatted, _ := formatConnectionJsonString(plugin, new)
 	return oldFormatted == newFormatted
+}
+
+// apply standard formatting to a json string by unmarshalling into a map then marshalling back to JSON
+func formatConnectionJsonString(plugin, body string) (string, map[string]interface{}) {
+	buffer := new(bytes.Buffer)
+	err := json.Compact(buffer, []byte(body))
+	if err != nil {
+		return body, nil
+	}
+	data := map[string]interface{}{}
+	if err := json.Unmarshal(buffer.Bytes(), &data); err != nil {
+		// ignore error and just return original body
+		return body, nil
+	}
+
+	// Handle multiline GCP json credentials
+	if plugin == "gcp" {
+		if value, ok := data["credentials"]; ok {
+			bufferCredentials := new(bytes.Buffer)
+			if compactErr := json.Compact(bufferCredentials, []byte(value.(string))); compactErr != nil {
+				log.Printf("[Warn] Error while compessing gcp credentials %v", compactErr)
+			}
+			data["credentials"] = bufferCredentials.String()
+		}
+	}
+	// Handle multiline OCI private key
+	if plugin == "oci" {
+		if value, ok := data["private_key"]; ok {
+			data["private_key"] = strings.ReplaceAll(value.(string), "\r\n", "\\n")
+		}
+	}
+
+	body, err = mapToJsonString(data)
+	if err != nil {
+		// ignore error and just return original body
+		return body, data
+	}
+	return body, data
 }
