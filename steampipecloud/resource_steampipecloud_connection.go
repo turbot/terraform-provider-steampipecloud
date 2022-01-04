@@ -70,7 +70,7 @@ func resourceConnection() *schema.Resource {
 				Type:             schema.TypeString,
 				Optional:         true,
 				ValidateFunc:     validation.StringIsJSON,
-				DiffSuppressFunc: suppressIfDataMatches,
+				DiffSuppressFunc: connectionJSONStringsEqual,
 			},
 		},
 	}
@@ -92,7 +92,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 
 	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
 	if value, ok := d.GetOk("config"); ok {
-		configString, config = formatConnectionJsonString(plugin, value.(string))
+		configString, config = formatConnectionJSONString(plugin, value.(string))
 	}
 
 	req := steampipe.CreateConnectionRequest{
@@ -134,6 +134,8 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 		d.Set("config", configString)
 	}
 
+	// If connection is created inside an Organization the id will be of the
+	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
 		d.SetId(fmt.Sprintf("%s:%s", orgHandle, resp.Handle))
 	} else {
@@ -155,6 +157,8 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	var isUser = false
 	id := d.Id()
 
+	// If connection exists inside an Organization the id will be of the
+	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
 	ids := strings.Split(id, ":")
 	if len(ids) == 2 {
 		orgHandle = strings.Split(id, ":")[0]
@@ -225,7 +229,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 
 	// save the formatted data: this is to ensure the acceptance tests behave in a consistent way regardless of the ordering of the json data
 	if value, ok := d.GetOk("config"); ok {
-		configString, config = formatConnectionJsonString(plugin, value.(string))
+		configString, config = formatConnectionJSONString(plugin, value.(string))
 	}
 
 	req := steampipe.UpdateConnectionRequest{Handle: types.String(newConnectionHandle.(string))}
@@ -256,6 +260,9 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("plugin", *resp.Plugin)
+
+	// If connection exists inside an Organization the id will be of the
+	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
 		d.SetId(fmt.Sprintf("%s:%s", orgHandle, resp.Handle))
 	} else {
@@ -303,7 +310,7 @@ func resourceConnectionDelete(ctx context.Context, d *schema.ResourceData, meta 
 
 // config is a json string
 // apply standard formatting to old and new data then compare
-func suppressIfDataMatches(k, old, new string, d *schema.ResourceData) bool {
+func connectionJSONStringsEqual(k, old, new string, d *schema.ResourceData) bool {
 	if old == "" || new == "" {
 		return false
 	}
@@ -311,13 +318,13 @@ func suppressIfDataMatches(k, old, new string, d *schema.ResourceData) bool {
 	if value, ok := d.GetOk("plugin"); ok {
 		plugin = value.(string)
 	}
-	oldFormatted, _ := formatConnectionJsonString(plugin, old)
-	newFormatted, _ := formatConnectionJsonString(plugin, new)
+	oldFormatted, _ := formatConnectionJSONString(plugin, old)
+	newFormatted, _ := formatConnectionJSONString(plugin, new)
 	return oldFormatted == newFormatted
 }
 
 // apply standard formatting to a json string by unmarshalling into a map then marshalling back to JSON
-func formatConnectionJsonString(plugin, body string) (string, map[string]interface{}) {
+func formatConnectionJSONString(plugin, body string) (string, map[string]interface{}) {
 	buffer := new(bytes.Buffer)
 	err := json.Compact(buffer, []byte(body))
 	if err != nil {
@@ -334,7 +341,7 @@ func formatConnectionJsonString(plugin, body string) (string, map[string]interfa
 		if value, ok := data["credentials"]; ok {
 			bufferCredentials := new(bytes.Buffer)
 			if compactErr := json.Compact(bufferCredentials, []byte(value.(string))); compactErr != nil {
-				log.Printf("[Warn] Error while compessing gcp credentials %v", compactErr)
+				log.Printf("[Warn] Error while compacting gcp credentials %v", compactErr)
 			}
 			data["credentials"] = bufferCredentials.String()
 		}
@@ -346,7 +353,7 @@ func formatConnectionJsonString(plugin, body string) (string, map[string]interfa
 		}
 	}
 
-	body, err = mapToJsonString(data)
+	body, err = mapToJSONString(data)
 	if err != nil {
 		// ignore error and just return original body
 		return body, data

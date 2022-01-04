@@ -50,7 +50,7 @@ func randomString(n int) string {
 	return string(b)
 }
 
-func mapToJsonString(data map[string]interface{}) (string, error) {
+func mapToJSONString(data map[string]interface{}) (string, error) {
 	dataBytes, err := json.MarshalIndent(data, "", " ")
 	if err != nil {
 		return "", err
@@ -59,7 +59,7 @@ func mapToJsonString(data map[string]interface{}) (string, error) {
 	return jsonData, nil
 }
 
-func JsonStringToMap(dataString string) (map[string]interface{}, error) {
+func JSONStringToMap(dataString string) (map[string]interface{}, error) {
 	var data = make(map[string]interface{})
 	if err := json.Unmarshal([]byte(dataString), &data); err != nil {
 		return nil, err
