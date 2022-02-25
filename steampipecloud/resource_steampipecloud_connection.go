@@ -5,7 +5,6 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"log"
 	"net/http"
 	"regexp"
 	"strings"
@@ -334,23 +333,6 @@ func formatConnectionJSONString(plugin, body string) (string, map[string]interfa
 	if err := json.Unmarshal(buffer.Bytes(), &data); err != nil {
 		// ignore error and just return original body
 		return body, nil
-	}
-
-	// Handle multiline GCP json credentials
-	if plugin == "gcp" {
-		if value, ok := data["credentials"]; ok {
-			bufferCredentials := new(bytes.Buffer)
-			if compactErr := json.Compact(bufferCredentials, []byte(value.(string))); compactErr != nil {
-				log.Printf("[Warn] Error while compacting gcp credentials %v", compactErr)
-			}
-			data["credentials"] = bufferCredentials.String()
-		}
-	}
-	// Handle multiline OCI private key
-	if plugin == "oci" {
-		if value, ok := data["private_key"]; ok {
-			data["private_key"] = strings.ReplaceAll(value.(string), "\r\n", "\\n")
-		}
 	}
 
 	body, err = mapToJSONString(data)
