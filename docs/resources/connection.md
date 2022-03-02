@@ -175,7 +175,7 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-### Import user connection
+### Import User Connection
 
 User connections can be imported using the connection `handle`, e.g.,
 
@@ -183,7 +183,7 @@ User connections can be imported using the connection `handle`, e.g.,
 terraform import steampipecloud_connection.example aws_aaa
 ```
 
-### Import organization connection
+### Import Organization Connection
 
 Organization connections can be imported using an ID made up of `organization_handle:connection_handle`, e.g.,
 
