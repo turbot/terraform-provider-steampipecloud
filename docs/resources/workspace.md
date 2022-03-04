@@ -53,8 +53,18 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Workspaces can be imported using the `handle`, e.g.,
+### Import User Workspace
+
+User workspaces can be imported using the workspace `handle`, e.g.,
 
 ```sh
 terraform import steampipecloud_workspace.example myworkspace
+```
+
+### Import Organization Workspace
+
+Organization workspaces can be imported using an ID made up of `organization_handle:workspace_handle`, e.g.,
+
+```sh
+terraform import steampipecloud_workspace.example myorg:myworkspace
 ```

@@ -6,6 +6,7 @@ import (
 	"log"
 	"net/http"
 	"regexp"
+	"strings"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
@@ -115,7 +116,6 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	log.Printf("\n[DEBUG] Workspace created: %s", resp.Handle)
 
 	// Set property values
-	d.SetId(resp.Handle)
 	d.Set("handle", resp.Handle)
 	d.Set("organization", orgHandle)
 	d.Set("workspace_id", resp.Id)
@@ -128,6 +128,14 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("version_id", resp.VersionId)
 
+	// If workspace is created inside an Organization the id will be of the
+	// format "OrganizationHandle:WorkspaceHandle" otherwise "WorkspaceHandle"
+	if strings.HasPrefix(resp.IdentityId, "o_") {
+		d.SetId(fmt.Sprintf("%s:%s", orgHandle, resp.Handle))
+	} else {
+		d.SetId(resp.Handle)
+	}
+
 	return diags
 }
 
@@ -135,14 +143,27 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	client := meta.(*SteampipeClient)
 
 	// Warning or errors can be collected in a slice type
-	var diags diag.Diagnostics
+	var orgHandle, workspaceHandle string
+	var isUser = false
 
-	workspaceHandle := d.Id()
+	var diags diag.Diagnostics
 	var resp steampipe.Workspace
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(d)
+	id := d.Id()
+
+	// If workspace exists inside an Organization the id will be of the
+	// format "OrganizationHandle:WorkspaceHandle" otherwise "WorkspaceHandle"
+	ids := strings.Split(id, ":")
+	if len(ids) == 2 {
+		orgHandle = strings.Split(id, ":")[0]
+		workspaceHandle = strings.Split(id, ":")[1]
+	} else if len(ids) == 1 {
+		isUser = true
+		workspaceHandle = strings.Split(id, ":")[0]
+	}
+
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
@@ -150,7 +171,6 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 			return diag.Errorf("resourceConnectionCreate. getUserHandler error  %v", decodeResponse(r))
 		}
 		resp, r, err = client.APIClient.UserWorkspaces.Get(ctx, actorHandle, workspaceHandle).Execute()
-
 	} else {
 		resp, r, err = client.APIClient.OrgWorkspaces.Get(ctx, orgHandle, workspaceHandle).Execute()
 	}
@@ -167,9 +187,10 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 		return diag.Errorf("error reading %s: %v ", workspaceHandle, decodeResponse(r))
 	}
 
-	d.Set("handle", workspaceHandle)
-	d.Set("organization", orgHandle)
+	// assign results back into ResourceData
 	d.Set("workspace_id", resp.Id)
+	d.Set("handle", resp.Handle)
+	d.Set("organization", orgHandle)
 	d.Set("workspace_state", resp.WorkspaceState)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
