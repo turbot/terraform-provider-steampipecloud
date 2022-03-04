@@ -164,8 +164,6 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	}
 
 	// Set property values
-	id := fmt.Sprintf("%s:%s", workspaceHandle, resp.Connection.Handle)
-	d.SetId(id)
 	d.Set("association_id", resp.Id)
 	d.Set("connection_id", resp.ConnectionId)
 	d.Set("workspace_id", resp.WorkspaceId)
@@ -195,36 +193,56 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 		d.Set("workspace_version_id", resp.Workspace.VersionId)
 	}
 
+	// If workspace connection association is created inside an Organization the id will be of the
+	// format "OrganizationHandle:WorkspaceHandle:ConnectionHandle" otherwise "WorkspaceHandle:ConnectionHandle"
+	id := fmt.Sprintf("%s:%s", workspaceHandle, resp.Connection.Handle)
+	if strings.HasPrefix(resp.IdentityId, "o_") {
+		d.SetId(fmt.Sprintf("%s:%s", orgHandle, id))
+	} else {
+		d.SetId(id)
+	}
+
 	return diags
 }
 
 func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
 	client := meta.(*SteampipeClient)
+
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
+	var orgHandle, workspaceHandle, connectionHandle string
+	var isUser = false
 
+	// If workspace connection association is created inside an Organization the id will be of the
+	// format "OrganizationHandle:WorkspaceHandle:ConnectionHandle" otherwise "WorkspaceHandle:ConnectionHandle"
 	idParts := strings.Split(d.Id(), ":")
-	if len(idParts) < 2 {
+	if len(idParts) < 2 && len(idParts) > 3 {
 		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<connection-handle>", d.Id())
 	}
 
-	workspaceHandle := idParts[0]
-	connHandle := idParts[1]
+	if len(idParts) == 3 {
+		orgHandle = idParts[0]
+		workspaceHandle = idParts[1]
+		connectionHandle = idParts[2]
+	} else if len(idParts) == 2 {
+		isUser = true
+		workspaceHandle = idParts[0]
+		connectionHandle = idParts[1]
+	}
 
 	var resp steampipe.WorkspaceConn
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
 			return diag.Errorf("resourceConnectionRead. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(ctx, actorHandle, workspaceHandle, connHandle).Execute()
+		resp, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Get(ctx, actorHandle, workspaceHandle, connectionHandle).Execute()
 	} else {
-		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, orgHandle, workspaceHandle, connHandle).Execute()
+		resp, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Get(ctx, orgHandle, workspaceHandle, connectionHandle).Execute()
 	}
 
 	if err != nil {
@@ -278,6 +296,7 @@ func resourceWorkspaceConnectionUpdate(ctx context.Context, d *schema.ResourceDa
 
 	workspaceHandle := d.State().Attributes["workspace_handle"]
 	connHandle := d.State().Attributes["connection_handle"]
+	orgHandle := d.State().Attributes["organization"]
 
 	if d.HasChange("workspace_handle") {
 		_, newWorkspaceHandle := d.GetChange("workspace_handle")
@@ -288,11 +307,16 @@ func resourceWorkspaceConnectionUpdate(ctx context.Context, d *schema.ResourceDa
 		connHandle = newConnHandle.(string)
 	}
 
+	var id string
 	if workspaceHandle != "" && connHandle != "" {
-		id := fmt.Sprintf("%s:%s", workspaceHandle, connHandle)
-		d.SetId(id)
+		id = fmt.Sprintf("%s:%s", workspaceHandle, connHandle)
 		d.Set("workspace_handle", workspaceHandle)
 		d.Set("connection_handle", connHandle)
+	}
+	if orgHandle != "" {
+		d.SetId(fmt.Sprintf("%s:%s", orgHandle, id))
+	} else {
+		d.SetId(id)
 	}
 
 	return diags
@@ -303,29 +327,38 @@ func resourceWorkspaceConnectionDelete(ctx context.Context, d *schema.ResourceDa
 
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
+	var orgHandle, workspaceHandle, connectionHandle string
+	var isUser = false
 
 	idParts := strings.Split(d.Id(), ":")
 	if len(idParts) < 2 {
 		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<connection-handle>", d.Id())
 	}
 
-	workspaceHandle := idParts[0]
-	connHandle := idParts[1]
-	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s:%s", workspaceHandle, connHandle))
+	if len(idParts) == 3 {
+		orgHandle = idParts[0]
+		workspaceHandle = idParts[1]
+		connectionHandle = idParts[2]
+	} else if len(idParts) == 2 {
+		isUser = true
+		workspaceHandle = idParts[0]
+		connectionHandle = idParts[1]
+	}
+
+	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s:%s", workspaceHandle, connectionHandle))
 
 	var err error
 	var r *http.Response
 
-	isUser, orgHandle := isUserConnection(d)
 	if isUser {
 		var actorHandle string
 		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
 			return diag.Errorf("resourceConnectionDelete. getUserHandler error: %v", decodeResponse(r))
 		}
-		_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Delete(ctx, actorHandle, workspaceHandle, connHandle).Execute()
+		_, r, err = client.APIClient.UserWorkspaceConnectionAssociations.Delete(ctx, actorHandle, workspaceHandle, connectionHandle).Execute()
 	} else {
-		_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Delete(ctx, orgHandle, workspaceHandle, connHandle).Execute()
+		_, r, err = client.APIClient.OrgWorkspaceConnectionAssociations.Delete(ctx, orgHandle, workspaceHandle, connectionHandle).Execute()
 	}
 
 	if err != nil {

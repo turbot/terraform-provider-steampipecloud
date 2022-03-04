@@ -157,11 +157,11 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	// format "OrganizationHandle:WorkspaceHandle" otherwise "WorkspaceHandle"
 	ids := strings.Split(id, ":")
 	if len(ids) == 2 {
-		orgHandle = strings.Split(id, ":")[0]
-		workspaceHandle = strings.Split(id, ":")[1]
+		orgHandle = ids[0]
+		workspaceHandle = ids[1]
 	} else if len(ids) == 1 {
 		isUser = true
-		workspaceHandle = strings.Split(id, ":")[0]
+		workspaceHandle = ids[0]
 	}
 
 	if isUser {

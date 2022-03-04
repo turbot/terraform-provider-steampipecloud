@@ -160,11 +160,11 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
 	ids := strings.Split(id, ":")
 	if len(ids) == 2 {
-		orgHandle = strings.Split(id, ":")[0]
-		connectionHandle = strings.Split(id, ":")[1]
+		orgHandle = ids[0]
+		connectionHandle = ids[1]
 	} else if len(ids) == 1 {
 		isUser = true
-		connectionHandle = strings.Split(id, ":")[0]
+		connectionHandle = ids[0]
 	}
 
 	if connectionHandle == "" {
