@@ -257,11 +257,14 @@ func resourceWorkspaceUpdate(ctx context.Context, d *schema.ResourceData, meta i
 }
 
 func resourceWorkspaceDelete(ctx context.Context, d *schema.ResourceData, meta interface{}) diag.Diagnostics {
+	client := meta.(*SteampipeClient)
+
 	// Warning or errors can be collected in a slice type
 	var diags diag.Diagnostics
-	client := meta.(*SteampipeClient)
-	handle := d.Id()
-	log.Printf("\n[DEBUG] Deleting Workspace: %s", handle)
+	var workspaceHandle string
+	if value, ok := d.GetOk("handle"); ok {
+		workspaceHandle = value.(string)
+	}
 
 	var err error
 	var r *http.Response
@@ -273,9 +276,9 @@ func resourceWorkspaceDelete(ctx context.Context, d *schema.ResourceData, meta i
 		if err != nil {
 			return diag.Errorf("resourceConnectionDelete. getUserHandler error: %v", decodeResponse(r))
 		}
-		_, r, err = client.APIClient.UserWorkspaces.Delete(ctx, actorHandle, handle).Execute()
+		_, r, err = client.APIClient.UserWorkspaces.Delete(ctx, actorHandle, workspaceHandle).Execute()
 	} else {
-		_, r, err = client.APIClient.OrgWorkspaces.Delete(ctx, orgHandle, handle).Execute()
+		_, r, err = client.APIClient.OrgWorkspaces.Delete(ctx, orgHandle, workspaceHandle).Execute()
 	}
 
 	if err != nil {
