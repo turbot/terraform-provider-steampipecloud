@@ -16,16 +16,65 @@ import (
 // TODO - Add the workspace creation and destruction logic as part of this test case.
 
 // test suites
-func TestAccUserWorkspaceModVariable_Basic(t *testing.T) {
+func TestAccUserWorkspaceModVariable_Number(t *testing.T) {
+	resourceName := "steampipecloud_workspace_mod_variable.tag_limit"
+	// workspaceHandle := "workspace" + randomString(3)
+	workspaceHandle := "dev"
+	modPath := "github.com/turbot/steampipe-mod-aws-tags"
+	modAlias := "aws_tags"
+	variableName := "tag_limit"
+	defaultValue := "45"
+	setting := "50"
+	updatedSetting := "55"
+	resource.Test(t, resource.TestCase{
+		PreCheck:     func() { testAccPreCheck(t) },
+		Providers:    testAccProviders,
+		CheckDestroy: testAccCheckWorkspaceModVariableDestroy,
+		Steps: []resource.TestStep{
+			{
+				Config: testAccUserWorkspaceModVariableConfig(workspaceHandle, modPath, variableName, setting),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckWorkspaceModVariableExists(workspaceHandle, modAlias, variableName),
+					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
+					resource.TestCheckResourceAttr(resourceName, "mod_alias", modAlias),
+					resource.TestCheckResourceAttr(resourceName, "name", variableName),
+					resource.TestCheckResourceAttr(resourceName, "default_value", defaultValue),
+					resource.TestCheckResourceAttr(resourceName, "setting_value", setting),
+					resource.TestCheckResourceAttr(resourceName, "value", setting),
+				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"updated_at"},
+			},
+			{
+				Config: testAccUserWorkspaceModVariableUpdateConfig(workspaceHandle, modPath, variableName, updatedSetting),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckWorkspaceModVariableExists(workspaceHandle, modAlias, variableName),
+					resource.TestCheckResourceAttr(resourceName, "workspace_handle", workspaceHandle),
+					resource.TestCheckResourceAttr(resourceName, "mod_alias", modAlias),
+					resource.TestCheckResourceAttr(resourceName, "name", variableName),
+					resource.TestCheckResourceAttr(resourceName, "default_value", defaultValue),
+					resource.TestCheckResourceAttr(resourceName, "setting_value", updatedSetting),
+					resource.TestCheckResourceAttr(resourceName, "value", updatedSetting),
+				),
+			},
+		},
+	})
+}
+
+func TestAccUserWorkspaceModVariable_StringArray(t *testing.T) {
 	resourceName := "steampipecloud_workspace_mod_variable.mandatory_tags"
 	// workspaceHandle := "workspace" + randomString(3)
 	workspaceHandle := "dev"
 	modPath := "github.com/turbot/steampipe-mod-aws-tags"
 	modAlias := "aws_tags"
 	variableName := "mandatory_tags"
-	defaultValue := fmt.Sprintf(`["Environment","Owner"]`)
-	setting := fmt.Sprintf(`["Environment","Owner","Foo"]`)
-	updatedSetting := fmt.Sprintf(`["Environment","Owner","Foo","Bar"]`)
+	defaultValue := `["Environment","Owner"]`
+	setting := `["Environment","Owner","Foo"]`
+	updatedSetting := `["Environment","Owner","Foo","Bar"]`
 	resource.Test(t, resource.TestCase{
 		PreCheck:     func() { testAccPreCheck(t) },
 		Providers:    testAccProviders,
@@ -68,31 +117,31 @@ func TestAccUserWorkspaceModVariable_Basic(t *testing.T) {
 func testAccUserWorkspaceModVariableConfig(workspaceHandle, modPath, variableName, setting string) string {
 	return fmt.Sprintf(`
 	resource "steampipecloud_workspace_mod" "aws_tags" {
-		workspace_handle = "dev"
+		workspace_handle = "%s"
 		path = "%s"
 	}
 	
-	resource "steampipecloud_workspace_mod_variable" "mandatory_tags" {
-		workspace_handle = "dev"
+	resource "steampipecloud_workspace_mod_variable" "%s" {
+		workspace_handle = "%s"
 		mod_alias = steampipecloud_workspace_mod.aws_tags.alias
 		name = "%s"
-		setting_value = jsonencode(%s)
-	}`, modPath, variableName, setting)
+		setting_value = %q
+	}`, workspaceHandle, modPath, variableName, workspaceHandle, variableName, setting)
 }
 
 func testAccUserWorkspaceModVariableUpdateConfig(workspaceHandle, modPath, variableName, setting string) string {
 	return fmt.Sprintf(`
 	resource "steampipecloud_workspace_mod" "aws_tags" {
-		workspace_handle = "dev"
+		workspace_handle = "%s"
 		path = "%s"
 	}
 	
-	resource "steampipecloud_workspace_mod_variable" "mandatory_tags" {
-		workspace_handle = "dev"
+	resource "steampipecloud_workspace_mod_variable" "%s" {
+		workspace_handle = "%s"
 		mod_alias = steampipecloud_workspace_mod.aws_tags.alias
 		name = "%s"
-		setting_value = jsonencode(%s)
-	}`, modPath, variableName, setting)
+		setting_value = %q
+	}`, workspaceHandle, modPath, variableName, workspaceHandle, variableName, setting)
 }
 
 func testAccCheckWorkspaceModVariableExists(workspaceHandle, modAlias, variableName string) resource.TestCheckFunc {
@@ -116,12 +165,12 @@ func testAccCheckWorkspaceModVariableExists(workspaceHandle, modAlias, variableN
 				if err != nil {
 					return fmt.Errorf("error fetching user handle. %s", err)
 				}
-				_, _, err = client.APIClient.UserWorkspaceModVariables.Get(ctx, actorHandle, workspaceHandle, modAlias, variableName).Execute()
+				_, _, err = client.APIClient.UserWorkspaceModVariables.GetSetting(ctx, actorHandle, workspaceHandle, modAlias, variableName).Execute()
 				if err != nil {
 					return fmt.Errorf("error fetching variable %s in mod %s for user workspace with handle %s. %s", variableName, modAlias, workspaceHandle, err)
 				}
 			} else {
-				_, _, err = client.APIClient.OrgWorkspaceModVariables.Get(ctx, org, workspaceHandle, modAlias, variableName).Execute()
+				_, _, err = client.APIClient.OrgWorkspaceModVariables.GetSetting(ctx, org, workspaceHandle, modAlias, variableName).Execute()
 				if err != nil {
 					return fmt.Errorf("error fetching variable %s in mod %s for org workspace with handle %s. %s", variableName, modAlias, workspaceHandle, err)
 				}
@@ -161,9 +210,9 @@ func testAccCheckWorkspaceModVariableDestroy(s *terraform.State) error {
 			if err != nil {
 				return fmt.Errorf("error fetching user handle. %s", err)
 			}
-			_, r, err = client.APIClient.UserWorkspaceModVariables.Get(ctx, actorHandle, workspaceHandle, modAlias, variableName).Execute()
+			_, r, err = client.APIClient.UserWorkspaceModVariables.GetSetting(ctx, actorHandle, workspaceHandle, modAlias, variableName).Execute()
 		} else {
-			_, r, err = client.APIClient.OrgWorkspaceModVariables.Get(ctx, org, workspaceHandle, modAlias, variableName).Execute()
+			_, r, err = client.APIClient.OrgWorkspaceModVariables.GetSetting(ctx, org, workspaceHandle, modAlias, variableName).Execute()
 		}
 		if err == nil {
 			return fmt.Errorf("Workspace Mod Variable %s:%s:%s still exists", workspaceHandle, modAlias, variableName)

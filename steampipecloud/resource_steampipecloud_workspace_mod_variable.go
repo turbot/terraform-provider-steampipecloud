@@ -116,7 +116,11 @@ func resourceWorkspaceModVariableCreateSetting(ctx context.Context, d *schema.Re
 	workspaceHandle := d.Get("workspace_handle").(string)
 	modAlias := d.Get("mod_alias").(string)
 	variableName := d.Get("name").(string)
-	setting := d.Get("setting_value")
+	settingRaw := d.Get("setting_value")
+	setting, err := JSONStringToInterface(settingRaw.(string))
+	if err != nil {
+		return diag.Errorf("error parsing setting for workspace mod variable : %v", setting)
+	}
 
 	// Create request
 	req := steampipe.CreateWorkspaceModVariableSettingRequest{Name: variableName, Setting: setting}
@@ -221,9 +225,9 @@ func resourceWorkspaceModVariableRead(ctx context.Context, d *schema.ResourceDat
 		if err != nil {
 			return diag.Errorf("resourceWorkspaceModVariableRead. getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, r, err = client.APIClient.UserWorkspaceModVariables.Get(ctx, userHandle, workspaceHandle, modAlias, variableName).Execute()
+		resp, r, err = client.APIClient.UserWorkspaceModVariables.GetSetting(ctx, userHandle, workspaceHandle, modAlias, variableName).Execute()
 	} else {
-		resp, r, err = client.APIClient.OrgWorkspaceModVariables.Get(ctx, orgHandle, workspaceHandle, modAlias, variableName).Execute()
+		resp, r, err = client.APIClient.OrgWorkspaceModVariables.GetSetting(ctx, orgHandle, workspaceHandle, modAlias, variableName).Execute()
 	}
 
 	// Error check
@@ -275,7 +279,11 @@ func resourceWorkspaceModVariableUpdateSetting(ctx context.Context, d *schema.Re
 	workspaceHandle := d.Get("workspace_handle").(string)
 	modAlias := d.Get("mod_alias").(string)
 	variableName := d.Get("name").(string)
-	setting := d.Get("setting_value")
+	settingRaw := d.Get("setting_value")
+	setting, err := JSONStringToInterface(settingRaw.(string))
+	if err != nil {
+		return diag.Errorf("error parsing setting for workspace mod variable : %v", setting)
+	}
 
 	// Create request
 	req := steampipe.UpdateWorkspaceModVariableSettingRequest{Setting: setting}

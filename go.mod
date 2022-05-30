@@ -7,7 +7,7 @@ require github.com/turbot/go-kit v0.3.0
 require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.10.0
 	github.com/turbot/steampipe-cloud-sdk-go v0.0.3
-// github.com/turbot/steampipe-cloud-sdk-go v0.0.3
+    //github.com/turbot/steampipe-cloud-sdk-go v0.0.3
 )
 
 require (
@@ -62,4 +62,4 @@ require (
 	google.golang.org/protobuf v1.25.0 // indirect
 )
 
-replace github.com/turbot/steampipe-cloud-sdk-go v0.0.3 => /Users/appale/steampipe/steampipe-cloud-sdk-go
+replace github.com/turbot/steampipe-cloud-sdk-go v0.0.3 => /Users/mike/Code/github.com/turbot/steampipe-cloud-sdk-go

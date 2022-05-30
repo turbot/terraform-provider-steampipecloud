@@ -59,8 +59,8 @@ func mapToJSONString(data map[string]interface{}) (string, error) {
 	return jsonData, nil
 }
 
-func JSONStringToMap(dataString string) (map[string]interface{}, error) {
-	var data = make(map[string]interface{})
+func JSONStringToInterface(dataString string) (interface{}, error) {
+	var data interface{}
 	if err := json.Unmarshal([]byte(dataString), &data); err != nil {
 		return nil, err
 	}
@@ -71,7 +71,7 @@ func JSONStringToMap(dataString string) (map[string]interface{}, error) {
 func FormatJson(body interface{}) string {
 	var raw []byte
 	var err error
-	if raw, err = MapToJsonString(body); err != nil {
+	if raw, err = marshallInterfaceToByteArray(body); err != nil {
 		// ignore error and just return original body
 		return ""
 	}
@@ -79,7 +79,7 @@ func FormatJson(body interface{}) string {
 	return string(raw)
 }
 
-func MapToJsonString(data interface{}) ([]byte, error) {
+func marshallInterfaceToByteArray(data interface{}) ([]byte, error) {
 	dataBytes, err := json.Marshal(data)
 	if err != nil {
 		return nil, err
