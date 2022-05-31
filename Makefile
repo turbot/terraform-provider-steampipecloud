@@ -5,6 +5,7 @@ PKG_NAME=steampipecloud
 VERSION=0.0.1
 DIR=~/.terraform.d/plugins
 TEST?=$$(go list ./... |grep -v 'vendor')
+RUN=TestAccUserWorkspaceModVariable_Basic
 
 default: build
 
@@ -32,4 +33,7 @@ test: fmtcheck
 		xargs -t -n4 go test $(TESTARGS) -timeout=30s -parallel=4
 
 testacc: fmtcheck
-	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -parallel 1 -timeout 120m
+	TF_ACC=1 go test $(TEST) -v $(TESTARGS) -parallel 1 -count 1 -timeout 120m
+
+testaccfocus: fmtcheck
+	TF_ACC=1 go test $(TEST) -run $(RUN) -parallel 1 -count 1 -timeout 120m

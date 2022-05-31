@@ -31,11 +31,13 @@ func Provider() *schema.Provider {
 		},
 
 		ResourcesMap: map[string]*schema.Resource{
-			"steampipecloud_connection":           resourceConnection(),
-			"steampipecloud_organization":         resourceOrganization(),
-			"steampipecloud_organization_member":  resourceOrganizationMember(),
-			"steampipecloud_workspace":            resourceWorkspace(),
-			"steampipecloud_workspace_connection": resourceWorkspaceConnection(),
+			"steampipecloud_connection":             resourceConnection(),
+			"steampipecloud_organization":           resourceOrganization(),
+			"steampipecloud_organization_member":    resourceOrganizationMember(),
+			"steampipecloud_workspace":              resourceWorkspace(),
+			"steampipecloud_workspace_connection":   resourceWorkspaceConnection(),
+			"steampipecloud_workspace_mod":          resourceWorkspaceMod(),
+			"steampipecloud_workspace_mod_variable": resourceWorkspaceModVariable(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipecloud_organization": dataSourceOrganization(),
@@ -102,6 +104,12 @@ func CreateClient(config *Config, diags diag.Diagnostics) (*steampipe.APIClient,
 			},
 		}
 	}
+
+	// For Local Steampipe Cloud Testing
+	//tr := &http.Transport{
+	//	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	//}
+	//configuration.HTTPClient = &http.Client{Transport: tr}
 
 	var steampipeCloudToken string
 	if config.Token != "" {

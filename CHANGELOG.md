@@ -1,3 +1,10 @@
+## 0.4.0 (March 31, 2022)
+
+FEATURES:
+
+* **New Resource:** `steampipecloud_workspace_mod`
+* **New Resource:** `steampipecloud_workspace_mod_variable`
+
 ## 0.3.0 (March 4, 2022)
 
 ENHANCEMENTS:

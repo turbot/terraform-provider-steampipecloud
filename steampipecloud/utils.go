@@ -59,10 +59,30 @@ func mapToJSONString(data map[string]interface{}) (string, error) {
 	return jsonData, nil
 }
 
-func JSONStringToMap(dataString string) (map[string]interface{}, error) {
-	var data = make(map[string]interface{})
+func JSONStringToInterface(dataString string) (interface{}, error) {
+	var data interface{}
 	if err := json.Unmarshal([]byte(dataString), &data); err != nil {
 		return nil, err
 	}
 	return data, nil
+}
+
+// apply standard formatting to a json string by unmarshalling into a map then marshalling back to JSON
+func FormatJson(body interface{}) string {
+	var raw []byte
+	var err error
+	if raw, err = marshallInterfaceToByteArray(body); err != nil {
+		// ignore error and just return original body
+		return ""
+	}
+
+	return string(raw)
+}
+
+func marshallInterfaceToByteArray(data interface{}) ([]byte, error) {
+	dataBytes, err := json.Marshal(data)
+	if err != nil {
+		return nil, err
+	}
+	return dataBytes, nil
 }
