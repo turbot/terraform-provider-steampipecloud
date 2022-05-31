@@ -60,7 +60,7 @@ The following arguments are supported:
 - `workspace_handle` - (Required) The handle of the workspace to create the variable setting in.
 - `mod_alias` - (Required) The alias of the mod to manage the variable setting for.
 - `name` - (Required) The name of the variable.
-- `setting_value` - (Required) The JSON-encoded string of the setting. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode(5)`, `jsonencode("Foo")`, `jsonencode(["Foo", "Bar""])`
+- `setting_value` - (Required) The JSON-encoded string of the setting. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode(5)`, `jsonencode("Foo")`, `jsonencode(["Foo", "Bar"])`
 
 ## Attributes Reference
 
