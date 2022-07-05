@@ -315,8 +315,8 @@ github.com/stretchr/testify v1.7.0/go.mod h1:6Fq8oRcR53rry900zMqJjRRixrwX3KX962/
 github.com/tkrajina/go-reflector v0.5.4/go.mod h1:9PyLgEOzc78ey/JmQQHbW8cQJ1oucLlNQsg8yFvkVk8=
 github.com/turbot/go-kit v0.3.0 h1:o4zZIO1ovdmJ2bHWOdXnnt8jJMIDGqYSkZvBREzFeMQ=
 github.com/turbot/go-kit v0.3.0/go.mod h1:SBdPRngbEfYubiR81iAVtO43oPkg1+ASr+XxvgbH7/k=
-github.com/turbot/steampipe-cloud-sdk-go v0.0.4 h1:zzMl5+piC6Zs21iL1UST1SBQ+q24aO9ePBZ40yhJHOo=
-github.com/turbot/steampipe-cloud-sdk-go v0.0.4/go.mod h1:8M2CspUHgCGqDCJV+FNn+boBPyLRHyzDinYnoZ/kZYw=
+github.com/turbot/steampipe-cloud-sdk-go v0.1.0 h1:MRLXkw1zUvxw420/efEsCQ+J0cVEigV0Z8eDWFQMI3Q=
+github.com/turbot/steampipe-cloud-sdk-go v0.1.0/go.mod h1:8M2CspUHgCGqDCJV+FNn+boBPyLRHyzDinYnoZ/kZYw=
 github.com/ulikunitz/xz v0.5.8 h1:ERv8V6GKqVi23rgu5cj9pVfVzJbOqAY2Ntl88O6c2nQ=
 github.com/ulikunitz/xz v0.5.8/go.mod h1:nbz6k7qbPmH4IRqmfOplQw/tblSgqTqBwxkY0oWt/14=
 github.com/vmihailenco/msgpack v3.3.3+incompatible/go.mod h1:fy3FlTQTDXWkZ7Bh6AcGMlsjHatGryHQYUTf1ShIgkk=
