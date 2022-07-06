@@ -55,6 +55,16 @@ func resourceWorkspace() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"created_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"updated_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"database_name": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -122,6 +132,12 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("workspace_state", resp.State)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 	d.Set("database_name", resp.DatabaseName)
 	d.Set("hive", resp.Hive)
 	d.Set("host", resp.Host)
@@ -194,6 +210,12 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	d.Set("workspace_state", resp.State)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 	d.Set("database_name", resp.DatabaseName)
 	d.Set("hive", resp.Hive)
 	d.Set("host", resp.Host)
@@ -247,6 +269,12 @@ func resourceWorkspaceUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("workspace_state", resp.State)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 	d.Set("database_name", resp.DatabaseName)
 	d.Set("hive", resp.Hive)
 	d.Set("host", resp.Host)

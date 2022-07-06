@@ -54,6 +54,20 @@ func resourceWorkspaceMod() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"created_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"updated_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"version_id": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"alias": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -139,6 +153,13 @@ func resourceWorkspaceModInstall(ctx context.Context, d *schema.ResourceData, me
 	d.Set("constraint", resp.Constraint)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
+	d.Set("version_id", resp.VersionId)
 	d.Set("alias", resp.Alias)
 	d.Set("installed_version", resp.InstalledVersion)
 	d.Set("state", resp.State)
@@ -211,6 +232,13 @@ func resourceWorkspaceModRead(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("constraint", resp.Constraint)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
+	d.Set("version_id", resp.VersionId)
 	d.Set("alias", resp.Alias)
 	d.Set("installed_version", resp.InstalledVersion)
 	d.Set("state", resp.State)
@@ -271,6 +299,13 @@ func resourceWorkspaceModUpdate(ctx context.Context, d *schema.ResourceData, met
 	d.Set("constraint", resp.Constraint)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
+	d.Set("version_id", resp.VersionId)
 	d.Set("alias", resp.Alias)
 	d.Set("installed_version", resp.InstalledVersion)
 	d.Set("state", resp.State)

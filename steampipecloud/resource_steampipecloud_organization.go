@@ -54,6 +54,16 @@ func resourceOrganization() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"created_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"updated_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"version_id": {
 				Type:     schema.TypeInt,
 				Computed: true,
@@ -102,6 +112,12 @@ func resourceOrganizationCreate(ctx context.Context, d *schema.ResourceData, met
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("url", resp.Url)
 	d.Set("version_id", resp.VersionId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 
 	return diags
 }
@@ -132,6 +148,12 @@ func resourceOrganizationRead(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("url", resp.Url)
 	d.Set("version_id", resp.VersionId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 
 	return diags
 }
@@ -179,6 +201,12 @@ func resourceOrganizationUpdate(ctx context.Context, d *schema.ResourceData, met
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("url", resp.Url)
 	d.Set("version_id", resp.VersionId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 
 	return diags
 }

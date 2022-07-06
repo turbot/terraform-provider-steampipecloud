@@ -75,6 +75,16 @@ func resourceOrganizationMember() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"created_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"updated_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 		},
 	}
 }
@@ -154,6 +164,12 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	d.Set("updated_at", orgMemberDetails.UpdatedAt)
 	d.Set("user_id", orgMemberDetails.UserId)
 	d.Set("version_id", orgMemberDetails.VersionId)
+	if orgMemberDetails.CreatedBy != nil {
+		d.Set("created_by", orgMemberDetails.CreatedBy.Handle)
+	}
+	if orgMemberDetails.UpdatedBy != nil {
+		d.Set("updated_by", orgMemberDetails.UpdatedBy.Handle)
+	}
 
 	if orgMemberDetails.User != nil {
 		d.Set("display_name", orgMemberDetails.User.DisplayName)
@@ -202,6 +218,12 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("user_id", resp.UserId)
 	d.Set("version_id", resp.VersionId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
@@ -248,6 +270,12 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("user_id", resp.UserId)
 	d.Set("version_id", resp.VersionId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
