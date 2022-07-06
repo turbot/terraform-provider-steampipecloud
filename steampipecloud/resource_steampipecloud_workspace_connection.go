@@ -182,7 +182,7 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("connection_version_id", resp.Connection.VersionId)
 
 	if resp.Workspace != nil {
-		d.Set("workspace_state", resp.Workspace.WorkspaceState)
+		d.Set("workspace_state", resp.Workspace.State)
 		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
 		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
 		d.Set("workspace_hive", resp.Workspace.Hive)
@@ -276,7 +276,7 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	d.Set("connection_version_id", resp.Connection.VersionId)
 
 	if resp.Workspace != nil {
-		d.Set("workspace_state", resp.Workspace.WorkspaceState)
+		d.Set("workspace_state", resp.Workspace.State)
 		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
 		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
 		d.Set("workspace_hive", resp.Workspace.Hive)
