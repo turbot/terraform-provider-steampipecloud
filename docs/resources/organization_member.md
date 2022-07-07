@@ -72,6 +72,8 @@ In addition to all arguments above, the following attributes are exported:
 - `status` - The current membership status. Can be either `invited`, or `accepted`.
 - `updated_at` - The time when the membership was last updated.
 - `user_id` - An unique identifier of the user to add to the organization.
+- `created_by` - The handle of the user who sent the invitation.
+- `updated_by` - The handle of the user who last updated the membership.
 - `version_id` - The membership version.
 
 ## Import

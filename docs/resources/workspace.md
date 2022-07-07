@@ -49,6 +49,8 @@ In addition to all arguments above, the following attributes are exported:
 - `database_name` - The name of the Steampipe workspace database.
 - `host` - The hostname.
 - `identity_id` - An unique identifier of the entity where the workspace is created.
+- `created_by` - The handle of the user who created the workspace.
+- `updated_by` - The handle of the user who last updated the workspace.
 - `version_id` - The workspace version.
 
 ## Import

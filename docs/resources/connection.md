@@ -172,6 +172,11 @@ In addition to all arguments above, the following attributes are exported:
 - `connection_id` - An unique identifier of the connection.
 - `identity_id` - A unique identifier of the entity where the connection is created.
 - `type` - The type of the resource.
+- `created_at` - The time when the connection was created.
+- `updated_at` - The time when the connection was last updated.
+- `created_by` - The handle of the user who created the connection.
+- `updated_by` - The handle of the user who last updated the connection.
+- `version_id` - The connection version.
 
 ## Import
 

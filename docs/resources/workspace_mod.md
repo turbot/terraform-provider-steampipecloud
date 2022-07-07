@@ -58,6 +58,9 @@ In addition to all arguments above, the following attributes are exported:
 - `path` - The path of the public git repo containing the mod.
 - `state` - The state of the mod installation.
 - `updated_at` - The ISO 8601 date & time the mod entity was last updated at.
+- `created_by` - The handle of the user who installed the mod.
+- `updated_by` - The handle of the user who last updated the mod.
+- `version_id` - The mod version.
 - `identity_id` - A unique identifier of the entity, where the mod is created.
 - `workspace_handle` - A human-friendly alias for the workspace the mod is installed in.
 - `workspace_id` - A unique identifier of the workspace.

@@ -63,6 +63,12 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
+- `created_at` - The time when the connection was associated to the workspace.
+- `updated_at` - The time when the association was last updated.
+- `created_by` - The handle of the user who created the association.
+- `updated_by` - The handle of the user who last updated the association.
+- `version_id` - The association version.
+- `identity_id` - The id of the user/organization to which the connection belongs to.
 - `association_id` - An unique identifier of the workspace connection association.
 - `connection_config` - A map of connection configuration.
 - `connection_created_at` - The creation time of the connection.
