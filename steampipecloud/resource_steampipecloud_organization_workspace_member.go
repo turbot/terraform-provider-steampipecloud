@@ -139,8 +139,7 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 	/*
 	 * If a member is invited using user handle, use `OrgWorkspaceMembers.Get` to fetch the user details
 	 * If a member is invited using an email;
-	   * List the invited users, and find the requested user; if found return the requested user
-	   * else, list the accepted users, and find the requested user; if found return the requested user
+	   * List all users of the workspace in the organization, and find the requested user; if found return the requested user
 	 * TODO:: As of Dec 15, 2021, SDK doesn't support `email` in `OrgWorkspaceMembers.Get` API. If the API supports `email`, list operations can be ignored.
 	*/
 	var orgWorkspaceMemberDetails steampipe.OrgWorkspaceUser
@@ -154,10 +153,7 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 		}
 		orgWorkspaceMemberDetails = resp
 	} else {
-		data, err := listOrganizationWorkspaceMembersInvited(d, meta, req.Handle, req.Email)
-		if data.Id == "" {
-			data, err = listOrganizationWorkspaceMembersAccepted(d, meta, req.Handle, req.Email)
-		}
+		data, err := listOrganizationWorkspaceMembers(d, meta, req.Handle, req.Email)
 
 		if err != nil {
 			return diag.Errorf("error fetching member from the list.\nerr: %s", decodeResponse(r))
@@ -328,8 +324,8 @@ func resourceOrganizationWorkspaceMemberDelete(ctx context.Context, d *schema.Re
 	return diags
 }
 
-// List all the members who has been invited to the org.
-func listOrganizationWorkspaceMembersInvited(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgWorkspaceUser, error) {
+// List all members of the workspace in the org.
+func listOrganizationWorkspaceMembers(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgWorkspaceUser, error) {
 	client := meta.(*SteampipeClient)
 
 	// Get the organization handle
@@ -344,44 +340,9 @@ func listOrganizationWorkspaceMembersInvited(d *schema.ResourceData, meta interf
 
 	for pagesLeft {
 		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.ListInvited(context.Background(), org, workspace).NextToken(*resp.NextToken).Execute()
+			resp, _, err = client.APIClient.OrgWorkspaceMembers.List(context.Background(), org, workspace).NextToken(*resp.NextToken).Execute()
 		} else {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.ListInvited(context.Background(), org, workspace).Execute()
-		}
-
-		if err != nil {
-			return steampipe.OrgWorkspaceUser{}, err
-		}
-
-		for _, i := range *resp.Items {
-			if (email != nil && i.Email == *email) || (handle != nil && i.UserHandle == *handle) {
-				return i, nil
-			}
-		}
-	}
-
-	return steampipe.OrgWorkspaceUser{}, nil
-}
-
-// List all the members who has accepted the request.
-func listOrganizationWorkspaceMembersAccepted(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgWorkspaceUser, error) {
-	client := meta.(*SteampipeClient)
-
-	// Get the organization handle
-	org := d.Get("organization").(string)
-
-	// Get the workspace handle
-	workspace := d.Get("workspace_handle").(string)
-
-	pagesLeft := true
-	var resp steampipe.ListOrgWorkspaceUsersResponse
-	var err error
-
-	for pagesLeft {
-		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.ListAccepted(context.Background(), org, workspace).NextToken(*resp.NextToken).Execute()
-		} else {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.ListAccepted(context.Background(), org, workspace).Execute()
+			resp, _, err = client.APIClient.OrgWorkspaceMembers.List(context.Background(), org, workspace).Execute()
 		}
 
 		if err != nil {
