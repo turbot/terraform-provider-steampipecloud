@@ -33,6 +33,10 @@ func resourceOrganizationMember() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"scope": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"email": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -156,6 +160,7 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	d.Set("organization_member_id", orgMemberDetails.Id)
 	d.Set("organization_id", orgMemberDetails.OrgId)
 	d.Set("role", orgMemberDetails.Role)
+	d.Set("scope", orgMemberDetails.Scope)
 	d.Set("status", orgMemberDetails.Status)
 	d.Set("updated_at", orgMemberDetails.UpdatedAt)
 	d.Set("user_id", orgMemberDetails.UserId)
@@ -210,6 +215,7 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
+	d.Set("scope", resp.Scope)
 	d.Set("status", resp.Status)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("user_id", resp.UserId)
@@ -262,6 +268,7 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
+	d.Set("scope", resp.Scope)
 	d.Set("status", resp.Status)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("user_id", resp.UserId)
