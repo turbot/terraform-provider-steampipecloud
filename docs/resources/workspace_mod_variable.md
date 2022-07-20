@@ -68,17 +68,17 @@ In addition to all arguments above, the following attributes are exported:
 
 - `created_at` - The ISO 8601 date & time the mod entity was created at.
 - `created_by` - The unique identifier of the actor that created this mod variable.
+- `default_value` - The default value of the variable, as defined in the mod.
 - `description` - The description of the variable, as defined in the mod.
+- `identity_id` - A unique identifier of the entity, where the mod is created.
 - `mod_alias` - The human-friendly alias of the workspace mod this variable setting is for.
 - `name` - The name of the variable, as defined in the mod.
-- `default_value` - The default value of the variable, as defined in the mod.
 - `setting_value` - The user-defined value of the variable.
-- `value` - The resolved value of the variable, derived from either the `setting_value` or `default_value` in that order.
-- `type` - The HCL type of the mod variable, as defined in the mod.
 - `state` - The state of the mod installation.
+- `type` - The HCL type of the mod variable, as defined in the mod.
 - `updated_at` - The ISO 8601 date & time the mod entity was last updated at.
 - `updated_by` - The unique identifier of the actor that last updated this mod variable.
-- `identity_id` - A unique identifier of the entity, where the mod is created.
+- `value` - The resolved value of the variable, derived from either the `setting_value` or `default_value` in that order.
 - `version_id` - The version ID of this mod variable.
 - `workspace_handle` - A human-friendly alias for the workspace the mod variable is managed within.
 - `workspace_mod_variable_id` - A unique identifier of the mod variable.

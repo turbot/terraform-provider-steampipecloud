@@ -42,14 +42,16 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-- `workspace_id` - An unique identifier of the workspace.
-- `workspace_state` - The current state of the workspace.
 - `created_at` - The creation time of the workspace.
-- `updated_at` - The time when the workspace was last updated.
+- `created_by` - The handle of the user who created the workspace.
 - `database_name` - The name of the Steampipe workspace database.
 - `host` - The hostname.
 - `identity_id` - An unique identifier of the entity where the workspace is created.
+- `updated_at` - The time when the workspace was last updated.
+- `updated_by` - The handle of the user who last updated the workspace.
 - `version_id` - The workspace version.
+- `workspace_id` - An unique identifier of the workspace.
+- `workspace_state` - The current state of the workspace.
 
 ## Import
 

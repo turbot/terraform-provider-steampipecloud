@@ -52,13 +52,16 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 - `alias` - The unique human-friendly alias for this mod within the workspace.
-- `constraint` - The semver constraint for the installed mod version.
 - `created_at` - The ISO 8601 date & time the mod entity was created at.
+- `created_by` - The handle of the user who installed the mod.
+- `constraint` - The semver constraint for the installed mod version.
+- `identity_id` - A unique identifier of the entity, where the mod is created.
 - `installed_version` - The installed version of the the mod.
 - `path` - The path of the public git repo containing the mod.
 - `state` - The state of the mod installation.
 - `updated_at` - The ISO 8601 date & time the mod entity was last updated at.
-- `identity_id` - A unique identifier of the entity, where the mod is created.
+- `updated_by` - The handle of the user who last updated the mod.
+- `version_id` - The mod version.
 - `workspace_handle` - A human-friendly alias for the workspace the mod is installed in.
 - `workspace_id` - A unique identifier of the workspace.
 - `workspace_mod_id` - A unique identifier of the mod.

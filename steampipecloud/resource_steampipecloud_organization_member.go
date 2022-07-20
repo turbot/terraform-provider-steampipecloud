@@ -33,6 +33,10 @@ func resourceOrganizationMember() *schema.Resource {
 				Type:     schema.TypeString,
 				Required: true,
 			},
+			"scope": {
+				Type:     schema.TypeString,
+				Computed: true,
+			},
 			"email": {
 				Type:          schema.TypeString,
 				Optional:      true,
@@ -73,6 +77,16 @@ func resourceOrganizationMember() *schema.Resource {
 			},
 			"display_name": {
 				Type:     schema.TypeString,
+				Computed: true,
+			},
+			"created_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"updated_by": {
+				Type:     schema.TypeString,
+				Optional: true,
 				Computed: true,
 			},
 		},
@@ -116,8 +130,7 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	/*
 	 * If a member is invited using user handle, use `OrgMembers.Get` to fetch the user details
 	 * If a member is invited using an email;
-	   * List the invited users, and find the requested user; if found return the requested user
-	   * else, list the accepted users, and find the requested user; if found return the requested user
+	   * List all organization users, and find the requested user; if found return the requested user
 	 * TODO:: As of Dec 15, 2021, SDK doesn't support `email` in `OrgMembers.Get` API. If the API supports `email`, list operations can be ignored.
 	*/
 	var orgMemberDetails steampipe.OrgUser
@@ -131,10 +144,7 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 		}
 		orgMemberDetails = resp
 	} else {
-		data, err := listOrganizationMembersInvited(d, meta, req.Handle, req.Email)
-		if data.Id == "" {
-			data, err = listOrganizationMembersAccepted(d, meta, req.Handle, req.Email)
-		}
+		data, err := listOrganizationMembers(d, meta, req.Handle, req.Email)
 
 		if err != nil {
 			return diag.Errorf("error fetching member from the list.\nerr: %s", decodeResponse(r))
@@ -150,10 +160,17 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	d.Set("organization_member_id", orgMemberDetails.Id)
 	d.Set("organization_id", orgMemberDetails.OrgId)
 	d.Set("role", orgMemberDetails.Role)
+	d.Set("scope", orgMemberDetails.Scope)
 	d.Set("status", orgMemberDetails.Status)
 	d.Set("updated_at", orgMemberDetails.UpdatedAt)
 	d.Set("user_id", orgMemberDetails.UserId)
 	d.Set("version_id", orgMemberDetails.VersionId)
+	if orgMemberDetails.CreatedBy != nil {
+		d.Set("created_by", orgMemberDetails.CreatedBy.Handle)
+	}
+	if orgMemberDetails.UpdatedBy != nil {
+		d.Set("updated_by", orgMemberDetails.UpdatedBy.Handle)
+	}
 
 	if orgMemberDetails.User != nil {
 		d.Set("display_name", orgMemberDetails.User.DisplayName)
@@ -198,10 +215,17 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
+	d.Set("scope", resp.Scope)
 	d.Set("status", resp.Status)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("user_id", resp.UserId)
 	d.Set("version_id", resp.VersionId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
@@ -244,10 +268,17 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
+	d.Set("scope", resp.Scope)
 	d.Set("status", resp.Status)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("user_id", resp.UserId)
 	d.Set("version_id", resp.VersionId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
@@ -280,8 +311,8 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 	return diags
 }
 
-// List all the members who has been invited to the org.
-func listOrganizationMembersInvited(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgUser, error) {
+// List all the members of the organization.
+func listOrganizationMembers(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgUser, error) {
 	client := meta.(*SteampipeClient)
 
 	// Get the organization
@@ -293,41 +324,9 @@ func listOrganizationMembersInvited(d *schema.ResourceData, meta interface{}, ha
 
 	for pagesLeft {
 		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgMembers.ListInvited(context.Background(), org).NextToken(*resp.NextToken).Execute()
+			resp, _, err = client.APIClient.OrgMembers.List(context.Background(), org).NextToken(*resp.NextToken).Execute()
 		} else {
-			resp, _, err = client.APIClient.OrgMembers.ListInvited(context.Background(), org).Execute()
-		}
-
-		if err != nil {
-			return steampipe.OrgUser{}, err
-		}
-
-		for _, i := range *resp.Items {
-			if (email != nil && i.Email == *email) || (handle != nil && i.UserHandle == *handle) {
-				return i, nil
-			}
-		}
-	}
-
-	return steampipe.OrgUser{}, nil
-}
-
-// List all the members who has accepted the request.
-func listOrganizationMembersAccepted(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgUser, error) {
-	client := meta.(*SteampipeClient)
-
-	// Get the organization
-	org := d.Get("organization").(string)
-
-	pagesLeft := true
-	var resp steampipe.ListOrgUsersResponse
-	var err error
-
-	for pagesLeft {
-		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgMembers.ListAccepted(context.Background(), org).NextToken(*resp.NextToken).Execute()
-		} else {
-			resp, _, err = client.APIClient.OrgMembers.ListAccepted(context.Background(), org).Execute()
+			resp, _, err = client.APIClient.OrgMembers.List(context.Background(), org).Execute()
 		}
 
 		if err != nil {

@@ -33,8 +33,10 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 - `created_at` - The creation time of the organization.
+- `created_by` - The handle of the user who created the organization.
 - `organization_id` - An unique identifier of the organization.
 - `updated_at` - The time when the organization was last updated.
+- `updated_by` - The handle of the user who last updated the organization.
 - `version_id` - The organization version.
 
 ## Import

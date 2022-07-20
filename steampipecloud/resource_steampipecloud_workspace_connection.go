@@ -59,6 +59,16 @@ func resourceWorkspaceConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"created_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"updated_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"identity_id": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -171,6 +181,12 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("identity_id", resp.IdentityId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 	d.Set("version_id", resp.VersionId)
 	d.Set("workspace_handle", workspaceHandle)
 	d.Set("connection_handle", resp.Connection.Handle)
@@ -182,7 +198,7 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("connection_version_id", resp.Connection.VersionId)
 
 	if resp.Workspace != nil {
-		d.Set("workspace_state", resp.Workspace.WorkspaceState)
+		d.Set("workspace_state", resp.Workspace.State)
 		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
 		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
 		d.Set("workspace_hive", resp.Workspace.Hive)
@@ -265,6 +281,12 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("identity_id", resp.IdentityId)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
 	d.Set("version_id", resp.VersionId)
 	d.Set("connection_handle", resp.Connection.Handle)
 	d.Set("workspace_handle", workspaceHandle)
@@ -276,7 +298,7 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	d.Set("connection_version_id", resp.Connection.VersionId)
 
 	if resp.Workspace != nil {
-		d.Set("workspace_state", resp.Workspace.WorkspaceState)
+		d.Set("workspace_state", resp.Workspace.State)
 		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
 		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
 		d.Set("workspace_hive", resp.Workspace.Hive)

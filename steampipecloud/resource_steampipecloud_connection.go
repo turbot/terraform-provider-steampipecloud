@@ -60,6 +60,20 @@ func resourceConnection() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
+			"created_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"updated_by": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
+			"version_id": {
+				Type:     schema.TypeInt,
+				Computed: true,
+			},
 			"identity_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -129,6 +143,13 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("plugin", resp.Plugin)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
+	d.Set("version_id", resp.VersionId)
 	if config != nil {
 		d.Set("config", configString)
 	}
@@ -202,6 +223,13 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	d.Set("handle", resp.Handle)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
+	d.Set("version_id", resp.VersionId)
 
 	return diags
 }
@@ -259,6 +287,13 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("plugin", *resp.Plugin)
+	if resp.CreatedBy != nil {
+		d.Set("created_by", resp.CreatedBy.Handle)
+	}
+	if resp.UpdatedBy != nil {
+		d.Set("updated_by", resp.UpdatedBy.Handle)
+	}
+	d.Set("version_id", resp.VersionId)
 
 	// If connection exists inside an Organization the id will be of the
 	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
