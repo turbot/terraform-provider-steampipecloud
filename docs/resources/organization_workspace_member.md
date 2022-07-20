@@ -58,19 +58,19 @@ The following arguments are supported:
 
 In addition to all arguments above, the following attributes are exported:
 
-- `organization_workspace_member_id` - A unique identifier of the organization workspace membership.
-- `organization_id` - A unique identifier of the organization.
-- `workspace_id` - A unique identifier of the workspace.
-- `user_id` - A unique identifier of the user to add to the workspace.
+- `created_at` - The time when the invitation has been sent.
+- `created_by` - The handle of the user who sent the invitation.
 - `display_name` - The display name of the user to add to the workspace.
 - `email` - The email of the user to add to the workspace.
-- `status` - The current membership status. Can be either `invited`, or `accepted`.
+- `organization_workspace_member_id` - A unique identifier of the organization workspace membership.
+- `organization_id` - A unique identifier of the organization.
 - `scope` - The level of membership for the user. Can be either `org` or `workspace`.
-- `created_at` - The time when the invitation has been sent.
+- `status` - The current membership status. Can be either `invited`, or `accepted`.
 - `updated_at` - The time when the membership was last updated.
-- `created_by` - The handle of the user who sent the invitation.
 - `updated_by` - The handle of the user who last updated the membership.
+- `user_id` - A unique identifier of the user to add to the workspace.
 - `version_id` - The membership version.
+- `workspace_id` - A unique identifier of the workspace.
 
 ## Import
 

@@ -66,15 +66,15 @@ The following arguments are supported:
 In addition to all arguments above, the following attributes are exported:
 
 - `created_at` - The time when the invitation has been sent.
+- `created_by` - The handle of the user who sent the invitation.
 - `display_name` - The display name of the user to add to the organization.
 - `organization_id` - An unique identifier of the organization.
 - `organization_member_id` - An unique identifier of the organization membership.
 - `status` - The current membership status. Can be either `invited`, or `accepted`.
 - `scope` - The level of membership for the user. Will always be `org`. (Field added for consistency with workspace member API)
 - `updated_at` - The time when the membership was last updated.
-- `user_id` - An unique identifier of the user to add to the organization.
-- `created_by` - The handle of the user who sent the invitation.
 - `updated_by` - The handle of the user who last updated the membership.
+- `user_id` - An unique identifier of the user to add to the organization.
 - `version_id` - The membership version.
 
 ## Import
