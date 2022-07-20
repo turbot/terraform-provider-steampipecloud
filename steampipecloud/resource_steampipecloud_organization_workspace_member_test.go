@@ -55,11 +55,18 @@ resource "steampipecloud_workspace" "test" {
 	handle = "%s"
 }
 
-# Please provide a valid email
+# Invite the user to the organization
+resource "steampipecloud_organization_member" "test" {
+	organization = steampipecloud_organization.test.handle
+	email        = "user@domain.com"
+	role         = "member"
+}
+
+# Add the user to the workspace
 resource "steampipecloud_organization_workspace_member" "test" {
 	organization = steampipecloud_organization.test.handle
 	workspace_handle = steampipecloud_workspace.test.handle
-	email        = "user@domain.com"
+	user_handle        = steampipecloud_organization_member.test.user_handle
 	role         = "reader"
 }`, orgHandle, workspaceHandle)
 }
@@ -77,12 +84,19 @@ resource "steampipecloud_workspace" "test" {
 	handle = "%s"
 }
 
+# Invite the user to the organization
+resource "steampipecloud_organization_member" "test" {
+	organization = steampipecloud_organization.test.handle
+	email        = "user@domain.com"
+	role         = "member"
+}
+
 # Please provide a valid email
 resource "steampipecloud_organization_workspace_member" "test" {
-  organization = steampipecloud_organization.test.handle
-  workspace_handle = steampipecloud_workspace.test.handle
-  email        = "user@domain.com"
-  role         = "owner"
+	organization = steampipecloud_organization.test.handle
+	workspace_handle = steampipecloud_workspace.test.handle
+	user_handle        = steampipecloud_organization_member.test.user_handle
+	role         = "owner"
 }`, orgHandle, workspaceHandle)
 }
 
