@@ -13,9 +13,8 @@ description: |-
 Manages the membership of a workspace in an organization.
 
 This resource allows you to add/remove users from a workspace of your 
-organization. When applied, an invitation will be sent to the user to become 
-part of the workspace. When destroyed, either the invitation will be 
-cancelled or the user will be removed.
+organization. When applied, the user whose handle is passed will be
+added to the workspace with the role as specified in the configuration.
 
 ## Example Usage
 
@@ -32,31 +31,16 @@ resource "steampipecloud_workspace" "myworkspace" {
   handle       = "myworkspace"
 }
 
-resource "steampipecloud_organization_member" "example" {
-  organization     = steampipecloud_organization.myorg.handle
-  workspace_handle = steampipecloud_workspace.myworkspace.handle
-  user_handle      = "someuser"
-  role             = "owner"
-}
-```
-
-**Invite a user using an email address**
-
-```hcl
-resource "steampipecloud_organization" "myorg" {
-  handle       = "myorg"
-  display_name = "Test Org"
-}
-
-resource "steampipecloud_workspace" "myworkspace" {
-  organization = steampipecloud_organization.myorg.handle
-  handle       = "myworkspace"
+resource "steampipecloud_organization_member" "orgmember" {
+	organization = steampipecloud_organization.test.handle
+	user_handle  = "someuser"
+	role         = "member"
 }
 
 resource "steampipecloud_organization_member" "example" {
   organization     = steampipecloud_organization.myorg.handle
   workspace_handle = steampipecloud_workspace.myworkspace.handle
-  email            = "user@domain.com"
+  user_handle      = steampipecloud_organization_member.orgmember.user_handle
   role             = "owner"
 }
 ```
@@ -67,12 +51,8 @@ The following arguments are supported:
 
 - `organization` - (Required) The organization ID or handle to which the workspace belongs to.
 - `workspace_handle` - (Required) The workspace handle to which the user will be invited to.
+- `user_handle` - (Required) The handle of the user to add to the workspace.
 - `role` - (Required) The role of the user in the workspace of the organization. Must be one of `reader`, `admin` or `owner`.
-
-~> **Note:** An member can be invited either using an email address or a user handle. Providing both at the same time will result in an error.
-
-- `email` - (Optional) The email address of the user to add to the workspace.
-- `user_handle` - (Optional) The handle of the user to add to the workspace.
 
 ## Attributes Reference
 
@@ -83,7 +63,9 @@ In addition to all arguments above, the following attributes are exported:
 - `workspace_id` - A unique identifier of the workspace.
 - `user_id` - A unique identifier of the user to add to the workspace.
 - `display_name` - The display name of the user to add to the workspace.
+- `email` - The email of the user to add to the workspace.
 - `status` - The current membership status. Can be either `invited`, or `accepted`.
+- `scope` - The level of membership for the user. Can be either `org` or `workspace`.
 - `created_at` - The time when the invitation has been sent.
 - `updated_at` - The time when the membership was last updated.
 - `created_by` - The handle of the user who sent the invitation.
