@@ -1,3 +1,16 @@
+## 0.5.0 (July 20, 2022)
+
+FEATURES:
+
+* **New Resource:** `steampipecloud_organization_workspace_member`
+* `resources/steampipecloud_connection`: Add fields - `created_at`, `updated_at`, `created_by`, `updated_by`, `version_id`
+* `resources/steampipecloud_organization`: Add fields - `created_by`, `updated_by`
+* `resources/steampipecloud_organization_member`: Add fields - `created_by`, `updated_by`, `scope`
+* `resources/steampipecloud_organization_member`: Modify the way organization members are listed i.e. use the `List` call instead of `Invited` and `Accepted` calls that was used previously
+* `resources/steampipecloud_workspace`: Add fields - `created_by`, `updated_by`
+* `resources/steampipecloud_workspace_connection`: Add fields - `created_at`, `updated_at`, `created_by`, `updated_by`, `version_id`, `identity_id`
+* `resources/steampipecloud_workspace_mod`: Add fields - `created_by`, `updated_by`, `version_id`
+
 ## 0.4.0 (March 31, 2022)
 
 FEATURES:
