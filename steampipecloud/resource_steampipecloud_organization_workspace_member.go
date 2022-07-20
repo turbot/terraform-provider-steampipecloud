@@ -6,7 +6,6 @@ import (
 	"log"
 	"strings"
 
-	"github.com/turbot/go-kit/types"
 	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/diag"
@@ -117,24 +116,21 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 	workspace := d.Get("workspace_handle").(string)
 
 	// Create request
-	req := steampipe.InviteOrgWorkspaceUserRequest{
+	req := steampipe.CreateOrgWorkspaceUserRequest{
 		Role: d.Get("role").(string),
 	}
 
 	if value, ok := d.GetOk("user_handle"); ok {
-		req.Handle = types.String(value.(string))
-	}
-	if value, ok := d.GetOk("email"); ok {
-		req.Email = types.String(value.(string))
+		req.Handle = value.(string)
 	}
 
-	// Return if both handle and email are empty
-	if req.Handle == nil && req.Email == nil {
-		return diag.Errorf("either 'user_handle' or 'email' must be set in resource config")
+	// Return if both user_handle is empty
+	if req.Handle == "" {
+		return diag.Errorf("'user_handle' must be set in resource config")
 	}
 
 	// Invite requested member
-	_, r, err := client.APIClient.OrgWorkspaceMembers.Invite(ctx, org, workspace).Request(req).Execute()
+	_, r, err := client.APIClient.OrgWorkspaceMembers.Create(ctx, org, workspace).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error inviting member: %s", decodeResponse(r))
 	}
@@ -142,28 +138,16 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 
 	/*
 	 * If a member is invited using user handle, use `OrgWorkspaceMembers.Get` to fetch the user details
-	 * If a member is invited using an email;
-	   * List all users of the workspace in the organization, and find the requested user; if found return the requested user
-	 * TODO:: As of Dec 15, 2021, SDK doesn't support `email` in `OrgWorkspaceMembers.Get` API. If the API supports `email`, list operations can be ignored.
-	*/
+	 */
 	var orgWorkspaceMemberDetails steampipe.OrgWorkspaceUser
-	if req.Handle != nil {
-		resp, r, err := client.APIClient.OrgWorkspaceMembers.Get(ctx, org, workspace, *req.Handle).Execute()
-		if err != nil {
-			if r.StatusCode == 404 {
-				return diag.Errorf("requested member %s not found", *req.Handle)
-			}
-			return diag.Errorf("error reading member %s.\nerr: %s", *req.Handle, decodeResponse(r))
+	resp, r, err := client.APIClient.OrgWorkspaceMembers.Get(ctx, org, workspace, req.Handle).Execute()
+	if err != nil {
+		if r.StatusCode == 404 {
+			return diag.Errorf("requested member %s not found", req.Handle)
 		}
-		orgWorkspaceMemberDetails = resp
-	} else {
-		data, err := listOrganizationWorkspaceMembers(d, meta, req.Handle, req.Email)
-
-		if err != nil {
-			return diag.Errorf("error fetching member from the list.\nerr: %s", decodeResponse(r))
-		}
-		orgWorkspaceMemberDetails = data
+		return diag.Errorf("error reading member %s.\nerr: %s", req.Handle, decodeResponse(r))
 	}
+	orgWorkspaceMemberDetails = resp
 
 	// Set property values
 	d.SetId(fmt.Sprintf("%s:%s:%s", org, workspace, orgWorkspaceMemberDetails.UserHandle))
