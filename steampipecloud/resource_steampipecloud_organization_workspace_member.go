@@ -47,20 +47,13 @@ func resourceOrganizationWorkspaceMember() *schema.Resource {
 				Computed: true,
 			},
 			"user_handle": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"email"},
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 			"display_name": {
 				Type:     schema.TypeString,
 				Computed: true,
-			},
-			"email": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"user_handle"},
 			},
 			"status": {
 				Type:     schema.TypeString,
@@ -159,7 +152,6 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 	if orgWorkspaceMemberDetails.User != nil {
 		d.Set("display_name", orgWorkspaceMemberDetails.User.DisplayName)
 	}
-	d.Set("email", orgWorkspaceMemberDetails.Email)
 	d.Set("status", orgWorkspaceMemberDetails.Status)
 	d.Set("role", orgWorkspaceMemberDetails.Role)
 	d.Set("scope", orgWorkspaceMemberDetails.Scope)
@@ -216,7 +208,6 @@ func resourceOrganizationWorkspaceMemberRead(ctx context.Context, d *schema.Reso
 	if orgWorkspaceMemberDetails.User != nil {
 		d.Set("display_name", orgWorkspaceMemberDetails.User.DisplayName)
 	}
-	d.Set("email", orgWorkspaceMemberDetails.Email)
 	d.Set("status", orgWorkspaceMemberDetails.Status)
 	d.Set("role", orgWorkspaceMemberDetails.Role)
 	d.Set("scope", orgWorkspaceMemberDetails.Scope)
@@ -272,7 +263,6 @@ func resourceOrganizationWorkspaceMemberUpdate(ctx context.Context, d *schema.Re
 	if orgWorkspaceMemberDetails.User != nil {
 		d.Set("display_name", orgWorkspaceMemberDetails.User.DisplayName)
 	}
-	d.Set("email", orgWorkspaceMemberDetails.Email)
 	d.Set("status", orgWorkspaceMemberDetails.Status)
 	d.Set("role", orgWorkspaceMemberDetails.Role)
 	d.Set("scope", orgWorkspaceMemberDetails.Scope)
@@ -313,39 +303,4 @@ func resourceOrganizationWorkspaceMemberDelete(ctx context.Context, d *schema.Re
 	d.SetId("")
 
 	return diags
-}
-
-// List all members of the workspace in the org.
-func listOrganizationWorkspaceMembers(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgWorkspaceUser, error) {
-	client := meta.(*SteampipeClient)
-
-	// Get the organization handle
-	org := d.Get("organization").(string)
-
-	// Get the workspace handle
-	workspace := d.Get("workspace_handle").(string)
-
-	pagesLeft := true
-	var resp steampipe.ListOrgWorkspaceUsersResponse
-	var err error
-
-	for pagesLeft {
-		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.List(context.Background(), org, workspace).NextToken(*resp.NextToken).Execute()
-		} else {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.List(context.Background(), org, workspace).Execute()
-		}
-
-		if err != nil {
-			return steampipe.OrgWorkspaceUser{}, err
-		}
-
-		for _, i := range *resp.Items {
-			if (email != nil && i.Email == *email) || (handle != nil && i.UserHandle == *handle) {
-				return i, nil
-			}
-		}
-	}
-
-	return steampipe.OrgWorkspaceUser{}, nil
 }

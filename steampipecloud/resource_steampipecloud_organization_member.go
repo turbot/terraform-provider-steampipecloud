@@ -24,10 +24,9 @@ func resourceOrganizationMember() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"user_handle": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"email"},
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 			"role": {
 				Type:     schema.TypeString,
@@ -36,12 +35,6 @@ func resourceOrganizationMember() *schema.Resource {
 			"scope": {
 				Type:     schema.TypeString,
 				Computed: true,
-			},
-			"email": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"user_handle"},
 			},
 			"organization": {
 				Type:     schema.TypeString,
@@ -111,13 +104,10 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	if value, ok := d.GetOk("user_handle"); ok {
 		req.Handle = types.String(value.(string))
 	}
-	if value, ok := d.GetOk("email"); ok {
-		req.Email = types.String(value.(string))
-	}
 
 	// Return if both handle and email are empty
-	if req.Handle == nil && req.Email == nil {
-		return diag.Errorf("either 'user_handle' or 'email' must be set in resource config")
+	if req.Handle == nil {
+		return diag.Errorf("'user_handle' must be set in resource config")
 	}
 
 	// Invite requested member
@@ -129,10 +119,7 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 
 	/*
 	 * If a member is invited using user handle, use `OrgMembers.Get` to fetch the user details
-	 * If a member is invited using an email;
-	   * List all organization users, and find the requested user; if found return the requested user
-	 * TODO:: As of Dec 15, 2021, SDK doesn't support `email` in `OrgMembers.Get` API. If the API supports `email`, list operations can be ignored.
-	*/
+	 */
 	var orgMemberDetails steampipe.OrgUser
 	if req.Handle != nil {
 		resp, r, err := client.APIClient.OrgMembers.Get(ctx, org, *req.Handle).Execute()
@@ -143,20 +130,12 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 			return diag.Errorf("error reading member %s.\nerr: %s", *req.Handle, decodeResponse(r))
 		}
 		orgMemberDetails = resp
-	} else {
-		data, err := listOrganizationMembers(d, meta, req.Handle, req.Email)
-
-		if err != nil {
-			return diag.Errorf("error fetching member from the list.\nerr: %s", decodeResponse(r))
-		}
-		orgMemberDetails = data
 	}
 
 	// Set property values
 	d.SetId(fmt.Sprintf("%s:%s", org, orgMemberDetails.UserHandle))
 	d.Set("user_handle", orgMemberDetails.UserHandle)
 	d.Set("created_at", orgMemberDetails.CreatedAt)
-	d.Set("email", orgMemberDetails.Email)
 	d.Set("organization_member_id", orgMemberDetails.Id)
 	d.Set("organization_id", orgMemberDetails.OrgId)
 	d.Set("role", orgMemberDetails.Role)
@@ -211,7 +190,6 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	d.SetId(id)
 	d.Set("user_handle", resp.UserHandle)
 	d.Set("created_at", resp.CreatedAt)
-	d.Set("email", resp.Email)
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
@@ -264,7 +242,6 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 	d.SetId(id)
 	d.Set("user_handle", resp.UserHandle)
 	d.Set("created_at", resp.CreatedAt)
-	d.Set("email", resp.Email)
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
@@ -309,36 +286,4 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 	d.SetId("")
 
 	return diags
-}
-
-// List all the members of the organization.
-func listOrganizationMembers(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgUser, error) {
-	client := meta.(*SteampipeClient)
-
-	// Get the organization
-	org := d.Get("organization").(string)
-
-	pagesLeft := true
-	var resp steampipe.ListOrgUsersResponse
-	var err error
-
-	for pagesLeft {
-		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgMembers.List(context.Background(), org).NextToken(*resp.NextToken).Execute()
-		} else {
-			resp, _, err = client.APIClient.OrgMembers.List(context.Background(), org).Execute()
-		}
-
-		if err != nil {
-			return steampipe.OrgUser{}, err
-		}
-
-		for _, i := range *resp.Items {
-			if (email != nil && i.Email == *email) || (handle != nil && i.UserHandle == *handle) {
-				return i, nil
-			}
-		}
-	}
-
-	return steampipe.OrgUser{}, nil
 }

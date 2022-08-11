@@ -29,10 +29,6 @@ func dataSourceUser() *schema.Resource {
 				Type:     schema.TypeString,
 				Optional: true,
 			},
-			"email": {
-				Type:     schema.TypeString,
-				Optional: true,
-			},
 			"user_id": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -79,9 +75,6 @@ func dataSourceUserRead(ctx context.Context, d *schema.ResourceData, meta interf
 		return diag.FromErr(err)
 	}
 	if err := d.Set("display_name", resp.DisplayName); err != nil {
-		return diag.FromErr(err)
-	}
-	if err := d.Set("email", resp.Email); err != nil {
 		return diag.FromErr(err)
 	}
 	if err := d.Set("handle", resp.Handle); err != nil {

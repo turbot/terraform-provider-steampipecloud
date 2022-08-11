@@ -51,7 +51,7 @@ resource "steampipecloud_organization" "test" {
 # Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
 	organization = steampipecloud_organization.test.handle
-	email        = "user@domain.com"
+	user_handle  = "user-ioik"
 	role         = "member"
 }`, orgHandle)
 }
@@ -67,7 +67,7 @@ resource "steampipecloud_organization" "test" {
 # Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
   organization = steampipecloud_organization.test.handle
-  email        = "user@domain.com"
+  user_handle  = "user-ioik"
   role         = "owner"
 }`, orgHandle)
 }

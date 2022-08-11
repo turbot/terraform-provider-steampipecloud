@@ -197,17 +197,23 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("connection_type", resp.Connection.Type)
 	d.Set("connection_version_id", resp.Connection.VersionId)
 
-	if resp.Workspace != nil {
-		d.Set("workspace_state", resp.Workspace.State)
-		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
-		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
-		d.Set("workspace_hive", resp.Workspace.Hive)
-		d.Set("workspace_host", resp.Workspace.Host)
-		d.Set("workspace_identity_id", resp.Workspace.IdentityId)
-		d.Set("workspace_public_key", resp.Workspace.PublicKey)
-		d.Set("workspace_updated_at", resp.Workspace.UpdatedAt)
-		d.Set("workspace_version_id", resp.Workspace.VersionId)
+	// Get the workspace details
+	workspaceResp, r, err := getWorkspaceDetails(ctx, client, d)
+
+	// Error check
+	if err != nil {
+		return diag.Errorf("error getting workspace details for connection association: %v", decodeResponse(r))
 	}
+
+	d.Set("workspace_state", workspaceResp.State)
+	d.Set("workspace_created_at", workspaceResp.CreatedAt)
+	d.Set("workspace_database_name", workspaceResp.DatabaseName)
+	d.Set("workspace_hive", workspaceResp.Hive)
+	d.Set("workspace_host", workspaceResp.Host)
+	d.Set("workspace_identity_id", workspaceResp.IdentityId)
+	d.Set("workspace_public_key", workspaceResp.PublicKey)
+	d.Set("workspace_updated_at", workspaceResp.UpdatedAt)
+	d.Set("workspace_version_id", workspaceResp.VersionId)
 
 	// If workspace connection association is created inside an Organization the id will be of the
 	// format "OrganizationHandle:WorkspaceHandle:ConnectionHandle" otherwise "WorkspaceHandle:ConnectionHandle"
@@ -297,17 +303,23 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	d.Set("connection_type", resp.Connection.Type)
 	d.Set("connection_version_id", resp.Connection.VersionId)
 
-	if resp.Workspace != nil {
-		d.Set("workspace_state", resp.Workspace.State)
-		d.Set("workspace_created_at", resp.Workspace.CreatedAt)
-		d.Set("workspace_database_name", resp.Workspace.DatabaseName)
-		d.Set("workspace_hive", resp.Workspace.Hive)
-		d.Set("workspace_host", resp.Workspace.Host)
-		d.Set("workspace_identity_id", resp.Workspace.IdentityId)
-		d.Set("workspace_public_key", resp.Workspace.PublicKey)
-		d.Set("workspace_updated_at", resp.Workspace.UpdatedAt)
-		d.Set("workspace_version_id", resp.Workspace.VersionId)
+	// Get the workspace details
+	workspaceResp, r, err := getWorkspaceDetails(ctx, client, d)
+
+	// Error check
+	if err != nil {
+		return diag.Errorf("error getting workspace details for connection association: %v", decodeResponse(r))
 	}
+
+	d.Set("workspace_state", workspaceResp.State)
+	d.Set("workspace_created_at", workspaceResp.CreatedAt)
+	d.Set("workspace_database_name", workspaceResp.DatabaseName)
+	d.Set("workspace_hive", workspaceResp.Hive)
+	d.Set("workspace_host", workspaceResp.Host)
+	d.Set("workspace_identity_id", workspaceResp.IdentityId)
+	d.Set("workspace_public_key", workspaceResp.PublicKey)
+	d.Set("workspace_updated_at", workspaceResp.UpdatedAt)
+	d.Set("workspace_version_id", workspaceResp.VersionId)
 
 	return diags
 }
