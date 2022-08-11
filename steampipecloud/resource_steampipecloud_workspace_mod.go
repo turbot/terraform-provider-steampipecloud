@@ -169,11 +169,11 @@ func resourceWorkspaceModInstall(ctx context.Context, d *schema.ResourceData, me
 	d.Set("workspace_handle", workspaceHandle)
 
 	// If mod is installed for a workspace inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias" otherwise "WorkspaceHandle:ModAlias"
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias" otherwise "WorkspaceHandle/ModAlias"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
-		d.SetId(fmt.Sprintf("%s:%s:%s", orgHandle, workspaceHandle, *resp.Alias))
+		d.SetId(fmt.Sprintf("%s/%s/%s", orgHandle, workspaceHandle, *resp.Alias))
 	} else {
-		d.SetId(fmt.Sprintf("%s:%s", workspaceHandle, *resp.Alias))
+		d.SetId(fmt.Sprintf("%s/%s", workspaceHandle, *resp.Alias))
 	}
 
 	return diags
@@ -187,11 +187,16 @@ func resourceWorkspaceModRead(ctx context.Context, d *schema.ResourceData, meta 
 	var orgHandle, workspaceHandle, modAlias string
 	var isUser = false
 
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(d.Id(), ":") {
+		separator = ":"
+	}
 	// If mod is installed for a workspace within an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias" otherwise "WorkspaceHandle:ModAlias"
-	idParts := strings.Split(d.Id(), ":")
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias" otherwise "WorkspaceHandle/ModAlias"
+	idParts := strings.Split(d.Id(), separator)
 	if len(idParts) < 2 && len(idParts) > 3 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<mod-alias>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<mod-alias>", d.Id())
 	}
 
 	if len(idParts) == 3 {
@@ -248,11 +253,11 @@ func resourceWorkspaceModRead(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("workspace_handle", workspaceHandle)
 
 	// If mod is installed for a workspace inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias" otherwise "WorkspaceHandle:ModAlias"
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias" otherwise "WorkspaceHandle/ModAlias"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
-		d.SetId(fmt.Sprintf("%s:%s:%s", orgHandle, workspaceHandle, *resp.Alias))
+		d.SetId(fmt.Sprintf("%s/%s/%s", orgHandle, workspaceHandle, *resp.Alias))
 	} else {
-		d.SetId(fmt.Sprintf("%s:%s", workspaceHandle, *resp.Alias))
+		d.SetId(fmt.Sprintf("%s/%s", workspaceHandle, *resp.Alias))
 	}
 
 	return diags
@@ -315,11 +320,11 @@ func resourceWorkspaceModUpdate(ctx context.Context, d *schema.ResourceData, met
 	d.Set("workspace_handle", workspaceHandle)
 
 	// If mod is installed for a workspace inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias" otherwise "WorkspaceHandle:ModAlias"
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias" otherwise "WorkspaceHandle/ModAlias"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
-		d.SetId(fmt.Sprintf("%s:%s:%s", orgHandle, workspaceHandle, *resp.Alias))
+		d.SetId(fmt.Sprintf("%s/%s/%s", orgHandle, workspaceHandle, *resp.Alias))
 	} else {
-		d.SetId(fmt.Sprintf("%s:%s", workspaceHandle, *resp.Alias))
+		d.SetId(fmt.Sprintf("%s/%s", workspaceHandle, *resp.Alias))
 	}
 
 	return diags
@@ -333,9 +338,14 @@ func resourceWorkspaceModUninstall(ctx context.Context, d *schema.ResourceData, 
 	var orgHandle, workspaceHandle, modAlias string
 	var isUser = false
 
-	idParts := strings.Split(d.Id(), ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(d.Id(), ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(d.Id(), separator)
 	if len(idParts) < 2 && len(idParts) > 3 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<mod-alias>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<mod-alias>", d.Id())
 	}
 
 	if len(idParts) == 3 {

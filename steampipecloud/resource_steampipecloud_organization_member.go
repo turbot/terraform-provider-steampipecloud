@@ -133,7 +133,7 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Set property values
-	d.SetId(fmt.Sprintf("%s:%s", org, orgMemberDetails.UserHandle))
+	d.SetId(fmt.Sprintf("%s/%s", org, orgMemberDetails.UserHandle))
 	d.Set("user_handle", orgMemberDetails.UserHandle)
 	d.Set("created_at", orgMemberDetails.CreatedAt)
 	d.Set("organization_member_id", orgMemberDetails.Id)
@@ -165,7 +165,12 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 2 {
 		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
 	}
@@ -187,7 +192,9 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	}
 	log.Printf("\n[DEBUG] Organization Member received: %s", id)
 
-	d.SetId(id)
+	if separator == ":" {
+		d.SetId(strings.ReplaceAll(id, ":", "/"))
+	}
 	d.Set("user_handle", resp.UserHandle)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("organization_member_id", resp.Id)
@@ -204,7 +211,6 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	if resp.UpdatedBy != nil {
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
-
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
 	}
@@ -229,16 +235,16 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 		Role: role,
 	}
 
-	log.Printf("\n[DEBUG] Updating membership: '%s:%s'", org, userHandle)
+	log.Printf("\n[DEBUG] Updating membership: '%s/%s'", org, userHandle)
 
 	resp, r, err := client.APIClient.OrgMembers.Update(context.Background(), org, userHandle).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error updating membership: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Membership updated: %s:%s", org, resp.UserHandle)
+	log.Printf("\n[DEBUG] Membership updated: %s/%s", org, resp.UserHandle)
 
 	// Update state file
-	id := fmt.Sprintf("%s:%s", org, resp.UserHandle)
+	id := fmt.Sprintf("%s/%s", org, resp.UserHandle)
 	d.SetId(id)
 	d.Set("user_handle", resp.UserHandle)
 	d.Set("created_at", resp.CreatedAt)
@@ -256,7 +262,6 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 	if resp.UpdatedBy != nil {
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
-
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
 	}
@@ -271,9 +276,14 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 2 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 

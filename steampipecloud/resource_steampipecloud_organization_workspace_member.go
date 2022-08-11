@@ -143,7 +143,7 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 	orgWorkspaceMemberDetails = resp
 
 	// Set property values
-	d.SetId(fmt.Sprintf("%s:%s:%s", org, workspace, orgWorkspaceMemberDetails.UserHandle))
+	d.SetId(fmt.Sprintf("%s/%s/%s", org, workspace, orgWorkspaceMemberDetails.UserHandle))
 	d.Set("organization_workspace_member_id", orgWorkspaceMemberDetails.Id)
 	d.Set("organization_id", orgWorkspaceMemberDetails.OrgId)
 	d.Set("workspace_id", orgWorkspaceMemberDetails.WorkspaceId)
@@ -175,9 +175,14 @@ func resourceOrganizationWorkspaceMemberRead(ctx context.Context, d *schema.Reso
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 3 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<workspace_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<workspace_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 	workspace := idParts[1]
@@ -194,12 +199,14 @@ func resourceOrganizationWorkspaceMemberRead(ctx context.Context, d *schema.Reso
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("error reading %s:%s.\nerr: %s", org, user, decodeResponse(r))
+		return diag.Errorf("error reading %s/%s.\nerr: %s", org, user, decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Organization Workspace Member received: %s", id)
 
 	// Set the property values
-	d.SetId(id)
+	if separator == ":" {
+		d.SetId(strings.ReplaceAll(id, ":", "/"))
+	}
 	d.Set("organization_workspace_member_id", orgWorkspaceMemberDetails.Id)
 	d.Set("organization_id", orgWorkspaceMemberDetails.OrgId)
 	d.Set("workspace_id", orgWorkspaceMemberDetails.WorkspaceId)
@@ -244,16 +251,16 @@ func resourceOrganizationWorkspaceMemberUpdate(ctx context.Context, d *schema.Re
 		Role: role,
 	}
 
-	log.Printf("\n[DEBUG] Updating membership: '%s:%s:%s'", org, workspace, user)
+	log.Printf("\n[DEBUG] Updating membership: '%s/%s/%s'", org, workspace, user)
 
 	orgWorkspaceMemberDetails, r, err := client.APIClient.OrgWorkspaceMembers.Update(context.Background(), org, workspace, user).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error updating membership: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Membership updated: %s:%s:%s", org, workspace, user)
+	log.Printf("\n[DEBUG] Membership updated: %s/%s/%s", org, workspace, user)
 
 	// Update state file
-	id := fmt.Sprintf("%s:%s:%s", org, workspace, user)
+	id := fmt.Sprintf("%s/%s/%s", org, workspace, user)
 	d.SetId(id)
 	d.Set("organization_workspace_member_id", orgWorkspaceMemberDetails.Id)
 	d.Set("organization_id", orgWorkspaceMemberDetails.OrgId)
@@ -286,9 +293,14 @@ func resourceOrganizationWorkspaceMemberDelete(ctx context.Context, d *schema.Re
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 3 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<workspace_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<workspace_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 	workspace := idParts[1]

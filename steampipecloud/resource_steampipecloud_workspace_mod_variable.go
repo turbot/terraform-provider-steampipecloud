@@ -178,11 +178,11 @@ func resourceWorkspaceModVariableCreateSetting(ctx context.Context, d *schema.Re
 	d.Set("value", FormatJson(resp.Value))
 
 	// If the mod variable belongs to a workspace inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias:VariableName" otherwise "WorkspaceHandle:ModAlias:VariableName"
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias/VariableName" otherwise "WorkspaceHandle/ModAlias/VariableName"
 	if isUser {
-		d.SetId(fmt.Sprintf("%s:%s:%s", workspaceHandle, modAlias, variableName))
+		d.SetId(fmt.Sprintf("%s/%s/%s", workspaceHandle, modAlias, variableName))
 	} else {
-		d.SetId(fmt.Sprintf("%s:%s:%s:%s", orgHandle, workspaceHandle, modAlias, variableName))
+		d.SetId(fmt.Sprintf("%s/%s/%s/%s", orgHandle, workspaceHandle, modAlias, variableName))
 	}
 
 	return diags
@@ -196,11 +196,16 @@ func resourceWorkspaceModVariableRead(ctx context.Context, d *schema.ResourceDat
 	var orgHandle, workspaceHandle, modAlias, variableName string
 	var isUser = false
 
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(d.Id(), ":") {
+		separator = ":"
+	}
 	// If mod is installed for a workspace within an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias" otherwise "WorkspaceHandle:ModAlias"
-	idParts := strings.Split(d.Id(), ":")
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias" otherwise "WorkspaceHandle/ModAlias"
+	idParts := strings.Split(d.Id(), separator)
 	if len(idParts) < 3 && len(idParts) > 4 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<mod-alias>:<name>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<mod-alias>/<name>", d.Id())
 	}
 
 	if len(idParts) == 4 {
@@ -257,11 +262,11 @@ func resourceWorkspaceModVariableRead(ctx context.Context, d *schema.ResourceDat
 	d.Set("value", FormatJson(resp.Value))
 
 	// If the mod variable belongs to a workspace inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias:VariableName" otherwise "WorkspaceHandle:ModAlias:VariableName"
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias/VariableName" otherwise "WorkspaceHandle/ModAlias/VariableName"
 	if isUser {
-		d.SetId(fmt.Sprintf("%s:%s:%s", workspaceHandle, modAlias, variableName))
+		d.SetId(fmt.Sprintf("%s/%s/%s", workspaceHandle, modAlias, variableName))
 	} else {
-		d.SetId(fmt.Sprintf("%s:%s:%s:%s", orgHandle, workspaceHandle, modAlias, variableName))
+		d.SetId(fmt.Sprintf("%s/%s/%s/%s", orgHandle, workspaceHandle, modAlias, variableName))
 	}
 
 	return diags
@@ -327,11 +332,11 @@ func resourceWorkspaceModVariableUpdateSetting(ctx context.Context, d *schema.Re
 	d.Set("value", FormatJson(resp.Value))
 
 	// If the mod variable belongs to a workspace inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ModAlias:VariableName" otherwise "WorkspaceHandle:ModAlias:VariableName"
+	// format "OrganizationHandle/WorkspaceHandle/ModAlias/VariableName" otherwise "WorkspaceHandle/ModAlias/VariableName"
 	if isUser {
-		d.SetId(fmt.Sprintf("%s:%s:%s", workspaceHandle, modAlias, variableName))
+		d.SetId(fmt.Sprintf("%s/%s/%s", workspaceHandle, modAlias, variableName))
 	} else {
-		d.SetId(fmt.Sprintf("%s:%s:%s:%s", orgHandle, workspaceHandle, modAlias, variableName))
+		d.SetId(fmt.Sprintf("%s/%s/%s/%s", orgHandle, workspaceHandle, modAlias, variableName))
 	}
 
 	return diags
@@ -345,9 +350,14 @@ func resourceWorkspaceModVariableDeleteSetting(ctx context.Context, d *schema.Re
 	var orgHandle, workspaceHandle, modAlias, variableName string
 	var isUser = false
 
-	idParts := strings.Split(d.Id(), ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(d.Id(), ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(d.Id(), separator)
 	if len(idParts) < 3 && len(idParts) > 4 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<mod-alias>:<variable-name>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<mod-alias>/<variable-name>", d.Id())
 	}
 
 	if len(idParts) == 4 {

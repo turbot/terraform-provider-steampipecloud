@@ -216,10 +216,10 @@ func resourceWorkspaceConnectionCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("workspace_version_id", workspaceResp.VersionId)
 
 	// If workspace connection association is created inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ConnectionHandle" otherwise "WorkspaceHandle:ConnectionHandle"
-	id := fmt.Sprintf("%s:%s", workspaceHandle, resp.Connection.Handle)
+	// format "OrganizationHandle/WorkspaceHandle/ConnectionHandle" otherwise "WorkspaceHandle/ConnectionHandle"
+	id := fmt.Sprintf("%s/%s", workspaceHandle, resp.Connection.Handle)
 	if strings.HasPrefix(resp.IdentityId, "o_") {
-		d.SetId(fmt.Sprintf("%s:%s", orgHandle, id))
+		d.SetId(fmt.Sprintf("%s/%s", orgHandle, id))
 	} else {
 		d.SetId(id)
 	}
@@ -235,11 +235,16 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	var orgHandle, workspaceHandle, connectionHandle string
 	var isUser = false
 
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(d.Id(), ":") {
+		separator = ":"
+	}
 	// If workspace connection association is created inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle:ConnectionHandle" otherwise "WorkspaceHandle:ConnectionHandle"
-	idParts := strings.Split(d.Id(), ":")
+	// format "OrganizationHandle/WorkspaceHandle/ConnectionHandle" otherwise "WorkspaceHandle/ConnectionHandle"
+	idParts := strings.Split(d.Id(), separator)
 	if len(idParts) < 2 && len(idParts) > 3 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<connection-handle>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
 	}
 
 	if len(idParts) == 3 {
@@ -280,6 +285,9 @@ func resourceWorkspaceConnectionRead(ctx context.Context, d *schema.ResourceData
 	}
 	log.Printf("\n[DEBUG] Association received: %s", resp.Id)
 
+	if separator == ":" {
+		d.SetId(strings.ReplaceAll(d.Id(), ":", "/"))
+	}
 	d.Set("association_id", resp.Id)
 	d.Set("workspace_id", resp.WorkspaceId)
 	d.Set("connection_id", resp.ConnectionId)
@@ -343,12 +351,12 @@ func resourceWorkspaceConnectionUpdate(ctx context.Context, d *schema.ResourceDa
 
 	var id string
 	if workspaceHandle != "" && connHandle != "" {
-		id = fmt.Sprintf("%s:%s", workspaceHandle, connHandle)
+		id = fmt.Sprintf("%s/%s", workspaceHandle, connHandle)
 		d.Set("workspace_handle", workspaceHandle)
 		d.Set("connection_handle", connHandle)
 	}
 	if orgHandle != "" {
-		d.SetId(fmt.Sprintf("%s:%s", orgHandle, id))
+		d.SetId(fmt.Sprintf("%s/%s", orgHandle, id))
 	} else {
 		d.SetId(id)
 	}
@@ -364,9 +372,14 @@ func resourceWorkspaceConnectionDelete(ctx context.Context, d *schema.ResourceDa
 	var orgHandle, workspaceHandle, connectionHandle string
 	var isUser = false
 
-	idParts := strings.Split(d.Id(), ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(d.Id(), ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(d.Id(), separator)
 	if len(idParts) < 2 {
-		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>:<connection-handle>", d.Id())
+		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<connection-handle>", d.Id())
 	}
 
 	if len(idParts) == 3 {
@@ -379,7 +392,7 @@ func resourceWorkspaceConnectionDelete(ctx context.Context, d *schema.ResourceDa
 		connectionHandle = idParts[1]
 	}
 
-	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s:%s", workspaceHandle, connectionHandle))
+	log.Printf("\n[DEBUG] Deleting Workspace Connection association: %s", fmt.Sprintf("%s/%s", workspaceHandle, connectionHandle))
 
 	var err error
 	var r *http.Response
