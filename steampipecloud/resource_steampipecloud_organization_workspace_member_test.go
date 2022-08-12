@@ -58,7 +58,7 @@ resource "steampipecloud_workspace" "test" {
 # Invite the user to the organization
 resource "steampipecloud_organization_member" "test" {
 	organization = steampipecloud_organization.test.handle
-	user_handle  = "user-ioik"
+	email        = "user@domain.com"
 	role         = "member"
 }
 
@@ -66,7 +66,7 @@ resource "steampipecloud_organization_member" "test" {
 resource "steampipecloud_organization_workspace_member" "test" {
 	organization = steampipecloud_organization.test.handle
 	workspace_handle = steampipecloud_workspace.test.handle
-	user_handle        = steampipecloud_organization_member.test.user_handle
+	user_handle      = steampipecloud_organization_member.test.user_handle
 	role         = "reader"
 }`, orgHandle, workspaceHandle)
 }
@@ -113,9 +113,9 @@ func testAccCheckOrganizationWorkspaceMemberExists(resource string) resource.Tes
 
 		// Extract organization handle and user handle from ID
 		id := rs.Primary.ID
-		idParts := strings.Split(id, ":")
+		idParts := strings.Split(id, "/")
 		if len(idParts) < 3 {
-			return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>:<workspace_handle>:<user_handle>", id)
+			return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>/<workspace_handle>/<user_handle>", id)
 		}
 
 		client := testAccProvider.Meta().(*SteampipeClient)
@@ -133,9 +133,9 @@ func testAccCheckOrganizationWorkspaceMemberDestroy(s *terraform.State) error {
 		if rs.Type == "steampipecloud_organization_workspace_member" {
 			// Extract organization handle and user handle from ID
 			id := rs.Primary.ID
-			idParts := strings.Split(id, ":")
+			idParts := strings.Split(id, "/")
 			if len(idParts) < 3 {
-				return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>:<workspace_handle>:<user_handle>", id)
+				return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>/<workspace_handle>/<user_handle>", id)
 			}
 
 			_, r, err := client.APIClient.OrgWorkspaceMembers.Get(context.Background(), idParts[0], idParts[1], idParts[2]).Execute()

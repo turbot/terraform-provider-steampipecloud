@@ -24,9 +24,10 @@ func resourceOrganizationMember() *schema.Resource {
 		},
 		Schema: map[string]*schema.Schema{
 			"user_handle": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"email"},
 			},
 			"role": {
 				Type:     schema.TypeString,
@@ -35,6 +36,12 @@ func resourceOrganizationMember() *schema.Resource {
 			"scope": {
 				Type:     schema.TypeString,
 				Computed: true,
+			},
+			"email": {
+				Type:          schema.TypeString,
+				Optional:      true,
+				Computed:      true,
+				ConflictsWith: []string{"user_handle"},
 			},
 			"organization": {
 				Type:     schema.TypeString,
@@ -104,55 +111,43 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	if value, ok := d.GetOk("user_handle"); ok {
 		req.Handle = types.String(value.(string))
 	}
+	if value, ok := d.GetOk("email"); ok {
+		req.Email = types.String(value.(string))
+	}
 
 	// Return if both handle and email are empty
-	if req.Handle == nil {
-		return diag.Errorf("'user_handle' must be set in resource config")
+	if req.Handle == nil && req.Email == nil {
+		return diag.Errorf("either 'user_handle' or 'email' must be set in resource config")
 	}
 
 	// Invite requested member
-	_, r, err := client.APIClient.OrgMembers.Invite(ctx, org).Request(req).Execute()
+	orgMember, r, err := client.APIClient.OrgMembers.Invite(ctx, org).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error inviting member: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Member invited: %v", decodeResponse(r))
-
-	/*
-	 * If a member is invited using user handle, use `OrgMembers.Get` to fetch the user details
-	 */
-	var orgMemberDetails steampipe.OrgUser
-	if req.Handle != nil {
-		resp, r, err := client.APIClient.OrgMembers.Get(ctx, org, *req.Handle).Execute()
-		if err != nil {
-			if r.StatusCode == 404 {
-				return diag.Errorf("requested member %s not found", *req.Handle)
-			}
-			return diag.Errorf("error reading member %s.\nerr: %s", *req.Handle, decodeResponse(r))
-		}
-		orgMemberDetails = resp
-	}
+	log.Printf("\n[DEBUG] Member invited: %v", orgMember)
 
 	// Set property values
-	d.SetId(fmt.Sprintf("%s/%s", org, orgMemberDetails.UserHandle))
-	d.Set("user_handle", orgMemberDetails.UserHandle)
-	d.Set("created_at", orgMemberDetails.CreatedAt)
-	d.Set("organization_member_id", orgMemberDetails.Id)
-	d.Set("organization_id", orgMemberDetails.OrgId)
-	d.Set("role", orgMemberDetails.Role)
-	d.Set("scope", orgMemberDetails.Scope)
-	d.Set("status", orgMemberDetails.Status)
-	d.Set("updated_at", orgMemberDetails.UpdatedAt)
-	d.Set("user_id", orgMemberDetails.UserId)
-	d.Set("version_id", orgMemberDetails.VersionId)
-	if orgMemberDetails.CreatedBy != nil {
-		d.Set("created_by", orgMemberDetails.CreatedBy.Handle)
+	d.SetId(fmt.Sprintf("%s/%s", org, orgMember.UserHandle))
+	d.Set("user_handle", orgMember.UserHandle)
+	d.Set("created_at", orgMember.CreatedAt)
+	d.Set("organization_member_id", orgMember.Id)
+	d.Set("organization_id", orgMember.OrgId)
+	d.Set("role", orgMember.Role)
+	d.Set("scope", orgMember.Scope)
+	d.Set("status", orgMember.Status)
+	d.Set("updated_at", orgMember.UpdatedAt)
+	d.Set("user_id", orgMember.UserId)
+	d.Set("version_id", orgMember.VersionId)
+	if orgMember.CreatedBy != nil {
+		d.Set("created_by", orgMember.CreatedBy.Handle)
 	}
-	if orgMemberDetails.UpdatedBy != nil {
-		d.Set("updated_by", orgMemberDetails.UpdatedBy.Handle)
+	if orgMember.UpdatedBy != nil {
+		d.Set("updated_by", orgMember.UpdatedBy.Handle)
 	}
 
-	if orgMemberDetails.User != nil {
-		d.Set("display_name", orgMemberDetails.User.DisplayName)
+	if orgMember.User != nil {
+		d.Set("display_name", orgMember.User.DisplayName)
 	}
 
 	return diags
@@ -172,7 +167,7 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	}
 	idParts := strings.Split(id, separator)
 	if len(idParts) < 2 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 

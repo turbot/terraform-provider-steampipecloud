@@ -51,7 +51,7 @@ resource "steampipecloud_organization" "test" {
 # Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
 	organization = steampipecloud_organization.test.handle
-	user_handle  = "user-ioik"
+	email        = "user@domain.com"
 	role         = "member"
 }`, orgHandle)
 }
@@ -67,7 +67,7 @@ resource "steampipecloud_organization" "test" {
 # Please provide a valid email
 resource "steampipecloud_organization_member" "test" {
   organization = steampipecloud_organization.test.handle
-  user_handle  = "user-ioik"
+  email        = "user@domain.com"
   role         = "owner"
 }`, orgHandle)
 }
@@ -85,9 +85,9 @@ func testAccCheckOrganizationMemberExists(resource string) resource.TestCheckFun
 
 		// Extract organization handle and user handle from ID
 		id := rs.Primary.ID
-		idParts := strings.Split(id, ":")
+		idParts := strings.Split(id, "/")
 		if len(idParts) < 2 {
-			return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
+			return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>/<user_handle>", id)
 		}
 
 		client := testAccProvider.Meta().(*SteampipeClient)
@@ -105,9 +105,9 @@ func testAccCheckOrganizationMemberDestroy(s *terraform.State) error {
 		if rs.Type == "steampipecloud_organization_member" {
 			// Extract organization handle and user handle from ID
 			id := rs.Primary.ID
-			idParts := strings.Split(id, ":")
+			idParts := strings.Split(id, "/")
 			if len(idParts) < 2 {
-				return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
+				return fmt.Errorf("unexpected format of ID (%q), expected <organization_handle>/<user_handle>", id)
 			}
 
 			_, r, err := client.APIClient.OrgMembers.Get(context.Background(), idParts[0], idParts[1]).Execute()
