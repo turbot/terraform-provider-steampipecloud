@@ -65,8 +65,8 @@ terraform import steampipecloud_workspace.example myworkspace
 
 ### Import Organization Workspace
 
-Organization workspaces can be imported using an ID made up of `organization_handle:workspace_handle`, e.g.,
+Organization workspaces can be imported using an ID made up of `organization_handle/workspace_handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_workspace.example myorg:myworkspace
+terraform import steampipecloud_workspace.example myorg/myworkspace
 ```

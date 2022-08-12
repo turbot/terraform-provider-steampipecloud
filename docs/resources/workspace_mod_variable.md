@@ -87,16 +87,16 @@ In addition to all arguments above, the following attributes are exported:
 
 ### Import User Workspace Mod Variable
 
-User workspace mod variables can be imported using an ID made up of `workspace_handle:mod_alias:variable_name`, e.g.,
+User workspace mod variables can be imported using an ID made up of `workspace_handle/mod_alias/variable_name`, e.g.,
 
 ```sh
-terraform import steampipecloud_workspace_mod.example dev:aws_tags:mandatory_tags
+terraform import steampipecloud_workspace_mod.example dev/aws_tags/mandatory_tags
 ```
 
 ### Import Organization Workspace Mod Variable
 
-Organization workspace mod variables can be imported using an ID made up of `organization_handle:workspace_handle:mod_alias:variable_name`, e.g.,
+Organization workspace mod variables can be imported using an ID made up of `organization_handle/workspace_handle/mod_alias/variable_name`, e.g.,
 
 ```sh
-terraform import steampipecloud_workspace_mod.example myorg:dev:aws_tags:mandatory_tags
+terraform import steampipecloud_workspace_mod.example myorg/dev/aws_tags/mandatory_tags
 ```
