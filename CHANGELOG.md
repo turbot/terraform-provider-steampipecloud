@@ -4,18 +4,21 @@ FEATURES:
 
 * **New Resource:** `steampipecloud_workspace_snapshot`
 
+ENHANCEMENTS:
+
+* `resources/steampipecloud_organization_member`: Remove redundant call to get orgMember. 
+
 BREAKING CHANGES:
 
 * `datasource/steampipecloud_user`: Remove `email` attribute
 * `resources/steampipecloud_organization_workspace_member`: Remove `email` attribute.
-* `resources/steampipecloud_organization_workspace_member`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<user-handle>
-* `resources/steampipecloud_connection`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<connection-handle>
-* `resources/steampipecloud_organization_member`: Remove redundant call to get orgMember. 
-* `resources/steampipecloud_organization_member`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<user-handle>
-* `resources/steampipecloud_workspace`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>
-* `resources/steampipecloud_workspace_connection`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<connection-handle>
-* `resources/steampipecloud_workspace_mod`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<mod-alias>
-* `resources/steampipecloud_workspace_mod_variable`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<mod-alias>/<variable-name>
+* `resources/steampipecloud_organization_workspace_member`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>/<user-handle>`
+* `resources/steampipecloud_connection`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<connection-handle>`
+* `resources/steampipecloud_organization_member`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<user-handle>`
+* `resources/steampipecloud_workspace`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>`
+* `resources/steampipecloud_workspace_connection`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>/<connection-handle>`
+* `resources/steampipecloud_workspace_mod`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>/<mod-alias>`
+* `resources/steampipecloud_workspace_mod_variable`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>/<mod-alias>/<variable-name>`
 
 ## 0.5.0 (July 20, 2022)
 
