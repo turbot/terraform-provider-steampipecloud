@@ -1,8 +1,11 @@
-## 1.0.0 (August 12, 2022)
+## 0.6.0 (August 19, 2022)
 
 FEATURES:
 
 * **New Resource:** `steampipecloud_workspace_snapshot`
+
+BREAKING CHANGES:
+
 * `datasource/steampipecloud_user`: Remove `email` attribute
 * `resources/steampipecloud_organization_workspace_member`: Remove `email` attribute.
 * `resources/steampipecloud_organization_workspace_member`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<user-handle>
@@ -13,7 +16,6 @@ FEATURES:
 * `resources/steampipecloud_workspace_connection`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<connection-handle>
 * `resources/steampipecloud_workspace_mod`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<mod-alias>
 * `resources/steampipecloud_workspace_mod_variable`: Resource to use "/" as a separator for id instead of ":" e.g. <org-handle>/<workspace-handle>/<mod-alias>/<variable-name>
-
 
 ## 0.5.0 (July 20, 2022)
 
