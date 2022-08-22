@@ -5,7 +5,7 @@ PKG_NAME=steampipecloud
 VERSION=0.0.1
 DIR=~/.terraform.d/plugins
 TEST?=$$(go list ./... |grep -v 'vendor')
-RUN=TestAccUserWorkspaceModVariable_Basic
+RUN=TestAccOrganizationMember_Basic
 
 default: build
 

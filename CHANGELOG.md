@@ -1,12 +1,4 @@
-## 0.6.0 (August 19, 2022)
-
-FEATURES:
-
-* **New Resource:** `steampipecloud_workspace_snapshot`
-
-ENHANCEMENTS:
-
-* `resources/steampipecloud_organization_member`: Remove redundant call to get orgMember. 
+## 0.6.0 (August 22, 2022)
 
 BREAKING CHANGES:
 
@@ -19,6 +11,14 @@ BREAKING CHANGES:
 * `resources/steampipecloud_workspace_connection`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>/<connection-handle>`
 * `resources/steampipecloud_workspace_mod`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>/<mod-alias>`
 * `resources/steampipecloud_workspace_mod_variable`: Resource to use `/` as a separator for id instead of `:` e.g. `<org-handle>/<workspace-handle>/<mod-alias>/<variable-name>`
+
+FEATURES:
+
+* **New Resource:** `steampipecloud_workspace_snapshot`
+
+ENHANCEMENTS:
+
+* `resources/steampipecloud_organization_member`: Remove redundant call to get orgMember. 
 
 ## 0.5.0 (July 20, 2022)
 
