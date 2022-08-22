@@ -31,7 +31,7 @@ $ make build
 
 If you're building the provider, follow the instructions to [install it as a plugin.](https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin) After placing it into your plugins directory, run `terraform init` to initialize it.
 
-Further [usage documentation is available on the Terraform website](https://www.terraform.io/docs/providers/steampipecloud/index.html).
+Further [usage documentation is available on the Terraform website](https://registry.terraform.io/providers/turbot/steampipecloud/latest/docs).
 
 ## Developing the Provider
 
