@@ -20,7 +20,6 @@ data "steampipecloud_user" "caller" {}
 The following attributes are exported.
 
 - `display_name` - Display name of the user.
-- `email` - Email of the user.
 - `handle` - Steampipe handle of the user.
 - `user_id` - Steampipe user ID.
 - `preview_access_mode` - Preview access mode of the user in https://cloud.steampipe.io/.

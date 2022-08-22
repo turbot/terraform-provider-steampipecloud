@@ -79,8 +79,8 @@ In addition to all arguments above, the following attributes are exported:
 
 ## Import
 
-Organization memberships can be imported using an ID made up of `organization_handle:user_handle`, e.g.,
+Organization memberships can be imported using an ID made up of `organization_handle/user_handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_organization_member.example hashicorp:someuser
+terraform import steampipecloud_organization_member.example hashicorp/someuser
 ```

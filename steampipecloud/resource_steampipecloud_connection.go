@@ -155,9 +155,9 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	}
 
 	// If connection is created inside an Organization the id will be of the
-	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
+	// format "OrganizationHandle/ConnectionHandle" otherwise "ConnectionHandle"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
-		d.SetId(fmt.Sprintf("%s:%s", orgHandle, resp.Handle))
+		d.SetId(fmt.Sprintf("%s/%s", orgHandle, resp.Handle))
 	} else {
 		d.SetId(resp.Handle)
 	}
@@ -177,9 +177,14 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	var isUser = false
 	id := d.Id()
 
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
 	// If connection exists inside an Organization the id will be of the
-	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
-	ids := strings.Split(id, ":")
+	// format "OrganizationHandle/ConnectionHandle" otherwise "ConnectionHandle"
+	ids := strings.Split(id, separator)
 	if len(ids) == 2 {
 		orgHandle = ids[0]
 		connectionHandle = ids[1]
@@ -230,6 +235,9 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
 	d.Set("version_id", resp.VersionId)
+	if separator == ":" {
+		d.SetId(strings.ReplaceAll(id, ":", "/"))
+	}
 
 	return diags
 }
@@ -296,9 +304,9 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("version_id", resp.VersionId)
 
 	// If connection exists inside an Organization the id will be of the
-	// format "OrganizationHandle:ConnectionHandle" otherwise "ConnectionHandle"
+	// format "OrganizationHandle/ConnectionHandle" otherwise "ConnectionHandle"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
-		d.SetId(fmt.Sprintf("%s:%s", orgHandle, resp.Handle))
+		d.SetId(fmt.Sprintf("%s/%s", orgHandle, resp.Handle))
 	} else {
 		d.SetId(resp.Handle)
 	}

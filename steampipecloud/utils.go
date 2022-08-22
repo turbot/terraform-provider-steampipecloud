@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 // isUserConnection:: Check if the connection is scoped on an user or a specific organization
@@ -27,6 +28,29 @@ func getUserHandler(ctx context.Context, client *SteampipeClient) (string, *http
 		return "", r, err
 	}
 	return resp.Handle, r, nil
+}
+
+func getWorkspaceDetails(ctx context.Context, client *SteampipeClient, d *schema.ResourceData) (*steampipe.Workspace, *http.Response, error) {
+	var resp steampipe.Workspace
+	var r *http.Response
+	var err error
+	// Get the workspace handle information
+	workspaceHandle := d.Get("workspace_handle").(string)
+	isUser, orgHandle := isUserConnection(d)
+	if isUser {
+		actorHandle, r, err := getUserHandler(ctx, client)
+		if err != nil {
+			return nil, r, err
+		}
+		resp, r, err = client.APIClient.UserWorkspaces.Get(ctx, actorHandle, workspaceHandle).Execute()
+	} else {
+		resp, r, err = client.APIClient.OrgWorkspaces.Get(ctx, orgHandle, workspaceHandle).Execute()
+	}
+
+	if err != nil {
+		return nil, r, err
+	}
+	return &resp, r, nil
 }
 
 // Decode response body

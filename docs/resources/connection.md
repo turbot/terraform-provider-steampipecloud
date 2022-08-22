@@ -190,8 +190,8 @@ terraform import steampipecloud_connection.example aws_aaa
 
 ### Import Organization Connection
 
-Organization connections can be imported using an ID made up of `organization_handle:connection_handle`, e.g.,
+Organization connections can be imported using an ID made up of `organization_handle/connection_handle`, e.g.,
 
 ```sh
-terraform import steampipecloud_connection.example myorg:aws_aab
+terraform import steampipecloud_connection.example myorg/aws_aab
 ```

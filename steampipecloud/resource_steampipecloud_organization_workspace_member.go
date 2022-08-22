@@ -47,20 +47,13 @@ func resourceOrganizationWorkspaceMember() *schema.Resource {
 				Computed: true,
 			},
 			"user_handle": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"email"},
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
 			},
 			"display_name": {
 				Type:     schema.TypeString,
 				Computed: true,
-			},
-			"email": {
-				Type:          schema.TypeString,
-				Optional:      true,
-				Computed:      true,
-				ConflictsWith: []string{"user_handle"},
 			},
 			"status": {
 				Type:     schema.TypeString,
@@ -150,7 +143,7 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 	orgWorkspaceMemberDetails = resp
 
 	// Set property values
-	d.SetId(fmt.Sprintf("%s:%s:%s", org, workspace, orgWorkspaceMemberDetails.UserHandle))
+	d.SetId(fmt.Sprintf("%s/%s/%s", org, workspace, orgWorkspaceMemberDetails.UserHandle))
 	d.Set("organization_workspace_member_id", orgWorkspaceMemberDetails.Id)
 	d.Set("organization_id", orgWorkspaceMemberDetails.OrgId)
 	d.Set("workspace_id", orgWorkspaceMemberDetails.WorkspaceId)
@@ -159,7 +152,6 @@ func resourceOrganizationWorkspaceMemberCreate(ctx context.Context, d *schema.Re
 	if orgWorkspaceMemberDetails.User != nil {
 		d.Set("display_name", orgWorkspaceMemberDetails.User.DisplayName)
 	}
-	d.Set("email", orgWorkspaceMemberDetails.Email)
 	d.Set("status", orgWorkspaceMemberDetails.Status)
 	d.Set("role", orgWorkspaceMemberDetails.Role)
 	d.Set("scope", orgWorkspaceMemberDetails.Scope)
@@ -183,9 +175,14 @@ func resourceOrganizationWorkspaceMemberRead(ctx context.Context, d *schema.Reso
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 3 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<workspace_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<workspace_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 	workspace := idParts[1]
@@ -202,12 +199,14 @@ func resourceOrganizationWorkspaceMemberRead(ctx context.Context, d *schema.Reso
 			d.SetId("")
 			return nil
 		}
-		return diag.Errorf("error reading %s:%s.\nerr: %s", org, user, decodeResponse(r))
+		return diag.Errorf("error reading %s/%s.\nerr: %s", org, user, decodeResponse(r))
 	}
 	log.Printf("\n[DEBUG] Organization Workspace Member received: %s", id)
 
 	// Set the property values
-	d.SetId(id)
+	if separator == ":" {
+		d.SetId(strings.ReplaceAll(id, ":", "/"))
+	}
 	d.Set("organization_workspace_member_id", orgWorkspaceMemberDetails.Id)
 	d.Set("organization_id", orgWorkspaceMemberDetails.OrgId)
 	d.Set("workspace_id", orgWorkspaceMemberDetails.WorkspaceId)
@@ -216,7 +215,6 @@ func resourceOrganizationWorkspaceMemberRead(ctx context.Context, d *schema.Reso
 	if orgWorkspaceMemberDetails.User != nil {
 		d.Set("display_name", orgWorkspaceMemberDetails.User.DisplayName)
 	}
-	d.Set("email", orgWorkspaceMemberDetails.Email)
 	d.Set("status", orgWorkspaceMemberDetails.Status)
 	d.Set("role", orgWorkspaceMemberDetails.Role)
 	d.Set("scope", orgWorkspaceMemberDetails.Scope)
@@ -253,16 +251,16 @@ func resourceOrganizationWorkspaceMemberUpdate(ctx context.Context, d *schema.Re
 		Role: role,
 	}
 
-	log.Printf("\n[DEBUG] Updating membership: '%s:%s:%s'", org, workspace, user)
+	log.Printf("\n[DEBUG] Updating membership: '%s/%s/%s'", org, workspace, user)
 
 	orgWorkspaceMemberDetails, r, err := client.APIClient.OrgWorkspaceMembers.Update(context.Background(), org, workspace, user).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error updating membership: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Membership updated: %s:%s:%s", org, workspace, user)
+	log.Printf("\n[DEBUG] Membership updated: %s/%s/%s", org, workspace, user)
 
 	// Update state file
-	id := fmt.Sprintf("%s:%s:%s", org, workspace, user)
+	id := fmt.Sprintf("%s/%s/%s", org, workspace, user)
 	d.SetId(id)
 	d.Set("organization_workspace_member_id", orgWorkspaceMemberDetails.Id)
 	d.Set("organization_id", orgWorkspaceMemberDetails.OrgId)
@@ -272,7 +270,6 @@ func resourceOrganizationWorkspaceMemberUpdate(ctx context.Context, d *schema.Re
 	if orgWorkspaceMemberDetails.User != nil {
 		d.Set("display_name", orgWorkspaceMemberDetails.User.DisplayName)
 	}
-	d.Set("email", orgWorkspaceMemberDetails.Email)
 	d.Set("status", orgWorkspaceMemberDetails.Status)
 	d.Set("role", orgWorkspaceMemberDetails.Role)
 	d.Set("scope", orgWorkspaceMemberDetails.Scope)
@@ -296,9 +293,14 @@ func resourceOrganizationWorkspaceMemberDelete(ctx context.Context, d *schema.Re
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 3 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<workspace_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<workspace_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 	workspace := idParts[1]
@@ -313,39 +315,4 @@ func resourceOrganizationWorkspaceMemberDelete(ctx context.Context, d *schema.Re
 	d.SetId("")
 
 	return diags
-}
-
-// List all members of the workspace in the org.
-func listOrganizationWorkspaceMembers(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgWorkspaceUser, error) {
-	client := meta.(*SteampipeClient)
-
-	// Get the organization handle
-	org := d.Get("organization").(string)
-
-	// Get the workspace handle
-	workspace := d.Get("workspace_handle").(string)
-
-	pagesLeft := true
-	var resp steampipe.ListOrgWorkspaceUsersResponse
-	var err error
-
-	for pagesLeft {
-		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.List(context.Background(), org, workspace).NextToken(*resp.NextToken).Execute()
-		} else {
-			resp, _, err = client.APIClient.OrgWorkspaceMembers.List(context.Background(), org, workspace).Execute()
-		}
-
-		if err != nil {
-			return steampipe.OrgWorkspaceUser{}, err
-		}
-
-		for _, i := range *resp.Items {
-			if (email != nil && i.Email == *email) || (handle != nil && i.UserHandle == *handle) {
-				return i, nil
-			}
-		}
-	}
-
-	return steampipe.OrgWorkspaceUser{}, nil
 }

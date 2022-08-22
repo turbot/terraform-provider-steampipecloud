@@ -145,9 +145,9 @@ func resourceWorkspaceCreate(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("version_id", resp.VersionId)
 
 	// If workspace is created inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle" otherwise "WorkspaceHandle"
+	// format "OrganizationHandle/WorkspaceHandle" otherwise "WorkspaceHandle"
 	if strings.HasPrefix(resp.IdentityId, "o_") {
-		d.SetId(fmt.Sprintf("%s:%s", orgHandle, resp.Handle))
+		d.SetId(fmt.Sprintf("%s/%s", orgHandle, resp.Handle))
 	} else {
 		d.SetId(resp.Handle)
 	}
@@ -169,9 +169,14 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	id := d.Id()
 
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
 	// If workspace exists inside an Organization the id will be of the
-	// format "OrganizationHandle:WorkspaceHandle" otherwise "WorkspaceHandle"
-	ids := strings.Split(id, ":")
+	// format "OrganizationHandle/WorkspaceHandle" otherwise "WorkspaceHandle"
+	ids := strings.Split(id, separator)
 	if len(ids) == 2 {
 		orgHandle = ids[0]
 		workspaceHandle = ids[1]
@@ -221,6 +226,9 @@ func resourceWorkspaceRead(ctx context.Context, d *schema.ResourceData, meta int
 	d.Set("host", resp.Host)
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("version_id", resp.VersionId)
+	if separator == ":" {
+		d.SetId(strings.ReplaceAll(id, ":", "/"))
+	}
 
 	return diags
 }
@@ -280,6 +288,14 @@ func resourceWorkspaceUpdate(ctx context.Context, d *schema.ResourceData, meta i
 	d.Set("host", resp.Host)
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("version_id", resp.VersionId)
+
+	// If workspace is created inside an Organization the id will be of the
+	// format "OrganizationHandle/WorkspaceHandle" otherwise "WorkspaceHandle"
+	if strings.HasPrefix(resp.IdentityId, "o_") {
+		d.SetId(fmt.Sprintf("%s/%s", orgHandle, resp.Handle))
+	} else {
+		d.SetId(resp.Handle)
+	}
 
 	return diags
 }

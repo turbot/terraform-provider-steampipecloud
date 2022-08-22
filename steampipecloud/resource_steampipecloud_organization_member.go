@@ -121,59 +121,33 @@ func resourceOrganizationMemberCreate(ctx context.Context, d *schema.ResourceDat
 	}
 
 	// Invite requested member
-	_, r, err := client.APIClient.OrgMembers.Invite(ctx, org).Request(req).Execute()
+	orgMember, r, err := client.APIClient.OrgMembers.Invite(ctx, org).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error inviting member: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Member invited: %v", decodeResponse(r))
-
-	/*
-	 * If a member is invited using user handle, use `OrgMembers.Get` to fetch the user details
-	 * If a member is invited using an email;
-	   * List all organization users, and find the requested user; if found return the requested user
-	 * TODO:: As of Dec 15, 2021, SDK doesn't support `email` in `OrgMembers.Get` API. If the API supports `email`, list operations can be ignored.
-	*/
-	var orgMemberDetails steampipe.OrgUser
-	if req.Handle != nil {
-		resp, r, err := client.APIClient.OrgMembers.Get(ctx, org, *req.Handle).Execute()
-		if err != nil {
-			if r.StatusCode == 404 {
-				return diag.Errorf("requested member %s not found", *req.Handle)
-			}
-			return diag.Errorf("error reading member %s.\nerr: %s", *req.Handle, decodeResponse(r))
-		}
-		orgMemberDetails = resp
-	} else {
-		data, err := listOrganizationMembers(d, meta, req.Handle, req.Email)
-
-		if err != nil {
-			return diag.Errorf("error fetching member from the list.\nerr: %s", decodeResponse(r))
-		}
-		orgMemberDetails = data
-	}
+	log.Printf("\n[DEBUG] Member invited: %v", orgMember)
 
 	// Set property values
-	d.SetId(fmt.Sprintf("%s:%s", org, orgMemberDetails.UserHandle))
-	d.Set("user_handle", orgMemberDetails.UserHandle)
-	d.Set("created_at", orgMemberDetails.CreatedAt)
-	d.Set("email", orgMemberDetails.Email)
-	d.Set("organization_member_id", orgMemberDetails.Id)
-	d.Set("organization_id", orgMemberDetails.OrgId)
-	d.Set("role", orgMemberDetails.Role)
-	d.Set("scope", orgMemberDetails.Scope)
-	d.Set("status", orgMemberDetails.Status)
-	d.Set("updated_at", orgMemberDetails.UpdatedAt)
-	d.Set("user_id", orgMemberDetails.UserId)
-	d.Set("version_id", orgMemberDetails.VersionId)
-	if orgMemberDetails.CreatedBy != nil {
-		d.Set("created_by", orgMemberDetails.CreatedBy.Handle)
+	d.SetId(fmt.Sprintf("%s/%s", org, orgMember.UserHandle))
+	d.Set("user_handle", orgMember.UserHandle)
+	d.Set("created_at", orgMember.CreatedAt)
+	d.Set("organization_member_id", orgMember.Id)
+	d.Set("organization_id", orgMember.OrgId)
+	d.Set("role", orgMember.Role)
+	d.Set("scope", orgMember.Scope)
+	d.Set("status", orgMember.Status)
+	d.Set("updated_at", orgMember.UpdatedAt)
+	d.Set("user_id", orgMember.UserId)
+	d.Set("version_id", orgMember.VersionId)
+	if orgMember.CreatedBy != nil {
+		d.Set("created_by", orgMember.CreatedBy.Handle)
 	}
-	if orgMemberDetails.UpdatedBy != nil {
-		d.Set("updated_by", orgMemberDetails.UpdatedBy.Handle)
+	if orgMember.UpdatedBy != nil {
+		d.Set("updated_by", orgMember.UpdatedBy.Handle)
 	}
 
-	if orgMemberDetails.User != nil {
-		d.Set("display_name", orgMemberDetails.User.DisplayName)
+	if orgMember.User != nil {
+		d.Set("display_name", orgMember.User.DisplayName)
 	}
 
 	return diags
@@ -186,9 +160,14 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 2 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 
@@ -208,10 +187,11 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	}
 	log.Printf("\n[DEBUG] Organization Member received: %s", id)
 
-	d.SetId(id)
+	if separator == ":" {
+		d.SetId(strings.ReplaceAll(id, ":", "/"))
+	}
 	d.Set("user_handle", resp.UserHandle)
 	d.Set("created_at", resp.CreatedAt)
-	d.Set("email", resp.Email)
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
@@ -226,7 +206,6 @@ func resourceOrganizationMemberRead(ctx context.Context, d *schema.ResourceData,
 	if resp.UpdatedBy != nil {
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
-
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
 	}
@@ -251,20 +230,19 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 		Role: role,
 	}
 
-	log.Printf("\n[DEBUG] Updating membership: '%s:%s'", org, userHandle)
+	log.Printf("\n[DEBUG] Updating membership: '%s/%s'", org, userHandle)
 
 	resp, r, err := client.APIClient.OrgMembers.Update(context.Background(), org, userHandle).Request(req).Execute()
 	if err != nil {
 		return diag.Errorf("error updating membership: %s", decodeResponse(r))
 	}
-	log.Printf("\n[DEBUG] Membership updated: %s:%s", org, resp.UserHandle)
+	log.Printf("\n[DEBUG] Membership updated: %s/%s", org, resp.UserHandle)
 
 	// Update state file
-	id := fmt.Sprintf("%s:%s", org, resp.UserHandle)
+	id := fmt.Sprintf("%s/%s", org, resp.UserHandle)
 	d.SetId(id)
 	d.Set("user_handle", resp.UserHandle)
 	d.Set("created_at", resp.CreatedAt)
-	d.Set("email", resp.Email)
 	d.Set("organization_member_id", resp.Id)
 	d.Set("organization_id", resp.OrgId)
 	d.Set("role", resp.Role)
@@ -279,7 +257,6 @@ func resourceOrganizationMemberUpdate(ctx context.Context, d *schema.ResourceDat
 	if resp.UpdatedBy != nil {
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
-
 	if resp.User != nil {
 		d.Set("display_name", resp.User.DisplayName)
 	}
@@ -294,9 +271,14 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 	var diags diag.Diagnostics
 
 	id := d.Id()
-	idParts := strings.Split(id, ":")
+	// For backward-compatibility, we see whether the id contains : or /
+	separator := "/"
+	if strings.Contains(id, ":") {
+		separator = ":"
+	}
+	idParts := strings.Split(id, separator)
 	if len(idParts) < 2 {
-		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>:<user_handle>", id)
+		return diag.Errorf("unexpected format of ID (%q), expected <organization_handle>/<user_handle>", id)
 	}
 	org := idParts[0]
 
@@ -309,36 +291,4 @@ func resourceOrganizationMemberDelete(ctx context.Context, d *schema.ResourceDat
 	d.SetId("")
 
 	return diags
-}
-
-// List all the members of the organization.
-func listOrganizationMembers(d *schema.ResourceData, meta interface{}, handle *string, email *string) (steampipe.OrgUser, error) {
-	client := meta.(*SteampipeClient)
-
-	// Get the organization
-	org := d.Get("organization").(string)
-
-	pagesLeft := true
-	var resp steampipe.ListOrgUsersResponse
-	var err error
-
-	for pagesLeft {
-		if resp.NextToken != nil {
-			resp, _, err = client.APIClient.OrgMembers.List(context.Background(), org).NextToken(*resp.NextToken).Execute()
-		} else {
-			resp, _, err = client.APIClient.OrgMembers.List(context.Background(), org).Execute()
-		}
-
-		if err != nil {
-			return steampipe.OrgUser{}, err
-		}
-
-		for _, i := range *resp.Items {
-			if (email != nil && i.Email == *email) || (handle != nil && i.UserHandle == *handle) {
-				return i, nil
-			}
-		}
-	}
-
-	return steampipe.OrgUser{}, nil
 }

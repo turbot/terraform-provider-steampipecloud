@@ -2,8 +2,10 @@ package steampipecloud
 
 import (
 	"context"
+	"crypto/tls"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 	"os"
 
@@ -39,6 +41,7 @@ func Provider() *schema.Provider {
 			"steampipecloud_workspace_connection":          resourceWorkspaceConnection(),
 			"steampipecloud_workspace_mod":                 resourceWorkspaceMod(),
 			"steampipecloud_workspace_mod_variable":        resourceWorkspaceModVariable(),
+			"steampipecloud_workspace_snapshot":            resourceWorkspaceSnapshot(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipecloud_organization": dataSourceOrganization(),
@@ -107,10 +110,10 @@ func CreateClient(config *Config, diags diag.Diagnostics) (*steampipe.APIClient,
 	}
 
 	// For Local Steampipe Cloud Testing
-	// tr := &http.Transport{
-	// 	TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
-	// }
-	// configuration.HTTPClient = &http.Client{Transport: tr}
+	tr := &http.Transport{
+		TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+	}
+	configuration.HTTPClient = &http.Client{Transport: tr}
 
 	var steampipeCloudToken string
 	if config.Token != "" {
