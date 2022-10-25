@@ -42,6 +42,7 @@ func Provider() *schema.Provider {
 			"steampipecloud_workspace_mod":                 resourceWorkspaceMod(),
 			"steampipecloud_workspace_mod_variable":        resourceWorkspaceModVariable(),
 			"steampipecloud_workspace_snapshot":            resourceWorkspaceSnapshot(),
+			"steampipecloud_user_preferences":              resourceUserPreferences(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipecloud_organization": dataSourceOrganization(),
@@ -88,9 +89,9 @@ type Config struct {
 }
 
 /*
-	precedence of credentials:
-	1. token set in config
-	2. ENV vars {STEAMPIPE_CLOUD_TOKEN}
+precedence of credentials:
+1. token set in config
+2. ENV vars {STEAMPIPE_CLOUD_TOKEN}
 */
 func CreateClient(config *Config, diags diag.Diagnostics) (*steampipe.APIClient, diag.Diagnostics) {
 	configuration := steampipe.NewConfiguration()
