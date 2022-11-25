@@ -49,18 +49,18 @@ func TestAccUserPreferences_Basic(t *testing.T) {
 // configs
 func testAccUserPreferencesConfig() string {
 	return `
-resource "steampipecloud_user_preferences" "test" {
-	communication_community_updates       = "enabled"
-}
-`
+		resource "steampipecloud_user_preferences" "test" {
+			communication_community_updates       = "enabled"
+		}
+	`
 }
 
 func testAccUserPreferencesModifyCommunityUpdatePreference() string {
 	return `
-resource "steampipecloud_user_preferences" "test" {
-	communication_community_updates       = "disabled"
-}
-`
+		resource "steampipecloud_user_preferences" "test" {
+			communication_community_updates       = "disabled"
+		}
+	`
 }
 
 func testAccCheckUserPreferencesDestroy(s *terraform.State) error {
