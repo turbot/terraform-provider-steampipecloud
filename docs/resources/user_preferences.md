@@ -16,9 +16,9 @@ Allows a user to manage various preferences related to their steampipe cloud pro
 
 ```hcl
 resource "steampipecloud_user_preferences" "enable_all_emails" {
-	communication_community_updates       = "enabled"
-    communication_product_updates         = "enabled"
-    communication_tips_and_tricks         = "enabled"
+  communication_community_updates       = "enabled"
+  communication_product_updates         = "enabled"
+  communication_tips_and_tricks         = "enabled"
 }
 ```
 
