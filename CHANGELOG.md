@@ -1,3 +1,9 @@
+## 0.8.0 (December 7, 2022)
+
+FEATURES:
+
+* `resources/steampipecloud_workspace_snapshot`: Add `expires_at` attribute. 
+
 ## 0.7.0 (December 6, 2022)
 
 FEATURES:
