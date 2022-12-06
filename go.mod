@@ -6,7 +6,7 @@ require github.com/turbot/go-kit v0.3.0
 
 require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.10.0
-	github.com/turbot/steampipe-cloud-sdk-go v0.2.0
+	github.com/turbot/steampipe-cloud-sdk-go v0.3.0
 )
 
 require (
