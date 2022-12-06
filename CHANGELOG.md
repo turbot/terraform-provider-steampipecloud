@@ -1,3 +1,9 @@
+## 0.7.0 (December 6, 2022)
+
+FEATURES:
+
+* **New Resource:** `steampipecloud_user_preferences`
+
 ## 0.6.0 (August 22, 2022)
 
 BREAKING CHANGES:
