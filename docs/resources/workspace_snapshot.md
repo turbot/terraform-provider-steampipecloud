@@ -67,6 +67,7 @@ In addition to all arguments above, the following attributes are exported:
 - `dashboard_name` - The name of the dashboard for which the snapshot was captured.
 - `dashboard_title` - The title of the dashboard for which the snapshot was captured.
 - `data` - The data captured for the snapshot.
+- `expires_at` - The ISO 8601 date & time the snapshot will expire.
 - `identity_id` - The unique identifier of the entity, where the snapshot was captured.
 - `inputs` - The inputs and their values used for this snapshot.
 - `organization` - The handle of the organization where the snapshot is captured.

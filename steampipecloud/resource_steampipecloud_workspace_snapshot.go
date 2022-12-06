@@ -85,6 +85,11 @@ func resourceWorkspaceSnapshot() *schema.Resource {
 				Optional: true,
 				Computed: true,
 			},
+			"expires_at": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"created_by": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -174,6 +179,7 @@ func resourceWorkspaceSnapshotCreate(ctx context.Context, d *schema.ResourceData
 	d.Set("tags", FormatJson(resp.Tags))
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	d.Set("expires_at", resp.ExpiresAt)
 	if resp.CreatedBy != nil {
 		d.Set("created_by", resp.CreatedBy.Handle)
 	}
@@ -254,6 +260,7 @@ func resourceWorkspaceSnapshotRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("tags", FormatJson(resp.Tags))
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	d.Set("expires_at", resp.ExpiresAt)
 	if resp.CreatedBy != nil {
 		d.Set("created_by", resp.CreatedBy.Handle)
 	}
@@ -326,6 +333,7 @@ func resourceWorkspaceSnapshotUpdate(ctx context.Context, d *schema.ResourceData
 	d.Set("tags", FormatJson(resp.Tags))
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
+	d.Set("expires_at", resp.ExpiresAt)
 	if resp.CreatedBy != nil {
 		d.Set("created_by", resp.CreatedBy.Handle)
 	}
