@@ -1,4 +1,4 @@
-## 0.8.0 (December 7, 2022)
+## 0.8.0 (December 27, 2022)
 
 FEATURES:
 
