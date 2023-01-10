@@ -59,90 +59,135 @@ func testAccUserWorkspaceSnapshotConfig(workspaceHandle, visibility string) stri
 	resource "steampipecloud_workspace_snapshot" "snapshot_1" {
 		workspace_handle = steampipecloud_workspace.test_workspace.handle
 		data             = jsonencode({
-			"action": "execution_complete",
-			"dashboard_node": {
-				"dashboard": "aws_tags.benchmark.limit",
-				"description": "The number of tags on each resource should be monitored to avoid hitting the limit unexpectedly.",
-				"name": "aws_tags.benchmark.limit",
-				"panel_type": "benchmark",
-				"session_id": "0xc001078e40",
-				"summary": {
-					"status": {
-						"alarm": 0,
-						"error": 0,
-						"info": 0,
-						"ok": 40,
-						"skip": 0
-					}
-				},
-				"tags": {
-					"category": "Tagging",
-					"plugin": "aws",
-					"service": "AWS",
-					"type": "Benchmark"
-				},
-				"title": "Limit"
+			"end_time": "2022-12-16T10:42:29Z",
+			"inputs": {
+				
 			},
-			"end_time": "2022-08-11T18:13:45+05:30",
-			"inputs": {},
 			"layout": {
 				"children": [
+				{
+					"children": [
 					{
-						"name": "aws_tags.control.accessanalyzer_analyzer_tag_limit",
-						"panel_type": "control"
+						"name": "aws_insights.card.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_0_anonymous_card_0",
+						"panel_type": "card"
+					},
+					{
+						"name": "aws_insights.card.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_0_anonymous_card_1",
+						"panel_type": "card"
+					},
+					{
+						"name": "aws_insights.card.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_0_anonymous_card_2",
+						"panel_type": "card"
+					},
+					{
+						"name": "aws_insights.card.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_0_anonymous_card_3",
+						"panel_type": "card"
+					},
+					{
+						"name": "aws_insights.card.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_0_anonymous_card_4",
+						"panel_type": "card"
+					},
+					{
+						"name": "aws_insights.card.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_0_anonymous_card_5",
+						"panel_type": "card"
 					}
+					],
+					"name": "aws_insights.container.dashboard_aws_s3_bucket_dashboard_anonymous_container_0",
+					"panel_type": "container"
+				},
+				{
+					"children": [
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_1_anonymous_chart_0",
+						"panel_type": "chart"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_1_anonymous_chart_1",
+						"panel_type": "chart"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_1_anonymous_chart_2",
+						"panel_type": "chart"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_1_anonymous_chart_3",
+						"panel_type": "chart"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_1_anonymous_chart_4",
+						"panel_type": "chart"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_1_anonymous_chart_5",
+						"panel_type": "chart"
+					}
+					],
+					"name": "aws_insights.container.dashboard_aws_s3_bucket_dashboard_anonymous_container_1",
+					"panel_type": "container"
+				},
+				{
+					"children": [
+					{
+						"name": "aws_insights.table.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_2_anonymous_table_0",
+						"panel_type": "table"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_2_anonymous_chart_0",
+						"panel_type": "chart"
+					}
+					],
+					"name": "aws_insights.container.dashboard_aws_s3_bucket_dashboard_anonymous_container_2",
+					"panel_type": "container"
+				},
+				{
+					"children": [
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_3_anonymous_chart_0",
+						"panel_type": "chart"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_3_anonymous_chart_1",
+						"panel_type": "chart"
+					},
+					{
+						"name": "aws_insights.chart.container_dashboard_aws_s3_bucket_dashboard_anonymous_container_3_anonymous_chart_2",
+						"panel_type": "chart"
+					}
+					],
+					"name": "aws_insights.container.dashboard_aws_s3_bucket_dashboard_anonymous_container_3",
+					"panel_type": "container"
+				}
 				],
-				"name": "aws_tags.benchmark.limit",
-				"panel_type": "benchmark"
+				"name": "aws_insights.dashboard.aws_s3_bucket_dashboard",
+				"panel_type": "dashboard"
 			},
 			"panels": {
-				"aws_tags.control.accessanalyzer_analyzer_tag_limit": {
-					"data": {
-						"columns": [
-							{
-								"data_type": "TEXT",
-								"name": "reason"
-							},
-							{
-								"data_type": "TEXT",
-								"name": "resource"
-							},
-							{
-								"data_type": "TEXT",
-								"name": "status"
-							}
-						],
-						"rows": []
-					},
-					"description": "Check if the number of tags on Access Analyzer analyzers do not exceed the limit.",
-					"name": "aws_tags.control.accessanalyzer_analyzer_tag_limit",
-					"panel_type": "control",
-					"properties": {},
-					"status": "complete",
-					"summary": {
-						"alarm": 0,
-						"error": 0,
-						"info": 0,
-						"ok": 0,
-						"skip": 0
-					},
-					"title": "Access Analyzer analyzers should not exceed tag limit"
+				"aws_insights.dashboard.aws_s3_bucket_dashboard": {
+				"dashboard": "aws_insights.dashboard.aws_s3_bucket_dashboard",
+				"name": "aws_insights.dashboard.aws_s3_bucket_dashboard",
+				"panel_type": "dashboard",
+				"status": "complete",
+				"tags": {
+					"service": "AWS/S3",
+					"type": "Dashboard"
+				},
+				"title": "AWS S3 Bucket Dashboard"
 				}
 			},
-			"schema_version": "20220614",
-			"search_path": [
-				"public",
-				"aws",
-				"steampipecloud",
-				"internal"
-			],
-			"start_time": "2022-08-11T18:13:45+05:30",
+			"schema_version": "20220929",
+			"start_time": "2022-12-16T10:42:23Z",
 			"variables": {
-				"aws_tags.var.mandatory_tags": "['Environment','Owner']",
-				"aws_tags.var.prohibited_tags": "['Password','Key']",
-				"aws_tags.var.tag_limit": "45"
+				
+			},
+			"cloud": {
+				"host": "cloud.steampipe.io",
+				"identity_id": "u_c7rtpfcconkqh8as4e2g",
+				"workspace_id": "w_cc3pi4uefsmi5u47rndg",
+				"snapshot_id": "snap_cee4n66baogoid88nfr0_2uhjh232i2sgx8pwqxpmassxq",
+				"created_at": "2022-12-16T10:42:32Z",
+				"created_by_id": "u_c7rtpfcconkqh8as4e2g"
 			}
-		})
+			})
 		tags             = jsonencode({
 			name: "snapshot_1",
 			foo: "bar"
