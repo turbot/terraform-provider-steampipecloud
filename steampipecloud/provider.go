@@ -40,6 +40,7 @@ func Provider() *schema.Provider {
 			"steampipecloud_workspace_connection":          resourceWorkspaceConnection(),
 			"steampipecloud_workspace_mod":                 resourceWorkspaceMod(),
 			"steampipecloud_workspace_mod_variable":        resourceWorkspaceModVariable(),
+			"steampipecloud_workspace_pipeline":            resourceWorkspacePipeline(),
 			"steampipecloud_workspace_snapshot":            resourceWorkspaceSnapshot(),
 		},
 		DataSourcesMap: map[string]*schema.Resource{
