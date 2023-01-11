@@ -5,8 +5,12 @@ import (
 	"encoding/json"
 	"math/rand"
 	"net/http"
+	"testing"
 
+	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/schema"
+	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	"github.com/stretchr/testify/require"
 	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
@@ -109,4 +113,12 @@ func marshallInterfaceToByteArray(data interface{}) ([]byte, error) {
 		return nil, err
 	}
 	return dataBytes, nil
+}
+
+func TestJSONFieldEqual(t *testing.T, resourceName, key, value string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		fieldValue := s.RootModule().Resources[resourceName].Primary.Attributes[key]
+		require.JSONEq(t, fieldValue, value)
+		return nil
+	}
 }

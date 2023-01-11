@@ -59,16 +59,16 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 					testAccCheckWorkspacePipelineExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "title", title),
 					resource.TestCheckResourceAttr(resourceName, "pipeline", pipeline),
-					resource.TestCheckResourceAttr(resourceName, "frequency", frequency),
-					resource.TestCheckResourceAttr(resourceName, "args", args),
-					resource.TestCheckResourceAttr(resourceName, "tags", tags),
+					TestJSONFieldEqual(t, resourceName, "frequency", frequency),
+					TestJSONFieldEqual(t, resourceName, "args", args),
+					TestJSONFieldEqual(t, resourceName, "tags", tags),
 				),
 			},
 			{
 				ResourceName:            resourceName,
 				ImportState:             true,
 				ImportStateVerify:       true,
-				ImportStateVerifyIgnore: []string{"updated_at", "data"},
+				ImportStateVerifyIgnore: []string{"updated_at", "args", "frequency", "tags"},
 			},
 			{
 				Config: testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, updatedFrequency, args, tags),
@@ -76,9 +76,9 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 					testAccCheckWorkspacePipelineExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "title", title),
 					resource.TestCheckResourceAttr(resourceName, "pipeline", pipeline),
-					resource.TestCheckResourceAttr(resourceName, "frequency", updatedFrequency),
-					resource.TestCheckResourceAttr(resourceName, "args", args),
-					resource.TestCheckResourceAttr(resourceName, "tags", tags),
+					TestJSONFieldEqual(t, resourceName, "frequency", updatedFrequency),
+					TestJSONFieldEqual(t, resourceName, "args", args),
+					TestJSONFieldEqual(t, resourceName, "tags", tags),
 				),
 			},
 		},
@@ -97,9 +97,9 @@ func testAccUserWorkspacePipelineConfig(workspaceHandle, title, pipeline, freque
 		workspace_handle = steampipecloud_workspace.test_workspace.handle
 		title            = "%s"
 		pipeline         = "%s"
-		frequency        = %q
-		args             = %q
-		tags             = %q
+		frequency        = jsonencode(%s)
+		args             = jsonencode(%s)
+		tags             = jsonencode(%s)
 	}`, workspaceHandle, title, pipeline, frequency, args, tags)
 }
 
@@ -115,9 +115,9 @@ func testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, 
 		workspace_handle = steampipecloud_workspace.test_workspace.handle
 		title            = "%s"
 		pipeline         = "%s"
-		frequency        = %q
-		args             = %q
-		tags             = %q
+		frequency        = jsonencode(%s)
+		args             = jsonencode(%s)
+		tags             = jsonencode(%s)
 	}`, workspaceHandle, title, pipeline, frequency, args, tags)
 }
 
