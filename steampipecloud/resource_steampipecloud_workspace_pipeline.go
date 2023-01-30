@@ -59,6 +59,11 @@ func resourceWorkspacePipeline() *schema.Resource {
 				Optional:     true,
 				ValidateFunc: validation.StringIsJSON,
 			},
+			"last_process_id": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"created_at": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -159,6 +164,7 @@ func resourceWorkspacePipelineCreate(ctx context.Context, d *schema.ResourceData
 	d.Set("pipeline", resp.Pipeline)
 	d.Set("args", FormatJson(resp.Args))
 	d.Set("tags", FormatJson(resp.Tags))
+	d.Set("last_process_id", resp.LastProcessId)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	if resp.CreatedBy != nil {
@@ -237,6 +243,7 @@ func resourceWorkspacePipelineRead(ctx context.Context, d *schema.ResourceData, 
 	d.Set("pipeline", resp.Pipeline)
 	d.Set("args", FormatJson(resp.Args))
 	d.Set("tags", FormatJson(resp.Tags))
+	d.Set("last_process_id", resp.LastProcessId)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	if resp.CreatedBy != nil {
@@ -318,6 +325,7 @@ func resourceWorkspacePipelineUpdate(ctx context.Context, d *schema.ResourceData
 	d.Set("pipeline", resp.Pipeline)
 	d.Set("args", FormatJson(resp.Args))
 	d.Set("tags", FormatJson(resp.Tags))
+	d.Set("last_process_id", resp.LastProcessId)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	if resp.CreatedBy != nil {
