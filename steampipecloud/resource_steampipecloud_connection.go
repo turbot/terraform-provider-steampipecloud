@@ -47,6 +47,11 @@ func resourceConnection() *schema.Resource {
 				Required: true,
 				ForceNew: true,
 			},
+			"plugin_version": {
+				Type:     schema.TypeString,
+				Optional: true,
+				Computed: true,
+			},
 			"type": {
 				Type:     schema.TypeString,
 				Optional: true,
@@ -141,6 +146,7 @@ func resourceConnectionCreate(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("organization", orgHandle)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
+	d.Set("plugin_version", resp.PluginVersion)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	if resp.CreatedBy != nil {
@@ -225,6 +231,7 @@ func resourceConnectionRead(ctx context.Context, d *schema.ResourceData, meta in
 	d.Set("organization", orgHandle)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
+	d.Set("plugin_version", resp.PluginVersion)
 	d.Set("handle", resp.Handle)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
@@ -295,6 +302,7 @@ func resourceConnectionUpdate(ctx context.Context, d *schema.ResourceData, meta 
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	d.Set("plugin", *resp.Plugin)
+	d.Set("plugin_version", resp.PluginVersion)
 	if resp.CreatedBy != nil {
 		d.Set("created_by", resp.CreatedBy.Handle)
 	}
