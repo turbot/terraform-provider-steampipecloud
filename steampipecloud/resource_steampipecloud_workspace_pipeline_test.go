@@ -5,15 +5,18 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"regexp"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
 	"github.com/hashicorp/terraform-plugin-sdk/v2/terraform"
+	steampipe "github.com/turbot/steampipe-cloud-sdk-go"
 )
 
 // test suites
 func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 	resourceName := "steampipecloud_workspace_pipeline.pipeline_1"
+	processDataSourceName := "data.steampipecloud_process.process_run"
 	workspaceHandle := "workspace" + randomString(3)
 	title := "Daily CIS Job"
 	pipeline := "pipeline.save_snapshot"
@@ -59,6 +62,7 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 					testAccCheckWorkspacePipelineExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "title", title),
 					resource.TestCheckResourceAttr(resourceName, "pipeline", pipeline),
+					resource.TestCheckResourceAttr(resourceName, "last_process_id", ""),
 					TestJSONFieldEqual(t, resourceName, "frequency", frequency),
 					TestJSONFieldEqual(t, resourceName, "args", args),
 					TestJSONFieldEqual(t, resourceName, "tags", tags),
@@ -76,9 +80,32 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 					testAccCheckWorkspacePipelineExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "title", title),
 					resource.TestCheckResourceAttr(resourceName, "pipeline", pipeline),
+					resource.TestCheckResourceAttr(resourceName, "last_process_id", ""),
 					TestJSONFieldEqual(t, resourceName, "frequency", updatedFrequency),
 					TestJSONFieldEqual(t, resourceName, "args", args),
 					TestJSONFieldEqual(t, resourceName, "tags", tags),
+					runPipeline(),
+				),
+			},
+			{
+				ResourceName:            resourceName,
+				ImportState:             true,
+				ImportStateVerify:       true,
+				ImportStateVerifyIgnore: []string{"updated_at", "args", "frequency", "tags"},
+			},
+			{
+				Config: testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline, updatedFrequency, args, tags),
+				Check: resource.ComposeTestCheckFunc(
+					testAccCheckWorkspacePipelineExists(workspaceHandle),
+					resource.TestCheckResourceAttr(resourceName, "title", title),
+					resource.TestCheckResourceAttr(resourceName, "pipeline", pipeline),
+					resource.TestMatchResourceAttr(resourceName, "last_process_id", regexp.MustCompile(`^p_[0-9a-v]{20}`)),
+					TestJSONFieldEqual(t, resourceName, "frequency", updatedFrequency),
+					TestJSONFieldEqual(t, resourceName, "args", args),
+					TestJSONFieldEqual(t, resourceName, "tags", tags),
+					resource.TestMatchResourceAttr(processDataSourceName, "process_id", regexp.MustCompile(`^p_[0-9a-v]{20}`)),
+					resource.TestCheckResourceAttr(processDataSourceName, "type", "pipeline.command.run"),
+					resource.TestCheckResourceAttr(processDataSourceName, "data_state", "live"),
 				),
 			},
 		},
@@ -121,6 +148,30 @@ func testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, 
 	}`, workspaceHandle, title, pipeline, frequency, args, tags)
 }
 
+func testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline, frequency, args, tags string) string {
+	return fmt.Sprintf(`
+	provider "steampipecloud" {}
+
+	resource "steampipecloud_workspace" "test_workspace" {
+		handle = "%s"
+	}
+	
+	resource "steampipecloud_workspace_pipeline" "pipeline_1" {
+		workspace_handle = steampipecloud_workspace.test_workspace.handle
+		title            = "%s"
+		pipeline         = "%s"
+		frequency        = jsonencode(%s)
+		args             = jsonencode(%s)
+		tags             = jsonencode(%s)
+	}
+	
+	data "steampipecloud_process" "process_run" {
+		workspace  = steampipecloud_workspace.test_workspace.handle
+		process_id = steampipecloud_workspace_pipeline.pipeline_1.last_process_id
+	}
+	`, workspaceHandle, title, pipeline, frequency, args, tags)
+}
+
 func testAccCheckWorkspacePipelineExists(workspaceHandle string) resource.TestCheckFunc {
 	ctx := context.Background()
 	return func(s *terraform.State) error {
@@ -153,6 +204,49 @@ func testAccCheckWorkspacePipelineExists(workspaceHandle string) resource.TestCh
 					return fmt.Errorf("error fetching pipeline %s in org workspace with handle %s. %s", pipelineId, workspaceHandle, err)
 				}
 			}
+		}
+		return nil
+	}
+}
+
+func runPipeline() resource.TestCheckFunc {
+	ctx := context.Background()
+	return func(s *terraform.State) error {
+		client := testAccProvider.Meta().(*SteampipeClient)
+
+		for _, rs := range s.RootModule().Resources {
+			if rs.Type != "steampipecloud_workspace_pipeline" {
+				continue
+			}
+
+			var resp steampipe.PipelineCommandResponse
+			pipelineId := rs.Primary.Attributes["workspace_pipeline_id"]
+			workspaceId := rs.Primary.Attributes["workspace_id"]
+			// Retrieve organization
+			org := rs.Primary.Attributes["organization"]
+			isUser := org == ""
+
+			// Create request
+			req := steampipe.PipelineCommandRequest{Command: "run"}
+
+			var err error
+			if isUser {
+				var userHandle string
+				userHandle, _, err = getUserHandler(ctx, client)
+				if err != nil {
+					return fmt.Errorf("error fetching user handle. %s", err)
+				}
+				resp, _, err = client.APIClient.UserWorkspacePipelines.Command(ctx, userHandle, workspaceId, pipelineId).Request(req).Execute()
+				if err != nil {
+					return fmt.Errorf("error fetching pipeline %s in user workspace with handle %s. %s", pipelineId, workspaceId, err)
+				}
+			} else {
+				resp, _, err = client.APIClient.OrgWorkspacePipelines.Command(ctx, org, workspaceId, pipelineId).Request(req).Execute()
+				if err != nil {
+					return fmt.Errorf("error fetching pipeline %s in org workspace with handle %s. %s", pipelineId, workspaceId, err)
+				}
+			}
+			log.Printf("\n[DEBUG] Pipeline Run Response: %v", resp)
 		}
 		return nil
 	}

@@ -45,6 +45,7 @@ func Provider() *schema.Provider {
 		},
 		DataSourcesMap: map[string]*schema.Resource{
 			"steampipecloud_organization": dataSourceOrganization(),
+			"steampipecloud_process":      dataSourceProcess(),
 			"steampipecloud_user":         dataSourceUser(),
 		},
 
