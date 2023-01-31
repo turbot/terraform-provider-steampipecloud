@@ -36,8 +36,7 @@ func resourceWorkspacePipeline() *schema.Resource {
 			},
 			"title": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Required: true,
 			},
 			"frequency": {
 				Type:         schema.TypeString,
@@ -46,12 +45,11 @@ func resourceWorkspacePipeline() *schema.Resource {
 			},
 			"pipeline": {
 				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
+				Required: true,
 			},
 			"args": {
 				Type:         schema.TypeString,
-				Optional:     true,
+				Required:     true,
 				ValidateFunc: validation.StringIsJSON,
 			},
 			"tags": {
@@ -88,17 +86,12 @@ func resourceWorkspacePipeline() *schema.Resource {
 				Type:     schema.TypeInt,
 				Computed: true,
 			},
-			"user": {
-				Type:     schema.TypeString,
-				Optional: true,
-				Computed: true,
-			},
 			"organization": {
 				Type:     schema.TypeString,
 				Optional: true,
 				Computed: true,
 			},
-			"workspace_handle": {
+			"workspace": {
 				Type:         schema.TypeString,
 				Required:     true,
 				ValidateFunc: validation.StringMatch(regexp.MustCompile(`^[a-z0-9]{1,23}$`), "Handle must be between 1 and 23 characters, and may only contain alphanumeric characters."),
@@ -116,7 +109,7 @@ func resourceWorkspacePipelineCreate(ctx context.Context, d *schema.ResourceData
 	var r *http.Response
 	var resp steampipe.Pipeline
 
-	workspaceHandle := d.Get("workspace_handle").(string)
+	workspaceHandle := d.Get("workspace").(string)
 	title := d.Get("title").(string)
 	pipeline := d.Get("pipeline").(string)
 	frequency, err := JSONStringToInterface(d.Get("frequency").(string))
@@ -174,9 +167,8 @@ func resourceWorkspacePipelineCreate(ctx context.Context, d *schema.ResourceData
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
 	d.Set("version_id", resp.VersionId)
-	d.Set("user", userHandle)
 	d.Set("organization", orgHandle)
-	d.Set("workspace_handle", workspaceHandle)
+	d.Set("workspace", workspaceHandle)
 
 	// If Pipeline is created for a Workspace inside an Organization the id will be of the
 	// format "OrganizationHandle/WorkspaceHandle/PipelineID" otherwise "WorkspaceHandle/PipelineID"
@@ -253,9 +245,8 @@ func resourceWorkspacePipelineRead(ctx context.Context, d *schema.ResourceData, 
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
 	d.Set("version_id", resp.VersionId)
-	d.Set("user", userHandle)
 	d.Set("organization", orgHandle)
-	d.Set("workspace_handle", workspaceHandle)
+	d.Set("workspace", workspaceHandle)
 
 	// If Pipeline is created for a Workspace inside an Organization the id will be of the
 	// format "OrganizationHandle/WorkspaceHandle/PipelineID" otherwise "WorkspaceHandle/PipelineID"
@@ -277,7 +268,7 @@ func resourceWorkspacePipelineUpdate(ctx context.Context, d *schema.ResourceData
 	var r *http.Response
 	var resp steampipe.Pipeline
 
-	workspaceHandle := d.Get("workspace_handle").(string)
+	workspaceHandle := d.Get("workspace").(string)
 	pipelineId := d.Get("workspace_pipeline_id").(string)
 	title := d.Get("title").(string)
 	frequency, err := JSONStringToInterface(d.Get("frequency").(string))
@@ -335,9 +326,8 @@ func resourceWorkspacePipelineUpdate(ctx context.Context, d *schema.ResourceData
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
 	d.Set("version_id", resp.VersionId)
-	d.Set("user", userHandle)
 	d.Set("organization", orgHandle)
-	d.Set("workspace_handle", workspaceHandle)
+	d.Set("workspace", workspaceHandle)
 
 	// If Pipeline is created for a Workspace inside an Organization the id will be of the
 	// format "OrganizationHandle/WorkspaceHandle/PipelineID" otherwise "WorkspaceHandle/PipelineID"

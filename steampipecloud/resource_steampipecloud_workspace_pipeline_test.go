@@ -121,7 +121,7 @@ func testAccUserWorkspacePipelineConfig(workspaceHandle, title, pipeline, freque
 	}
 	
 	resource "steampipecloud_workspace_pipeline" "pipeline_1" {
-		workspace_handle = steampipecloud_workspace.test_workspace.handle
+		workspace = steampipecloud_workspace.test_workspace.handle
 		title            = "%s"
 		pipeline         = "%s"
 		frequency        = jsonencode(%s)
@@ -139,7 +139,7 @@ func testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, 
 	}
 	
 	resource "steampipecloud_workspace_pipeline" "pipeline_1" {
-		workspace_handle = steampipecloud_workspace.test_workspace.handle
+		workspace = steampipecloud_workspace.test_workspace.handle
 		title            = "%s"
 		pipeline         = "%s"
 		frequency        = jsonencode(%s)
@@ -157,7 +157,7 @@ func testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline,
 	}
 	
 	resource "steampipecloud_workspace_pipeline" "pipeline_1" {
-		workspace_handle = steampipecloud_workspace.test_workspace.handle
+		workspace = steampipecloud_workspace.test_workspace.handle
 		title            = "%s"
 		pipeline         = "%s"
 		frequency        = jsonencode(%s)
@@ -268,7 +268,7 @@ func testAccCheckWorkspacePipelineDestroy(s *terraform.State) error {
 		}
 
 		// Retrieve workspace handle and pipeline id by referencing it's state handle for API lookup
-		workspaceHandle := rs.Primary.Attributes["workspace_handle"]
+		workspaceHandle := rs.Primary.Attributes["workspace"]
 		pipelineId := rs.Primary.Attributes["workspace_pipeline_id"]
 
 		// Retrieve organization
