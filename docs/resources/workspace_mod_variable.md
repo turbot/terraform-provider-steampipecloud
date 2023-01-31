@@ -57,6 +57,7 @@ resource "steampipecloud_workspace_mod_variable" "mandatory_tags" {
 
 The following arguments are supported:
 
+- `organization` - (Optional) The handle of the organization if the workspace belongs to an org.
 - `workspace_handle` - (Required) The handle of the workspace to create the variable setting in.
 - `mod_alias` - (Required) The alias of the mod to manage the variable setting for.
 - `name` - (Required) The name of the variable.
@@ -73,6 +74,7 @@ In addition to all arguments above, the following attributes are exported:
 - `identity_id` - A unique identifier of the entity, where the mod is created.
 - `mod_alias` - The human-friendly alias of the workspace mod this variable setting is for.
 - `name` - The name of the variable, as defined in the mod.
+- `organization` - A human-friendly alias for the organization the mod variable is managed within.
 - `setting_value` - The user-defined value of the variable.
 - `state` - The state of the mod installation.
 - `type` - The HCL type of the mod variable, as defined in the mod.
