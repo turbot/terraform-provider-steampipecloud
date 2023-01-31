@@ -121,6 +121,7 @@ func dataSourceProcessRead(ctx context.Context, d *schema.ResourceData, meta int
 
 	log.Printf("\n[DEBUG] Process Received: %v", resp)
 
+	d.Set("process_id", resp.Id)
 	d.Set("identity_id", resp.IdentityId)
 	d.Set("workspace_id", resp.WorkspaceId)
 	d.Set("pipeline_id", resp.PipelineId)
@@ -136,6 +137,8 @@ func dataSourceProcessRead(ctx context.Context, d *schema.ResourceData, meta int
 		d.Set("updated_by", resp.UpdatedBy.Handle)
 	}
 	d.Set("version_id", resp.VersionId)
+	d.Set("organization", orgHandle)
+	d.Set("workspace", workspace)
 	d.SetId(resp.Id)
 
 	return diags
