@@ -2,6 +2,7 @@ package steampipecloud
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -112,7 +113,8 @@ func resourceWorkspacePipelineCreate(ctx context.Context, d *schema.ResourceData
 	workspaceHandle := d.Get("workspace").(string)
 	title := d.Get("title").(string)
 	pipeline := d.Get("pipeline").(string)
-	frequency, err := JSONStringToInterface(d.Get("frequency").(string))
+	var frequency steampipe.PipelineFrequency
+	err = json.Unmarshal([]byte(d.Get("frequency").(string)), &frequency)
 	if err != nil {
 		return diag.Errorf("error parsing frequency for workspace pipeline : %v", d.Get("frequency").(string))
 	}
@@ -271,7 +273,8 @@ func resourceWorkspacePipelineUpdate(ctx context.Context, d *schema.ResourceData
 	workspaceHandle := d.Get("workspace").(string)
 	pipelineId := d.Get("workspace_pipeline_id").(string)
 	title := d.Get("title").(string)
-	frequency, err := JSONStringToInterface(d.Get("frequency").(string))
+	var frequency steampipe.PipelineFrequency
+	err = json.Unmarshal([]byte(d.Get("frequency").(string)), &frequency)
 	if err != nil {
 		return diag.Errorf("error parsing frequency for workspace pipeline : %v", d.Get("frequency").(string))
 	}
@@ -288,7 +291,7 @@ func resourceWorkspacePipelineUpdate(ctx context.Context, d *schema.ResourceData
 	log.Printf("\n[DEBUG] Pipeline Tags: %v", tags)
 
 	// Create request
-	req := steampipe.UpdatePipelineRequest{Title: &title, Frequency: frequency, Args: args, Tags: tags}
+	req := steampipe.UpdatePipelineRequest{Title: &title, Frequency: &frequency, Args: args, Tags: tags}
 
 	userHandle := ""
 	isUser, orgHandle := isUserConnection(d)
