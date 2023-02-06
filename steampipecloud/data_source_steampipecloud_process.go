@@ -50,10 +50,6 @@ func dataSourceProcess() *schema.Resource {
 				Type:     schema.TypeString,
 				Computed: true,
 			},
-			"data_state": {
-				Type:     schema.TypeString,
-				Computed: true,
-			},
 			"created_at": {
 				Type:     schema.TypeString,
 				Computed: true,
@@ -127,7 +123,6 @@ func dataSourceProcessRead(ctx context.Context, d *schema.ResourceData, meta int
 	d.Set("pipeline_id", resp.PipelineId)
 	d.Set("type", resp.Type)
 	d.Set("state", resp.State)
-	d.Set("data_state", resp.DataState)
 	d.Set("created_at", resp.CreatedAt)
 	if resp.CreatedBy != nil {
 		d.Set("created_by", resp.CreatedBy.Handle)

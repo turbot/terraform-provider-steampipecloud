@@ -105,7 +105,6 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 					TestJSONFieldEqual(t, resourceName, "tags", tags),
 					resource.TestMatchResourceAttr(processDataSourceName, "process_id", regexp.MustCompile(`^p_[0-9a-v]{20}`)),
 					resource.TestCheckResourceAttr(processDataSourceName, "type", "pipeline.command.run"),
-					resource.TestCheckResourceAttr(processDataSourceName, "data_state", "live"),
 				),
 			},
 		},

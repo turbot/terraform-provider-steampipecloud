@@ -70,7 +70,6 @@ In addition to all arguments above, the following attributes are exported:
 
 - `created_at` - The ISO 8601 date & time the process was created at.
 - `created_by` - The unique identifier of the actor that created this process.
-- `data_state` - The current state of process and process log data.
 - `identity_id` - The unique identifier of the identity in which the process exists.
 - `organization` - A human-friendly alias of the organization in which the process exists.
 - `pipeline_id` - The unique identifier of the pipeline in which the process exists.
