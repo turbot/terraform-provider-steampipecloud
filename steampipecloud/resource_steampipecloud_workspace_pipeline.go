@@ -191,8 +191,8 @@ func resourceWorkspacePipelineRead(ctx context.Context, d *schema.ResourceData, 
 	var orgHandle, workspaceHandle, pipelineId string
 	var isUser = false
 
-	// If Pipeline is created for a Workspace within an Organization the id will be of the
-	// format "OrganizationHandle/WorkspaceHandle/PipelineID" otherwise "WorkspaceHandle/PipelineID"
+	// If a pipeline is created for a workspace inside an organization then the ID will be of the
+	// format "OrganizationHandle/WorkspaceHandle/PipelineID" otherwise "WorkspaceHandle/PipelineID".
 	idParts := strings.Split(d.Id(), "/")
 	if len(idParts) < 2 && len(idParts) > 3 {
 		return diag.Errorf("unexpected format of ID (%q), expected <workspace-handle>/<pipeline-id>", d.Id())
