@@ -172,8 +172,8 @@ func resourceWorkspacePipelineCreate(ctx context.Context, d *schema.ResourceData
 	d.Set("organization", orgHandle)
 	d.Set("workspace", workspaceHandle)
 
-	// If Pipeline is created for a Workspace inside an Organization the id will be of the
-	// format "OrganizationHandle/WorkspaceHandle/PipelineID" otherwise "WorkspaceHandle/PipelineID"
+	// If a pipeline is created for a workspace inside an organization then the ID will be of the
+	// format "OrganizationHandle/WorkspaceHandle/PipelineID" otherwise "WorkspaceHandle/PipelineID".
 	if userHandle == "" {
 		d.SetId(fmt.Sprintf("%s/%s/%s", orgHandle, workspaceHandle, resp.Id))
 	} else {
