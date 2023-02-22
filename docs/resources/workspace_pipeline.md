@@ -79,13 +79,13 @@ resource "steampipecloud_workspace_pipeline" "daily_cis_pipeline" {
 
 The following arguments are supported:
 
-- `workspace` - (Required) The handle of the workspace to manage the pipeline for.
-- `title` - (Required) The title of the pipeline to be created.
+- `args` - (Required) The JSON-encoded set of arguments to be used for a pipeline run. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode({"resource": "aws_compliance.benchmark.cis_v140", "inputs": {}, "snapshot_tags": {"series": "daily_cis"}})`
 - `frequency` - (Required) The JSON-encoded frequency at which the pipeline will run. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode({"type": "interval", "schedule": "daily"})`
 - `pipeline` - (Required) The name of the pipeline to be executed. Only supports `pipeline.save_snapshot` for now.
-- `args` - (Required) The JSON-encoded set of arguments to be used for a pipeline run. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode({"resource": "aws_compliance.benchmark.cis_v140", "inputs": {}, "snapshot_tags": {"series": "daily_cis"}})`
-- `tags` - (Optional) The JSON-encoded string of tags for the pipeline. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode({Foo: "Bar"})`
+- `title` - (Required) The title of the pipeline to be created.
+- `workspace` - (Required) The handle of the workspace to manage the pipeline for.
 - `organization` - (Optional) The optional handle of the organization to be used when the pipeline to be managed belongs to an organization.
+- `tags` - (Optional) The JSON-encoded string of tags for the pipeline. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode({Foo: "Bar"})`
 
 ## Attributes Reference
 

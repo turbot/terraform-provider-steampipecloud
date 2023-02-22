@@ -57,11 +57,11 @@ resource "steampipecloud_workspace_mod_variable" "mandatory_tags" {
 
 The following arguments are supported:
 
-- `organization` - (Optional) The handle of the organization if the workspace belongs to an org.
-- `workspace_handle` - (Required) The handle of the workspace to create the variable setting in.
 - `mod_alias` - (Required) The alias of the mod to manage the variable setting for.
 - `name` - (Required) The name of the variable.
 - `setting_value` - (Required) The JSON-encoded string of the setting. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode(5)`, `jsonencode("Foo")`, `jsonencode(["Foo", "Bar"])`
+- `workspace_handle` - (Required) The handle of the workspace to create the variable setting in.
+- `organization` - (Optional) The handle of the organization if the workspace belongs to an org.
 
 ## Attributes Reference
 

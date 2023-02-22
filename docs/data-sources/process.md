@@ -60,9 +60,9 @@ data "steampipecloud_process" "process_run" {
 
 The following arguments are supported:
 
+- `process_id` - (Required) The id of the process to be retrieved.
 - `organization` - (Optional) The handle of the organization to retrieve the process for.
 - `workspace` - (Optional) The handle of the workspace to retrieve the process for.
-- `process_id` - (Required) The id of the process to be retrieved.
 
 ## Attributes Reference
 
@@ -74,7 +74,7 @@ In addition to all arguments above, the following attributes are exported:
 - `organization` - A human-friendly alias of the organization in which the process exists.
 - `pipeline_id` - The unique identifier of the pipeline in which the process exists.
 - `process_id` - The unique identifier of the process.
-- `state` - The current state of the process. Possible values - `pending`, `running`, `failed`, `completed`, `canceled`.
+- `state` - The current state of the process. Possible values - `canceled`, `completed`, `failed`, `pending`, `running`.
 - `type` - The type of action executed by the process.
 - `updated_at` - The ISO 8601 date & time the process was last updated at.
 - `updated_by` - The unique identifier of the actor that last updated this process.
