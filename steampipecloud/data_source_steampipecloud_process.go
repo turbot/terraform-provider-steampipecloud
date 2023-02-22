@@ -95,7 +95,7 @@ func dataSourceProcessRead(ctx context.Context, d *schema.ResourceData, meta int
 			return diag.Errorf("dataSourceProcessRead.getUserHandler error  %v", decodeResponse(r))
 		}
 		log.Printf("\n[DEBUG] Process get context-> identity:'%s'; workspace:'%s'; process:'%s'", actorHandle, workspace, processId)
-		// If a workspace is not passed we can assume its an identity process
+		// If a workspace is not passed we can assume that it is an identity process
 		if workspace == "" {
 			resp, r, err = client.APIClient.UserProcesses.Get(ctx, actorHandle, processId).Execute()
 		} else {
