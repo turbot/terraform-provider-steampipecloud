@@ -1,4 +1,4 @@
-## 0.9.0 (TBD)
+## 0.9.0 (February 23, 2023)
 
 FEATURES:
 
