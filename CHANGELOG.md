@@ -1,3 +1,11 @@
+## 0.9.0 (February 23, 2023)
+
+FEATURES:
+
+* **New Resource:** `steampipecloud_workspace_pipeline`
+* **New Data Source:** `steampipecloud_process`
+* `resources/steampipecloud_connection`: Add `plugin_version` attribute
+
 ## 0.8.0 (December 27, 2022)
 
 FEATURES:

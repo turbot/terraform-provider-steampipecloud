@@ -87,7 +87,7 @@ resource "steampipecloud_workspace" "test" {
 # Invite the user to the organization
 resource "steampipecloud_organization_member" "test" {
 	organization = steampipecloud_organization.test.handle
-	user_handle  = "user-ioik"
+	email        = "user@domain.com"
 	role         = "member"
 }
 

@@ -6,7 +6,8 @@ require github.com/turbot/go-kit v0.3.0
 
 require (
 	github.com/hashicorp/terraform-plugin-sdk/v2 v2.10.0
-	github.com/turbot/steampipe-cloud-sdk-go v0.3.0
+	github.com/stretchr/testify v1.7.0
+	github.com/turbot/steampipe-cloud-sdk-go v0.5.0
 )
 
 require (
@@ -46,6 +47,7 @@ require (
 	github.com/mitchellh/mapstructure v1.3.3 // indirect
 	github.com/mitchellh/reflectwalk v1.0.2 // indirect
 	github.com/oklog/run v1.0.0 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/vmihailenco/msgpack v4.0.4+incompatible // indirect
 	github.com/zclconf/go-cty v1.10.0 // indirect
 	golang.org/x/crypto v0.0.0-20210616213533-5ff15b29337e // indirect
@@ -59,4 +61,5 @@ require (
 	google.golang.org/genproto v0.0.0-20200904004341-0bd0a958aa1d // indirect
 	google.golang.org/grpc v1.32.0 // indirect
 	google.golang.org/protobuf v1.25.0 // indirect
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c // indirect
 )
