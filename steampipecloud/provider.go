@@ -37,6 +37,7 @@ func Provider() *schema.Provider {
 			"steampipecloud_organization_workspace_member": resourceOrganizationWorkspaceMember(),
 			"steampipecloud_user_preferences":              resourceUserPreferences(),
 			"steampipecloud_workspace":                     resourceWorkspace(),
+			"steampipecloud_workspace_aggregator":          resourceWorkspaceAggregator(),
 			"steampipecloud_workspace_connection":          resourceWorkspaceConnection(),
 			"steampipecloud_workspace_mod":                 resourceWorkspaceMod(),
 			"steampipecloud_workspace_mod_variable":        resourceWorkspaceModVariable(),
