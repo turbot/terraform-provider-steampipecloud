@@ -41,7 +41,7 @@ func TestAccUserWorkspaceAggregator_Basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"updated_at", "connections"},
 			},
 			{
-				Config: testAccUserWorkspaceAggregatorConfig(workspaceHandle, updatedAggregatorHandle, plugin, connections),
+				Config: testAccUserWorkspaceAggregatorUpdateConfig(workspaceHandle, updatedAggregatorHandle, plugin, connections),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckWorkspaceAggregatorExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "handle", updatedAggregatorHandle),
