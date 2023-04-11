@@ -1,3 +1,9 @@
+## 0.10.0 (TBD)
+
+BREAKING CHANGES:
+
+* `resources/steampipecloud_organization`: Remove `avatar_url` argument
+
 ## 0.9.0 (February 23, 2023)
 
 FEATURES:
