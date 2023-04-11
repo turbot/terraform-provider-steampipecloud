@@ -42,7 +42,8 @@ func getWorkspaceDetails(ctx context.Context, client *SteampipeClient, d *schema
 	workspaceHandle := d.Get("workspace_handle").(string)
 	isUser, orgHandle := isUserConnection(d)
 	if isUser {
-		actorHandle, r, err := getUserHandler(ctx, client)
+		var actorHandle string
+		actorHandle, r, err = getUserHandler(ctx, client)
 		if err != nil {
 			return nil, r, err
 		}
