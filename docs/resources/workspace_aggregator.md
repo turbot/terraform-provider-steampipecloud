@@ -50,8 +50,8 @@ The following arguments are supported:
 - `connections` - (Required) The list of connection names that the aggregator will merge. The wildcard `*` is supported in the connection names. e.g. `["aws1", "aws2"]`, `["aws*"]`
 - `handle` - (Required) A friendly identifier for your aggregator, which must be unique across all other schemas defined in the workspace or identity.
 - `plugin` - (Required) The name of the plugin.
-- `organization` - (Optional) The optional handle of the organization to be used when the aggregator to be managed belongs to an organization.
 - `workspace` - (Required) The handle of the workspace to manage the aggregator for.
+- `organization` - (Optional) The optional handle of the organization to be used when the aggregator to be managed belongs to an organization.
 
 ## Attributes Reference
 
