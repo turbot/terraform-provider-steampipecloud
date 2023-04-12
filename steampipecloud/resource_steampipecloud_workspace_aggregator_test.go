@@ -31,7 +31,7 @@ func TestAccUserWorkspaceAggregator_Basic(t *testing.T) {
 					testAccCheckWorkspaceAggregatorExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "handle", aggregatorHandle),
 					resource.TestCheckResourceAttr(resourceName, "plugin", plugin),
-					TestJSONFieldEqual(t, resourceName, "connections", connections),
+					TestArrayEqual(t, resourceName, "connections", connections),
 				),
 			},
 			{
@@ -46,14 +46,14 @@ func TestAccUserWorkspaceAggregator_Basic(t *testing.T) {
 					testAccCheckWorkspaceAggregatorExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "handle", updatedAggregatorHandle),
 					resource.TestCheckResourceAttr(resourceName, "plugin", plugin),
-					TestJSONFieldEqual(t, resourceName, "connections", connections),
+					TestArrayEqual(t, resourceName, "connections", connections),
 				),
 			},
 		},
 	})
 }
 
-func testAccUserWorkspaceAggregatorConfig(workspaceHandle, aggregatorHandle, plugin string, connections string) string {
+func testAccUserWorkspaceAggregatorConfig(workspaceHandle, aggregatorHandle, plugin, connections string) string {
 	return fmt.Sprintf(`
 	provider "steampipecloud" {}
 
@@ -65,11 +65,11 @@ func testAccUserWorkspaceAggregatorConfig(workspaceHandle, aggregatorHandle, plu
 		workspace = steampipecloud_workspace.test_workspace.handle
 		handle             = "%s"
 		plugin             = "%s"
-		connections        = jsonencode(%s)
+		connections        = %s
 	}`, workspaceHandle, aggregatorHandle, plugin, connections)
 }
 
-func testAccUserWorkspaceAggregatorUpdateConfig(workspaceHandle, aggregatorHandle, plugin string, connections string) string {
+func testAccUserWorkspaceAggregatorUpdateConfig(workspaceHandle, aggregatorHandle, plugin, connections string) string {
 	return fmt.Sprintf(`
 	provider "steampipecloud" {}
 
@@ -81,7 +81,7 @@ func testAccUserWorkspaceAggregatorUpdateConfig(workspaceHandle, aggregatorHandl
 		workspace = steampipecloud_workspace.test_workspace.handle
 		handle             = "%s"
 		plugin             = "%s"
-		connections        = jsonencode(%s)
+		connections        = %s
 	}`, workspaceHandle, aggregatorHandle, plugin, connections)
 }
 

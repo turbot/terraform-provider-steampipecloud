@@ -3,8 +3,10 @@ package steampipecloud
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"math/rand"
 	"net/http"
+	"strconv"
 	"testing"
 
 	"github.com/hashicorp/terraform-plugin-sdk/v2/helper/resource"
@@ -122,4 +124,45 @@ func TestJSONFieldEqual(t *testing.T, resourceName, key, value string) resource.
 		require.JSONEq(t, fieldValue, value)
 		return nil
 	}
+}
+
+func TestArrayEqual(t *testing.T, resourceName, key, values string) resource.TestCheckFunc {
+	return func(s *terraform.State) error {
+		// Unmarshal the values passed as a string into a string array
+		var matcherItems []string
+		err := json.Unmarshal([]byte(values), &matcherItems)
+		if err != nil {
+			return err
+		}
+
+		// Get the number of expected items in the primary attribute
+		noOfExpectedItems, err := strconv.Atoi(s.RootModule().Resources[resourceName].Primary.Attributes[fmt.Sprintf("%s.#", key)])
+		if err != nil {
+			return err
+		}
+
+		// If the number of items expected and the no of items present do not match throw an error
+		if len(matcherItems) != noOfExpectedItems {
+			return fmt.Errorf("number of expected items do not match for attribute %s", key)
+		}
+
+		for i := 0; i < noOfExpectedItems; i++ {
+			if matcherItems[i] != s.RootModule().Resources[resourceName].Primary.Attributes[fmt.Sprintf("%s.%d", key, i)] {
+				return fmt.Errorf("mismatch while matching item no %d for attribute %s", i, key)
+			}
+		}
+		return nil
+	}
+}
+
+func convertToStringArray(data []interface{}) ([]string, error) {
+	strArray := make([]string, len(data))
+	for index, value := range data {
+		if s, ok := value.(string); ok {
+			strArray[index] = s
+		} else {
+			return nil, fmt.Errorf("invalid value entered in string array")
+		}
+	}
+	return strArray, nil
 }
