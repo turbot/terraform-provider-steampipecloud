@@ -20,24 +20,24 @@ resource "steampipecloud_workspace" "test_user_workspace" {
 }
 
 resource "steampipecloud_workspace_pipeline" "daily_cis_pipeline" {
-    workspace_handle = steampipecloud_workspace.test_user_workspace.handle
-    title = "Daily CIS Job"
-    pipeline = "pipeline.save_snapshot"
-    frequency = jsonencode({
-      "type": "interval",
-      "schedule": "daily"
-    })
-    args = jsonencode({
-      "resource": "aws_compliance.benchmark.cis_v140",
-      "snapshot_tags": {
-        "series": "daily_cis"
-      },
-      "visibility": "workspace",
-      "inputs": {},
-      "notifications": {},
-      "variables": {}
-    })
-    tags = jsonencode({
+  workspace_handle = steampipecloud_workspace.test_user_workspace.handle
+  title = "Daily CIS Job"
+  pipeline = "pipeline.save_snapshot"
+  frequency = jsonencode({
+    "type": "interval",
+    "schedule": "daily"
+  })
+  args = jsonencode({
+    "resource": "aws_compliance.benchmark.cis_v140",
+    "snapshot_tags": {
+      "series": "daily_cis"
+    },
+    "visibility": "workspace",
+    "inputs": {},
+    "notifications": {},
+    "variables": {}
+  })
+  tags = jsonencode({
 	  "name": "daily_cis_pipeline"
 	})
 }
@@ -52,24 +52,24 @@ resource "steampipecloud_workspace" "test_org_workspace" {
 }
 
 resource "steampipecloud_workspace_pipeline" "daily_cis_pipeline" {
-    workspace_handle = steampipecloud_workspace.test_org_workspace.handle
-    title = "Daily CIS Job"
-    pipeline = "pipeline.save_snapshot"
-    frequency = jsonencode({
-      "type": "interval",
-      "schedule": "daily"
-    })
-    args = jsonencode({
-      "resource": "aws_compliance.benchmark.cis_v140",
-      "snapshot_tags": {
-        "series": "daily_cis"
-      },
-      "visibility": "workspace",
-      "inputs": {},
-      "notifications": {},
-      "variables": {}
-    })
-    tags = jsonencode({
+  workspace_handle = steampipecloud_workspace.test_org_workspace.handle
+  title = "Daily CIS Job"
+  pipeline = "pipeline.save_snapshot"
+  frequency = jsonencode({
+    "type": "interval",
+    "schedule": "daily"
+  })
+  args = jsonencode({
+    "resource": "aws_compliance.benchmark.cis_v140",
+    "snapshot_tags": {
+      "series": "daily_cis"
+    },
+    "visibility": "workspace",
+    "inputs": {},
+    "notifications": {},
+    "variables": {}
+  })
+  tags = jsonencode({
 	  "name": "daily_cis_pipeline"
 	})
 }
