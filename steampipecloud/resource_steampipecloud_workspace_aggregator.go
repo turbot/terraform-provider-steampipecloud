@@ -48,9 +48,9 @@ func resourceWorkspaceAggregator() *schema.Resource {
 				Required: true,
 			},
 			"connections": {
-				Type:         schema.TypeString,
-				Required:     true,
-				ValidateFunc: validation.StringIsJSON,
+				Type:     schema.TypeList,
+				Required: true,
+				Elem:     &schema.Schema{Type: schema.TypeString},
 			},
 			"created_at": {
 				Type:     schema.TypeString,
@@ -102,7 +102,10 @@ func resourceWorkspaceAggregatorCreate(ctx context.Context, d *schema.ResourceDa
 	workspaceHandle := d.Get("workspace").(string)
 	aggregatorHandle := d.Get("handle").(string)
 	plugin := d.Get("plugin").(string)
-	connections := d.Get("connections").([]string)
+	connections, err := convertToStringArray(d.Get("connections").([]interface{}))
+	if err != nil {
+		return diag.Errorf("resourceWorkspaceAggregatorCreate.connections error  %v", err.Error())
+	}
 
 	log.Printf("\n[DEBUG] Workspace Handle: %v", workspaceHandle)
 	log.Printf("\n[DEBUG] Aggregator Handle: %v", aggregatorHandle)
@@ -136,7 +139,7 @@ func resourceWorkspaceAggregatorCreate(ctx context.Context, d *schema.ResourceDa
 	d.Set("handle", resp.Handle)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
-	d.Set("connections", FormatJson(resp.Connections))
+	d.Set("connections", resp.Connections)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	if resp.CreatedBy != nil {
@@ -212,7 +215,7 @@ func resourceWorkspaceAggregatorRead(ctx context.Context, d *schema.ResourceData
 	d.Set("handle", resp.Handle)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
-	d.Set("connections", FormatJson(resp.Connections))
+	d.Set("connections", resp.Connections)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	if resp.CreatedBy != nil {
@@ -246,15 +249,22 @@ func resourceWorkspaceAggregatorUpdate(ctx context.Context, d *schema.ResourceDa
 	var resp steampipe.WorkspaceAggregator
 
 	workspaceHandle := d.Get("workspace").(string)
-	aggregatorHandle := d.Get("handle").(string)
-	connections := d.Get("connections").([]string)
+	oldAggregatorHandle, newHandle := d.GetChange("handle")
+	newAggregatorHandle, ok := newHandle.(string)
+	if !ok {
+		return diag.Errorf("resourceWorkspaceAggregatorCreate.handle error : invalid value passed for aggregator handle")
+	}
+	connections, err := convertToStringArray(d.Get("connections").([]interface{}))
+	if err != nil {
+		return diag.Errorf("resourceWorkspaceAggregatorCreate.connections error  %v", err.Error())
+	}
 
 	log.Printf("\n[DEBUG] Workspace Handle: %v", workspaceHandle)
-	log.Printf("\n[DEBUG] Aggregator Handle: %v", aggregatorHandle)
+	log.Printf("\n[DEBUG] Aggregator Handle: %v", oldAggregatorHandle)
 	log.Printf("\n[DEBUG] Aggregator Connections: %v", connections)
 
 	// Create request
-	req := steampipe.UpdateWorkspaceAggregatorRequest{Handle: &aggregatorHandle, Connections: &connections}
+	req := steampipe.UpdateWorkspaceAggregatorRequest{Handle: &newAggregatorHandle, Connections: &connections}
 
 	userHandle := ""
 	isUser, orgHandle := isUserConnection(d)
@@ -263,9 +273,9 @@ func resourceWorkspaceAggregatorUpdate(ctx context.Context, d *schema.ResourceDa
 		if err != nil {
 			return diag.Errorf("resourceWorkspaceAggregatorUpdate.getUserHandler error  %v", decodeResponse(r))
 		}
-		resp, r, err = client.APIClient.UserWorkspaceAggregators.Update(ctx, userHandle, workspaceHandle, aggregatorHandle).Request(req).Execute()
+		resp, r, err = client.APIClient.UserWorkspaceAggregators.Update(ctx, userHandle, workspaceHandle, oldAggregatorHandle.(string)).Request(req).Execute()
 	} else {
-		resp, r, err = client.APIClient.OrgWorkspaceAggregators.Update(ctx, orgHandle, workspaceHandle, aggregatorHandle).Request(req).Execute()
+		resp, r, err = client.APIClient.OrgWorkspaceAggregators.Update(ctx, orgHandle, workspaceHandle, oldAggregatorHandle.(string)).Request(req).Execute()
 	}
 
 	// Error check
@@ -280,7 +290,7 @@ func resourceWorkspaceAggregatorUpdate(ctx context.Context, d *schema.ResourceDa
 	d.Set("handle", resp.Handle)
 	d.Set("type", resp.Type)
 	d.Set("plugin", resp.Plugin)
-	d.Set("connections", FormatJson(resp.Connections))
+	d.Set("connections", resp.Connections)
 	d.Set("created_at", resp.CreatedAt)
 	d.Set("updated_at", resp.UpdatedAt)
 	if resp.CreatedBy != nil {
