@@ -1,4 +1,4 @@
-## 0.10.0 (TBD)
+## 0.10.0 (May 3, 2023)
 
 BREAKING CHANGES:
 
