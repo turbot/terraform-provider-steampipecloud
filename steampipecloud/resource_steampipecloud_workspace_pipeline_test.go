@@ -19,7 +19,8 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 	processDataSourceName := "data.steampipecloud_process.process_run"
 	workspaceHandle := "workspace" + randomString(3)
 	title := "Daily CIS Job"
-	pipeline := "pipeline.save_snapshot"
+	pipeline := "pipeline.snapshot_dashboard"
+	mod := "github.com/turbot/steampipe-mod-aws-compliance"
 	frequency := `
 		{
 			"type": "interval",
@@ -57,7 +58,7 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 		CheckDestroy: testAccCheckWorkspacePipelineDestroy,
 		Steps: []resource.TestStep{
 			{
-				Config: testAccUserWorkspacePipelineConfig(workspaceHandle, title, pipeline, frequency, args, tags),
+				Config: testAccUserWorkspacePipelineConfig(workspaceHandle, title, pipeline, frequency, args, tags, mod),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckWorkspacePipelineExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "title", title),
@@ -75,7 +76,7 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"updated_at", "args", "frequency", "tags"},
 			},
 			{
-				Config: testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, updatedFrequency, args, tags),
+				Config: testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, updatedFrequency, args, tags, mod),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckWorkspacePipelineExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "title", title),
@@ -94,7 +95,7 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 				ImportStateVerifyIgnore: []string{"updated_at", "args", "frequency", "tags"},
 			},
 			{
-				Config: testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline, updatedFrequency, args, tags),
+				Config: testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline, updatedFrequency, args, tags, mod),
 				Check: resource.ComposeTestCheckFunc(
 					testAccCheckWorkspacePipelineExists(workspaceHandle),
 					resource.TestCheckResourceAttr(resourceName, "title", title),
@@ -111,12 +112,17 @@ func TestAccUserWorkspacePipeline_Basic(t *testing.T) {
 	})
 }
 
-func testAccUserWorkspacePipelineConfig(workspaceHandle, title, pipeline, frequency, args, tags string) string {
+func testAccUserWorkspacePipelineConfig(workspaceHandle, title, pipeline, frequency, args, tags, mod string) string {
 	return fmt.Sprintf(`
 	provider "steampipecloud" {}
 
 	resource "steampipecloud_workspace" "test_workspace" {
 		handle = "%s"
+	}
+
+	resource "steampipecloud_workspace_mod" "aws_compliance" {
+		workspace_handle = steampipecloud_workspace.test_workspace.handle
+		path = "%s"
 	}
 	
 	resource "steampipecloud_workspace_pipeline" "pipeline_1" {
@@ -126,15 +132,22 @@ func testAccUserWorkspacePipelineConfig(workspaceHandle, title, pipeline, freque
 		frequency        = jsonencode(%s)
 		args             = jsonencode(%s)
 		tags             = jsonencode(%s)
-	}`, workspaceHandle, title, pipeline, frequency, args, tags)
+
+		depends_on = [steampipecloud_workspace_mod.aws_compliance]
+	}`, workspaceHandle, mod, title, pipeline, frequency, args, tags)
 }
 
-func testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, frequency, args, tags string) string {
+func testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, frequency, args, tags, mod string) string {
 	return fmt.Sprintf(`
 	provider "steampipecloud" {}
 
 	resource "steampipecloud_workspace" "test_workspace" {
 		handle = "%s"
+	}
+
+	resource "steampipecloud_workspace_mod" "aws_compliance" {
+		workspace_handle = steampipecloud_workspace.test_workspace.handle
+		path = "%s"
 	}
 	
 	resource "steampipecloud_workspace_pipeline" "pipeline_1" {
@@ -144,15 +157,22 @@ func testAccUserWorkspacePipelineUpdateConfig(workspaceHandle, title, pipeline, 
 		frequency        = jsonencode(%s)
 		args             = jsonencode(%s)
 		tags             = jsonencode(%s)
-	}`, workspaceHandle, title, pipeline, frequency, args, tags)
+
+		depends_on = [steampipecloud_workspace_mod.aws_compliance]
+	}`, workspaceHandle, mod, title, pipeline, frequency, args, tags)
 }
 
-func testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline, frequency, args, tags string) string {
+func testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline, frequency, args, tags, mod string) string {
 	return fmt.Sprintf(`
 	provider "steampipecloud" {}
 
 	resource "steampipecloud_workspace" "test_workspace" {
 		handle = "%s"
+	}
+
+	resource "steampipecloud_workspace_mod" "aws_compliance" {
+		workspace_handle = steampipecloud_workspace.test_workspace.handle
+		path = "%s"
 	}
 	
 	resource "steampipecloud_workspace_pipeline" "pipeline_1" {
@@ -162,13 +182,15 @@ func testAccUserWorkspacePipelineProcessConfig(workspaceHandle, title, pipeline,
 		frequency        = jsonencode(%s)
 		args             = jsonencode(%s)
 		tags             = jsonencode(%s)
+
+		depends_on = [steampipecloud_workspace_mod.aws_compliance]
 	}
 	
 	data "steampipecloud_process" "process_run" {
 		workspace  = steampipecloud_workspace.test_workspace.handle
 		process_id = steampipecloud_workspace_pipeline.pipeline_1.last_process_id
 	}
-	`, workspaceHandle, title, pipeline, frequency, args, tags)
+	`, workspaceHandle, mod, title, pipeline, frequency, args, tags)
 }
 
 func testAccCheckWorkspacePipelineExists(workspaceHandle string) resource.TestCheckFunc {
