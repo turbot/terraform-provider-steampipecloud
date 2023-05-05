@@ -34,6 +34,7 @@ resource "steampipecloud_workspace" "org_dev_workspace" {
 }
 
 resource "steampipecloud_workspace_mod" "aws_tags" {
+  organization = steampipecloud_workspace.org_dev_workspace.organization
   workspace_handle = steampipecloud_workspace.org_dev_workspace.handle
   path = "github.com/turbot/steampipe-mod-aws-tags"
 }
@@ -43,9 +44,10 @@ resource "steampipecloud_workspace_mod" "aws_tags" {
 
 The following arguments are supported:
 
-- `workspace_handle` - (Required) The handle of the workspace to install the mod in.
 - `path` - (Required) The path of the public git repo containing the mod.
+- `workspace_handle` - (Required) The handle of the workspace to install the mod in.
 - `constraint` - (Optional) The semver constraint for the mod version to install. Defaults to "*".
+- `organization` - (Optional) The optional handle of the organization to be used when the mod to be installed in a workspace belonging to an organization.
 
 ## Attributes Reference
 
