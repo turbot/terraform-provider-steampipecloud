@@ -1,4 +1,4 @@
-## 0.10.0 (May 3, 2023)
+## 0.10.0 (May 9, 2023)
 
 BREAKING CHANGES:
 
