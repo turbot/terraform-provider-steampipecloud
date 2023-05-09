@@ -135,7 +135,7 @@ func resourceWorkspaceModVariableCreateSetting(ctx context.Context, d *schema.Re
 		}
 		// After Mod installation - it might so happen that the mod variable has yet to be created, which is why we will retry the setting creation
 		// logic until the mod is installed and the variables created in the workspace
-		err = resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+		err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
 			var err error
 			resp, r, err = client.APIClient.UserWorkspaceModVariables.CreateSetting(ctx, userHandle, workspaceHandle, modAlias).Request(req).Execute()
 			if err != nil {
@@ -144,7 +144,7 @@ func resourceWorkspaceModVariableCreateSetting(ctx context.Context, d *schema.Re
 			return nil
 		})
 	} else {
-		err = resource.Retry(d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
+		err = resource.RetryContext(ctx, d.Timeout(schema.TimeoutCreate), func() *resource.RetryError {
 			resp, r, err = client.APIClient.OrgWorkspaceModVariables.CreateSetting(ctx, orgHandle, workspaceHandle, modAlias).Request(req).Execute()
 			if err != nil {
 				return resource.RetryableError(err)

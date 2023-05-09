@@ -146,8 +146,8 @@ The following arguments are supported:
 
 - `handle` - (Required) A friendly identifier for your connection, and must be unique across your connections.
 - `plugin` - (Required) The name of the plugin.
-- `organization` - (Optional) An organization ID or handle to create the connection in.
 - `config` - (Optional) Configuration for the connection.
+- `organization` - (Optional) An organization ID or handle to create the connection in.
 
 For each connection resource, additional arguments are supported based on the plugin it uses. For instance, if creating a connection that uses the Zendesk plugin, the [Zendesk configuration arguments](https://hub.steampipe.io/plugins/turbot/zendesk#configuration) should be used in the connection:
 

@@ -52,8 +52,8 @@ resource "steampipecloud_workspace_snapshot" "aws_tags_limit_snapshot" {
 
 The following arguments are supported:
 
-- `workspace_handle` - (Required) The handle of the workspace to create the snapshot in.
 - `data` - (Required) The data to be stored for the snapshot.
+- `workspace_handle` - (Required) The handle of the workspace to create the snapshot in.
 - `organization` - (Optional) The optional organization handle to be used when the snapshot is to be captured for a workspace that belongs to an organization.
 - `tags` - (Optional) The JSON-encoded string of tags for the snapshot. Use `jsonencode` on a terraform type to ensure correct escaping e.g. `jsonencode({Foo: "Bar"})`
 - `visibility` - (Optional) The scope of the snapshot. Can either be `workspace` or `anyone_with_link`.

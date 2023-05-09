@@ -56,7 +56,7 @@ The following arguments are supported:
 - `organization` - (Required) The organization ID or handle to invite the user to.
 - `role` - (Required) The role of the user within the organization. Must be one of `member` or `owner`.
 
-~> **Note:** An member can be invited either using an email address or a user handle. Providing both at the same time will result in an error.
+~> **Note:** A member can be invited either using an email address or a user handle. Providing both at the same time will result in an error.
 
 - `email` - (Optional) The email address of the user to add to the organization.
 - `user_handle` - (Optional) The handle of the user to add to the organization.

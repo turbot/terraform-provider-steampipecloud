@@ -29,7 +29,6 @@ func resourceOrganization() *schema.Resource {
 			},
 			"avatar_url": {
 				Type:     schema.TypeString,
-				Optional: true,
 				Computed: true,
 			},
 			"display_name": {
@@ -82,10 +81,6 @@ func resourceOrganizationCreate(ctx context.Context, d *schema.ResourceData, met
 	// Create request
 	req := steampipe.CreateOrgRequest{
 		Handle: handle.(string),
-	}
-
-	if value, ok := d.GetOk("avatar_url"); ok {
-		req.AvatarUrl = types.String(value.(string))
 	}
 
 	if value, ok := d.GetOk("display_name"); ok {
@@ -169,10 +164,6 @@ func resourceOrganizationUpdate(ctx context.Context, d *schema.ResourceData, met
 	// Create request
 	req := steampipe.UpdateOrgRequest{
 		Handle: types.String(newHandle.(string)),
-	}
-
-	if value, ok := d.GetOk("avatar_url"); ok {
-		req.AvatarUrl = types.String(value.(string))
 	}
 
 	if value, ok := d.GetOk("display_name"); ok {

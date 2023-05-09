@@ -37,7 +37,7 @@ resource "steampipecloud_organization_member" "orgmember" {
 	role         = "member"
 }
 
-resource "steampipecloud_organization_member" "example" {
+resource "steampipecloud_organization_workspace_member" "example" {
   organization     = steampipecloud_organization.myorg.handle
   workspace_handle = steampipecloud_workspace.myworkspace.handle
   user_handle      = steampipecloud_organization_member.orgmember.user_handle
@@ -50,9 +50,9 @@ resource "steampipecloud_organization_member" "example" {
 The following arguments are supported:
 
 - `organization` - (Required) The organization ID or handle to which the workspace belongs to.
-- `workspace_handle` - (Required) The workspace handle to which the user will be invited to.
-- `user_handle` - (Required) The handle of the user to add to the workspace.
 - `role` - (Required) The role of the user in the workspace of the organization. Must be one of `reader`, `admin` or `owner`.
+- `user_handle` - (Required) The handle of the user to add to the workspace.
+- `workspace_handle` - (Required) The workspace handle to which the user will be invited to.
 
 ## Attributes Reference
 

@@ -24,7 +24,6 @@ resource "steampipecloud_organization" "example" {
 The following arguments are supported:
 
 - `handle` - (Required) A friendly identifier for your workspace, and must be unique across your workspaces.
-- `avatar_url` - (Optional) A publicly accessible URL for the organization's logo.
 - `display_name` - (Optional) A friendly name for your organization.
 - `url` - (Optional) A publicly accessible URL for the organization.
 

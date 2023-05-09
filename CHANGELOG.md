@@ -1,3 +1,13 @@
+## 0.10.0 (May 9, 2023)
+
+BREAKING CHANGES:
+
+* `resources/steampipecloud_organization`: Remove `avatar_url` argument
+
+FEATURES:
+
+* **New Resource:** `steampipecloud_workspace_aggregator`
+
 ## 0.9.0 (February 23, 2023)
 
 FEATURES:
