@@ -1,6 +1,6 @@
 # :warning: DEPRECATED
 
-The Steampipe Cloud provider has been deprecated. Please use [Turbot Pipes provider](https://registry.terraform.io/providers/turbot/pipes) instead.
+The Steampipe Cloud provider has been deprecated. Please use the [Turbot Pipes provider](https://registry.terraform.io/providers/turbot/pipes) instead.
 
 ---
 # Terraform Steampipe Cloud provider
