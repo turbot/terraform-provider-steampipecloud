@@ -11,9 +11,8 @@
 #
 name: release
 on:
-  push:
-    tags:
-      - "v*"
+  workflow_call:
+
 jobs:
   goreleaser:
     runs-on: ubuntu-latest
