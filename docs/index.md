@@ -6,7 +6,7 @@ description: "Terraform provider for interacting with Steampipe Cloud API."
 
 # Steampipe Cloud Provider
 
-~> **Note:** The Steampipe Cloud provider has been deprecated. Please use [Turbot Pipes provider](https://registry.terraform.io/providers/turbot/pipes) instead.
+~> **Note:** The Steampipe Cloud provider has been deprecated. Please use the [Turbot Pipes provider](https://registry.terraform.io/providers/turbot/pipes) instead.
 
 <!-- Steampipe Cloud provides a hosted platform for Steampipe, simplifying setup and operation, accelerating integration, and providing solutions for collaborating and sharing insights. -->
 
