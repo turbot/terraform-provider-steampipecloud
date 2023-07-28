@@ -1,3 +1,9 @@
+## 0.11.0 (May 9, 2023)
+
+DEPRECATED
+
+* The Steampipe Cloud provider has been deprecated. Please use the [Turbot Pipes provider](https://registry.terraform.io/providers/turbot/pipes) instead. This was part of our [renaming](https://turbot.com/blog/2023/07/introducing-turbot-guardrails-and-pipes) of Steampipe Cloud to Turbot Pipes.
+
 ## 0.10.0 (May 9, 2023)
 
 BREAKING CHANGES:
